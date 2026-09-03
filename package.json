@@ -1,0 +1,11 @@
+{
+  "name": "glenn-blog-prototype",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node prototype/serve.mjs",
+    "build": "node prototype/build.mjs",
+    "test": "node --test prototype/tests/*.test.mjs"
+  }
+}
