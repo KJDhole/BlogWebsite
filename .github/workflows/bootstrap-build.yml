@@ -22,7 +22,7 @@ jobs:
         run: npm run build
       - name: Commit generated files
         run: |
-          if git diff --quiet -- dist/index.html glenn-blog-demo.html; then
+          if [ -z "$(git status --porcelain -- dist/index.html glenn-blog-demo.html)" ]; then
             echo "Generated files already current"
             exit 0
           fi
