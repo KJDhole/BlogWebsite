@@ -1,0 +1,15 @@
+# Generated visual QA artifacts
+*-preview.*
+v*-preview/
+v*-preview-*/
+v*-frames/
+v*-time-frames/
+v*-accurate-frames/
+v*-final-frames/
+
+# Local packaged handoff files
+*.zip
+
+# OS / editor
+.DS_Store
+Thumbs.db
