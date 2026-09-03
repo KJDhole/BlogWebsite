@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Glenn's personal writing on AI, Agents, software and ideas." />
+  <title>GLENN — Personal Blog</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <span class="flight-echo flight-echo-two" aria-hidden="true"></span>
+  <span class="flight-echo flight-echo-one" aria-hidden="true"></span>
+  <span class="flight-orb" aria-hidden="true"></span>
+
+  <div class="page-shell">
+    <header class="site-topbar">
+      <a class="brand" href="#top" aria-label="返回首页">GLENN<span class="brand-dot" aria-hidden="true"></span></a>
+      <button id="theme-toggle" class="icon-button theme-toggle" type="button" aria-label="切换深浅主题" title="切换主题">
+        <span class="theme-icon theme-icon-sun" aria-hidden="true">☼</span>
+        <span class="theme-icon theme-icon-moon" aria-hidden="true">◐</span>
+      </button>
+    </header>
+
+    <main id="top">
+      <section class="hero reveal-block" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">PERSONAL NOTES · 2026</p>
+          <h1 id="hero-title">Hi, I’m Glenn.</h1>
+          <p class="hero-intro">CS student exploring <strong>AI</strong>, <strong>Agents</strong>, and building things that matter.</p>
+          <div class="social-row" aria-label="社交链接">
+            <a href="https://x.com" target="_blank" rel="noreferrer" aria-label="X / Twitter" class="social-link">X</a>
+            <a href="https://github.com/KJDhole" target="_blank" rel="noreferrer" aria-label="GitHub" class="social-link">GH</a>
+            <a href="mailto:hello@example.com" aria-label="Email" class="social-link">↗</a>
+          </div>
+        </div>
+
+        <div class="orbit-wrap" aria-hidden="true">
+          <div class="orbit-stage">
+            <svg class="orbit-svg" viewBox="0 0 420 420" focusable="false">
+              <g class="orbit-grid">
+                <line class="orbit-grid-line" x1="-22" y1="210" x2="442" y2="210"></line>
+                <line class="orbit-grid-line" x1="210" y1="-22" x2="210" y2="442"></line>
+              </g>
+              <g class="orbit-geometry">
+                <circle class="orbit-ring orbit-ring-a" cx="210" cy="210" r="70"></circle>
+                <circle class="orbit-ring orbit-ring-b" cx="210" cy="210" r="120"></circle>
+                <circle class="orbit-ring orbit-ring-c-base" cx="210" cy="210" r="172"></circle>
+                <circle class="orbit-ring orbit-ring-c" cx="210" cy="210" r="172" pathLength="1"></circle>
+              </g>
+              <g class="orbit-planets">
+                <circle class="orbit-planet orbit-planet-a" cx="280" cy="210" r="4"></circle>
+                <circle class="orbit-planet orbit-planet-b" cx="90" cy="210" r="4.5"></circle>
+                <circle class="orbit-planet orbit-planet-c" cx="382" cy="210" r="7"></circle>
+              </g>
+              <circle class="orbit-core-halo" cx="210" cy="210" r="19"></circle>
+              <circle class="orbit-core" cx="210" cy="210" r="9"></circle>
+            </svg>
+          </div>
+          <p class="orbit-caption">slow systems · clear thinking</p>
+        </div>
+      </section>
+
+      <section class="content-section" aria-label="文章">
+        <div class="controls reveal-block">
+          <label class="search-box" for="article-search">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <input id="article-search" type="search" autocomplete="off" placeholder="Search articles…" aria-label="搜索文章" />
+            <kbd>⌘ K</kbd>
+          </label>
+
+          <div class="filter-wrap" aria-label="文章分类">
+            <div class="filter-list" role="tablist" aria-label="文章分类筛选">
+              <button class="filter-button is-active" type="button" role="tab" aria-selected="true" data-category="All">All</button>
+              <button class="filter-button" type="button" role="tab" aria-selected="false" data-category="AI">AI</button>
+              <button class="filter-button" type="button" role="tab" aria-selected="false" data-category="Agent">Agent</button>
+              <button class="filter-button" type="button" role="tab" aria-selected="false" data-category="Development">Development</button>
+              <button class="filter-button" type="button" role="tab" aria-selected="false" data-category="Product">Product</button>
+              <button class="filter-button" type="button" role="tab" aria-selected="false" data-category="Thinking">Thinking</button>
+              <span class="filter-indicator" aria-hidden="true"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-heading reveal-block">
+          <div>
+            <p class="eyebrow">LATEST WRITING</p>
+            <h2>Articles</h2>
+          </div>
+          <p id="result-count" class="result-count" aria-live="polite"></p>
+        </div>
+
+        <div id="article-list" class="article-list" aria-live="polite">
+          <article class="article-row reveal-item is-visible">
+            <div class="article-date">SEP 03
+2026</div>
+            <div class="article-main"><a class="article-title" href="#commerce-agent-rules">Commerce Agent 的 24 条设计法则</a><p class="article-summary">从 Anthropic 的 Commerce Agent 架构出发，重新理解 Agent 应该负责什么，不应该负责什么。</p><div class="article-meta"><span class="read-time">8 min read</span><span class="meta-separator">·</span><div class="tag-list"><span class="tag">AI</span><span class="tag">Agent</span><span class="tag">Architecture</span></div></div></div>
+            <div class="article-visual visual-pearl" aria-hidden="true"><span></span></div>
+          </article>
+          <article class="article-row reveal-item is-visible">
+            <div class="article-date">AUG 31
+2026</div>
+            <div class="article-main"><a class="article-title" href="#ai-native-development">AI Native 开发到底改变了什么</a><p class="article-summary">以前我们优化的是写代码的效率，现在开始优化的是交付智能的速度。</p><div class="article-meta"><span class="read-time">12 min read</span><span class="meta-separator">·</span><div class="tag-list"><span class="tag">AI</span><span class="tag">Development</span><span class="tag">Tools</span></div></div></div>
+            <div class="article-visual visual-rays" aria-hidden="true"><span></span></div>
+          </article>
+          <article class="article-row reveal-item is-visible">
+            <div class="article-date">AUG 28
+2026</div>
+            <div class="article-main"><a class="article-title" href="#agent-memory-notes">我对 Agent 记忆系统的一些思考</a><p class="article-summary">短期记忆、长期记忆、知识图谱、向量数据库，到底应该在什么场景下使用？</p><div class="article-meta"><span class="read-time">6 min read</span><span class="meta-separator">·</span><div class="tag-list"><span class="tag">Agent</span><span class="tag">Memory</span><span class="tag">Design</span></div></div></div>
+            <div class="article-visual visual-paper" aria-hidden="true"><span></span></div>
+          </article>
+          <article class="article-row reveal-item is-visible">
+            <div class="article-date">AUG 26
+2026</div>
+            <div class="article-main"><a class="article-title" href="#claude-code-workflow">Claude Code + 自定义指令的工作流</a><p class="article-summary">如何让 Coding Agent 真正理解你的代码库，而不是每次都从零开始猜。</p><div class="article-meta"><span class="read-time">7 min read</span><span class="meta-separator">·</span><div class="tag-list"><span class="tag">Claude</span><span class="tag">Workflow</span><span class="tag">Best Practice</span></div></div></div>
+            <div class="article-visual visual-code" aria-hidden="true"><span></span></div>
+          </article>
+          <article class="article-row reveal-item is-visible">
+            <div class="article-date">AUG 23
+2026</div>
+            <div class="article-main"><a class="article-title" href="#building-in-public">为什么我选择公开构建所有项目</a><p class="article-summary">透明构建带来的反馈质量，远比想象中更高。</p><div class="article-meta"><span class="read-time">5 min read</span><span class="meta-separator">·</span><div class="tag-list"><span class="tag">Building in Public</span><span class="tag">Mindset</span></div></div></div>
+            <div class="article-visual visual-halo" aria-hidden="true"><span></span></div>
+          </article>
+        </div>
+        <div id="empty-state" class="empty-state" hidden>
+          <p>No matching articles.</p>
+          <button id="clear-filters" type="button">Clear filters</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <a class="brand brand-small" href="#top">GLENN<span class="brand-dot" aria-hidden="true"></span></a>
+      <div class="footer-meta">
+        <span>© 2026 Glenn</span>
+        <span>Building in public.</span>
+      </div>
+    </footer>
+  </div>
+
+  <template id="article-template">
+    <article class="article-row reveal-item">
+      <div class="article-date"></div>
+      <div class="article-main">
+        <a class="article-title" href="#"></a>
+        <p class="article-summary"></p>
+        <div class="article-meta">
+          <span class="read-time"></span>
+          <span class="meta-separator">·</span>
+          <div class="tag-list"></div>
+        </div>
+      </div>
+      <div class="article-visual" aria-hidden="true"><span></span></div>
+    </article>
+  </template>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
