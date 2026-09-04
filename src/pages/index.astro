@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content'
 import ArticleRow from '../components/ArticleRow.astro'
+import SpaceScene from '../components/SpaceScene.astro'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import { SITE } from '../config/site.mjs'
 import { estimateReadingTime } from '../lib/readingTime.mjs'
@@ -9,6 +10,7 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
 ---
 <BaseLayout title={SITE.title} description={SITE.description}>
+  <span class="nav-portal" aria-hidden="true"></span>
   <span class="flight-echo flight-echo-two" aria-hidden="true"></span>
   <span class="flight-echo flight-echo-one" aria-hidden="true"></span>
   <span class="flight-orb" aria-hidden="true"></span>
@@ -35,27 +37,7 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
         </div>
 
         <div class="orbit-wrap" aria-hidden="true">
-          <div class="orbit-stage">
-            <svg class="orbit-svg" viewBox="0 0 420 420" focusable="false">
-              <g class="orbit-grid">
-                <line class="orbit-grid-line" x1="-22" y1="210" x2="442" y2="210"></line>
-                <line class="orbit-grid-line" x1="210" y1="-22" x2="210" y2="442"></line>
-              </g>
-              <g class="orbit-geometry">
-                <circle class="orbit-ring orbit-ring-a" cx="210" cy="210" r="70"></circle>
-                <circle class="orbit-ring orbit-ring-b" cx="210" cy="210" r="120"></circle>
-                <circle class="orbit-ring orbit-ring-c-base" cx="210" cy="210" r="172"></circle>
-                <circle class="orbit-ring orbit-ring-c" cx="210" cy="210" r="172" pathLength="1"></circle>
-              </g>
-              <g class="orbit-planets">
-                <circle class="orbit-planet orbit-planet-a" cx="280" cy="210" r="4"></circle>
-                <circle class="orbit-planet orbit-planet-b" cx="90" cy="210" r="4.5"></circle>
-                <circle class="orbit-planet orbit-planet-c" cx="382" cy="210" r="7"></circle>
-              </g>
-              <circle class="orbit-core-halo" cx="210" cy="210" r="19"></circle>
-              <circle class="orbit-core" cx="210" cy="210" r="9"></circle>
-            </svg>
-          </div>
+          <SpaceScene />
           <p class="orbit-caption">slow systems · clear thinking</p>
         </div>
       </section>
