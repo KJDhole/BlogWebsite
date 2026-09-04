@@ -21,7 +21,7 @@
 - The existing `getLandingMotionState`, `landingProgressFromElapsed`, free-fall, squash, bounce, settle, and final morph semantics remain intact.
 - Existing typography, search, categories, buttons, article list, footer, content model, theme persistence, RSS, archive, and tag behavior are unchanged.
 - Use direct Three.js; do not add React or React Three Fiber.
-- Reuse no third-party implementation code or assets unless the repository has an explicit compatible license. The implementation in this plan should be original and use only Three.js as a runtime dependency.
+- Reuse no third-party implementation code or assets unless the repository has an explicit compatible license. This implementation is original and uses only Three.js as a new runtime dependency.
 - Cap renderer pixel ratio; mobile gets a lower cap and lower particle count.
 - `prefers-reduced-motion: reduce` skips swallow/eject travel and leaves the filter indicator usable.
 - WebGL failure/context loss falls back to the existing/static SVG solar-system visual; page controls must remain usable.
@@ -49,10 +49,10 @@
 - `src/scripts/home.js` — remove old SVG-flight orchestration; coordinate scroll story, Three.js scene, nav portal, ejection, existing landing physics, and existing UI behavior.
 - `src/styles/global.css` — 3D scene container, deep-space treatment, fallback visibility, portal styling, containment, mobile, reduced-motion.
 - `tests/ui-contract.test.mjs` — assert the new scene exists while search/categories/article collection remain unchanged.
-- `tests/orbit-motion.test.mjs` — keep landing regressions; remove only assertions tied exclusively to the retired SVG transition if they no longer describe production behavior.
 
-### Do Not Modify
+### Preserve Unchanged
 
+- `src/scripts/orbitMotion.mjs` and `tests/orbit-motion.test.mjs` — keep all existing landing and legacy math regressions green even though production `home.js` stops using the old SVG transition helpers.
 - `src/content/**`
 - article routes/layouts
 - `src/scripts/filterArticles.mjs`
@@ -68,16 +68,26 @@
 - Create: `tests/scroll-story.test.mjs`
 
 **Interfaces:**
-- Produces: `STORY_PHASES: readonly string[]`.
+- Produces: `STORY_PHASES`, a frozen array in the exact semantic order.
 - Produces: `STORY_LIMITS` containing exact phase thresholds and desktop/mobile minimum system scale.
 - Produces: `getScrollStoryState(progress, { mobile = false, reducedMotion = false } = {})`.
 - Produces: `buildEjectionPath(start, end, { mobile = false } = {})`.
 - Produces: `sampleEjectionPath(path, progress)`.
 - Consumes later: `home.js` and `spaceScene.mjs` use the semantic state object; no renderer-specific values are read directly from scroll position elsewhere.
 
-Use these exact normalized thresholds initially:
+Use these exact initial constants:
 
 ```js
+export const STORY_PHASES = Object.freeze([
+  'stable-orbit',
+  'portal-emerge',
+  'absorb',
+  'compact',
+  'nav-portal',
+  'eject',
+  'landing'
+])
+
 export const STORY_LIMITS = Object.freeze({
   stableEnd: 0.18,
   portalEnd: 0.32,
@@ -108,7 +118,7 @@ The state shape is:
 
 - [ ] **Step 1: Write failing phase-order and overlap tests**
 
-Create `tests/scroll-story.test.mjs` with these cases:
+Create `tests/scroll-story.test.mjs`:
 
 ```js
 import test from 'node:test'
@@ -185,21 +195,19 @@ test('ejection curve starts at the portal and ends exactly at drop start', () =>
 })
 ```
 
-- [ ] **Step 3: Run the tests and verify the module is missing**
-
-Run:
+- [ ] **Step 3: Run the focused test and verify failure**
 
 ```bash
-npm test -- tests/scroll-story.test.mjs
+node --test tests/scroll-story.test.mjs
 ```
 
 Expected: FAIL because `src/scripts/scrollStory.mjs` does not exist.
 
 - [ ] **Step 4: Implement the pure state mapper and cubic ejection helper**
 
-Use local helpers `clamp01`, `rangeProgress`, `smoothstep`, `easeOutCubic`, and a cubic Bézier sampler inside `scrollStory.mjs`. `accent.mode` must be `orbit` before absorption, `absorbing` during absorption, and `hidden` from absorption completion through nav handoff. The state mapper must compute the same semantic outputs on every call without reading DOM or time.
+Use local `clamp01`, `rangeProgress`, `smoothstep`, `easeOutCubic`, and cubic Bézier helpers. `accent.mode` is `orbit` before absorption, `absorbing` during absorption, and `hidden` from absorption completion through nav handoff. The mapper reads no DOM/time.
 
-For ejection, construct a curve from portal center to drop-start with a short sideways kick:
+For ejection:
 
 ```js
 export function buildEjectionPath(start, end, { mobile = false } = {}) {
@@ -214,17 +222,15 @@ export function buildEjectionPath(start, end, { mobile = false } = {}) {
 }
 ```
 
-The state must set `landingReady: true` at and after `STORY_LIMITS.ejectEnd`.
+Set `landingReady: true` at and after `STORY_LIMITS.ejectEnd`. Reduced-motion returns `phase: 'reduced'`, system scale `1`, both portals hidden, no ejection, and `landingReady: false`.
 
-- [ ] **Step 5: Run the focused tests**
-
-Run:
+- [ ] **Step 5: Run focused tests**
 
 ```bash
 node --test tests/scroll-story.test.mjs
 ```
 
-Expected: all scroll-story tests PASS.
+Expected: PASS.
 
 - [ ] **Step 6: Commit**
 
@@ -246,11 +252,10 @@ git commit -m "test: define black hole scroll story contract"
 
 **Interfaces:**
 - `SpaceScene.astro` renders `[data-space-scene]`, `canvas[data-space-canvas]`, and `[data-space-fallback]`.
-- The fallback contains a simplified copy of the existing sun + three orbit rings + planets, including an orange accent planet.
-- `index.astro` keeps `.flight-orb`, `.flight-echo-one`, `.flight-echo-two`, and adds `.nav-portal` as a fixed decorative overlay.
-- Later `home.js` queries these stable data/class hooks.
+- The fallback contains a simplified sun + three orbit rings + planets, including an orange accent planet.
+- `index.astro` keeps `.flight-orb`, `.flight-echo-one`, `.flight-echo-two`, and adds `.nav-portal`.
 
-- [ ] **Step 1: Write failing structural tests before changing markup**
+- [ ] **Step 1: Write failing structural tests**
 
 Create `tests/space-scene-contract.test.mjs`:
 
@@ -280,29 +285,25 @@ test('homepage preserves all controls while mounting space scene and nav portal'
 })
 ```
 
-Update the first assertion in `tests/ui-contract.test.mjs` from requiring `orbit-svg` to requiring `<SpaceScene`, while retaining assertions for hero/search/categories/content collection.
+Update `tests/ui-contract.test.mjs` so the homepage test requires `<SpaceScene` instead of `orbit-svg`; retain hero/search/category/content assertions.
 
-- [ ] **Step 2: Run the focused contract tests**
+- [ ] **Step 2: Run and verify failure**
 
 ```bash
 node --test tests/space-scene-contract.test.mjs tests/ui-contract.test.mjs
 ```
 
-Expected: FAIL because `SpaceScene.astro` and the nav portal do not exist yet.
+Expected: FAIL.
 
-- [ ] **Step 3: Install Three.js as the only new runtime dependency**
-
-Run:
+- [ ] **Step 3: Install Three.js only**
 
 ```bash
-npm install three
+npm install three --package-lock=false
 ```
 
-Verify `package.json` adds only `three` under `dependencies`; do not add React, GSAP, React Three Fiber, or a second animation runtime.
+Verify `package.json` adds only `three`. Do not add React, GSAP, React Three Fiber, or another animation runtime.
 
 - [ ] **Step 4: Create `SpaceScene.astro`**
-
-Use this shell shape:
 
 ```astro
 <div class="space-scene" data-space-scene aria-hidden="true">
@@ -325,15 +326,15 @@ Use this shell shape:
 
 - [ ] **Step 5: Replace only the old orbit visual in `index.astro`**
 
-Import `SpaceScene` and replace `.orbit-stage > svg` with `<SpaceScene />`. Keep `.orbit-wrap` and `.orbit-caption`. Add exactly one top-level decorative element beside the flight orb nodes:
+Import `SpaceScene`, replace `.orbit-stage > svg` with `<SpaceScene />`, retain `.orbit-wrap`/caption, and add:
 
 ```html
 <span class="nav-portal" aria-hidden="true"></span>
 ```
 
-Do not change copy, search controls, category buttons, article rows, or footer.
+Do not change copy/search/categories/articles/footer.
 
-- [ ] **Step 6: Run contract tests and full tests**
+- [ ] **Step 6: Run tests**
 
 ```bash
 node --test tests/space-scene-contract.test.mjs tests/ui-contract.test.mjs
@@ -361,13 +362,13 @@ git commit -m "feat: add 3d space scene shell"
 
 **Interfaces:**
 - `createStarField(scene, { mobile })` returns `{ update(elapsedSeconds, storyState), setTheme(theme), destroy() }`.
-- `createSolarSystem(scene, { mobile })` returns `{ group, update(deltaSeconds), setStoryState(state), setTheme(theme), destroy() }`.
-- `createBlackHolePortal()` returns `{ group, setState(portalState), setTheme(theme), destroy() }`.
-- The orange accent planet remains owned by `solarSystem3d`; `blackHolePortal` never owns or replaces the sun.
+- `createSolarSystem(scene, { mobile, portalPosition })` returns `{ group, update(deltaSeconds), setStoryState(state), setTheme(theme), destroy() }`.
+- `createBlackHolePortal({ position })` returns `{ group, setState(portalState), setTheme(theme), destroy() }`.
+- `spaceScene.mjs` supplies one shared `portalPosition` to both solar system and portal so absorption ends at the visible event horizon.
 
-- [ ] **Step 1: Extend architectural tests to require separated responsibilities**
+- [ ] **Step 1: Add failing module-boundary test**
 
-Append to `tests/space-scene-contract.test.mjs`:
+Append:
 
 ```js
 test('3d scene responsibilities stay split into focused modules', async () => {
@@ -388,11 +389,11 @@ test('3d scene responsibilities stay split into focused modules', async () => {
 node --test tests/space-scene-contract.test.mjs
 ```
 
-Expected: FAIL because the three modules do not exist.
+Expected: FAIL.
 
 - [ ] **Step 3: Implement three-layer star field**
 
-`starField.mjs` uses `THREE.Points` with deterministic pseudo-random positions generated once at construction. Use these default counts:
+Use `THREE.Points` and deterministic positions generated once. Counts:
 
 ```js
 const COUNTS = {
@@ -401,48 +402,37 @@ const COUNTS = {
 }
 ```
 
-Each layer gets a `BufferGeometry` and `PointsMaterial`; far stars are smallest/dimmest, near stars are sparse and slightly larger. `update()` rotates the three groups by very small different rates and applies restrained offsets based on `storyState.system.rotationY`. Do not blink individual stars each frame and do not allocate new vectors in the render loop.
+Far stars are smallest/dimmest; near stars are sparse/slightly larger. `update()` applies tiny independent rotation/parallax. Do not blink stars or allocate arrays/vectors every frame.
 
 - [ ] **Step 4: Implement the 3D solar system**
 
-Create one `THREE.Group` for the system. Add:
+Use one root `THREE.Group`, a sun at origin, three thin line-ring orbital planes with mild inclinations, two neutral planets, and one orange accent planet. No external textures. While `accent.mode === 'orbit'`, advance its orbit normally.
 
-- one sun mesh at the origin;
-- three thin orbit rings using line/curve geometry;
-- three orbit pivots with mild different inclinations;
-- two neutral planets and one orange accent planet;
-- an accent-orbit angle that advances independently while `accent.mode === 'orbit'`.
+`spaceScene.mjs` will pass this shared location:
 
-Use simple materials and no external textures. During `accent.mode === 'absorbing'`, blend the orange planet away from its current orbit toward a portal-local target with a curved spiral:
+```js
+const portalPosition = new THREE.Vector3(2.15, 0.18, 0.55)
+```
+
+During absorption, curve from the accent’s outer orbit toward that position:
 
 ```js
 const angle = absorptionStartAngle + absorption * Math.PI * 2.2
-const radius = orbitRadius * (1 - absorption) * (1 - 0.35 * absorption)
+const radius = 2.35 * (1 - absorption) * (1 - 0.35 * absorption)
 accentPlanet.position.set(
-  portalTarget.x + Math.cos(angle) * radius,
-  portalTarget.y + Math.sin(angle * 0.72) * radius * 0.24,
-  portalTarget.z + Math.sin(angle) * radius * 0.48
+  portalPosition.x + Math.cos(angle) * radius,
+  portalPosition.y + Math.sin(angle * 0.72) * radius * 0.24,
+  portalPosition.z + Math.sin(angle) * radius * 0.48
 )
 ```
 
-Also shrink the accent planet toward zero as absorption approaches 1 and add a mild velocity-axis stretch using mesh scale. The other planets keep orbiting during absorption and compact phases.
-
-`setStoryState(state)` applies `state.system.scale`, `rotationX`, `rotationY`, and `lift` to the whole group.
+Shrink toward zero and add mild directional stretch near capture. Other planets continue orbiting. `setStoryState(state)` applies system scale, X/Y rotations, and lift.
 
 - [ ] **Step 5: Implement the hero black-hole portal**
 
-Use original Three.js geometry/material composition only:
+Use original Three.js geometry/material composition: black inner sphere/disc, two thin transparent additive rings, faint halo; no jets, giant accretion disc, or external textures. `setState({ opacity, scale, distortion, pulse })` controls visibility/scale/ring intensity. Set group position from the `position` argument so it matches `portalPosition`, never the sun.
 
-- black inner sphere/disc;
-- two thin torus/ring meshes with additive transparent material;
-- one faint halo sprite or transparent ring;
-- no jets;
-- no giant accretion disc;
-- no external textures.
-
-`setState({ opacity, scale, distortion, pulse })` controls group visibility/scale and ring material opacity. The portal group is positioned behind/slightly offset from the orange planet’s outer-orbit region, not at the sun.
-
-- [ ] **Step 6: Run focused and full tests**
+- [ ] **Step 6: Run tests**
 
 ```bash
 node --test tests/space-scene-contract.test.mjs
@@ -460,42 +450,18 @@ git commit -m "feat: build 3d solar system and portal primitives"
 
 ---
 
-### Task 4: Build the Three.js scene lifecycle, containment, quality caps, and WebGL fallback
+### Task 4: Build the Three.js lifecycle, containment, quality caps, and WebGL fallback
 
 **Files:**
 - Create: `src/scripts/spaceScene.mjs`
 - Modify: `tests/space-scene-contract.test.mjs`
 
 **Interfaces:**
-- Produces `createSpaceScene(canvas, options)`.
-- `options` shape:
+- `createSpaceScene(canvas, { mobile, reducedMotion, theme, onUnavailable })`.
+- Returns `{ available, setStoryState(state), setTheme(theme), resize(), destroy() }`.
+- `home.js` never accesses renderer internals.
 
-```js
-{
-  mobile,
-  reducedMotion,
-  theme,
-  onUnavailable
-}
-```
-
-- Returned interface:
-
-```js
-{
-  available,
-  setStoryState(state),
-  setTheme(theme),
-  resize(),
-  destroy()
-}
-```
-
-- `home.js` must not access Three.js renderer internals.
-
-- [ ] **Step 1: Add failing scene-lifecycle contract tests**
-
-Append:
+- [ ] **Step 1: Add failing lifecycle test**
 
 ```js
 test('space scene exposes a small lifecycle API and quality protections', async () => {
@@ -517,40 +483,44 @@ test('space scene exposes a small lifecycle API and quality protections', async 
 node --test tests/space-scene-contract.test.mjs
 ```
 
-Expected: FAIL because `spaceScene.mjs` does not exist.
+Expected: FAIL.
 
 - [ ] **Step 3: Implement renderer/camera/scene orchestration**
 
-`createSpaceScene()` must:
+Create `portalPosition` once:
 
-1. Try to instantiate `THREE.WebGLRenderer({ canvas, alpha: true, antialias: !mobile, powerPreference: 'high-performance' })`.
-2. On constructor failure, call `onUnavailable()` and return a no-op interface with `available: false`.
-3. Cap DPR to `1.75` desktop and `1.25` mobile:
+```js
+const portalPosition = new THREE.Vector3(2.15, 0.18, 0.55)
+const solarSystem = createSolarSystem(scene, { mobile, portalPosition })
+const heroPortal = createBlackHolePortal({ position: portalPosition })
+scene.add(heroPortal.group)
+```
+
+Then:
+
+1. Try `new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !mobile, powerPreference: 'high-performance' })`.
+2. On constructor failure call `onUnavailable()` and return no-op `{ available: false, ... }` lifecycle methods.
+3. Cap DPR:
 
 ```js
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.25 : 1.75))
 ```
 
-4. Use a `PerspectiveCamera` with mild tilt and enough depth for parallax.
-5. Create the star field, solar system, and hero portal once.
-6. Maintain one RAF loop; reuse elapsed/delta scalars and avoid per-frame array/object construction.
-7. Pause expensive animation when `document.hidden` is true.
-8. Handle `webglcontextlost` with `event.preventDefault()`, stop rendering, and call `onUnavailable()`.
-9. Handle resize with `ResizeObserver` on the canvas parent; update camera aspect and renderer size.
-10. `destroy()` cancels RAF, removes listeners/observer, and disposes geometries/materials/renderer.
+4. Use a mildly tilted `PerspectiveCamera`.
+5. Construct stars/system/portal once.
+6. Use one RAF loop and scalar delta/elapsed values; no per-frame collection rebuilding.
+7. Pause costly updates while `document.hidden`.
+8. On `webglcontextlost`, prevent default, stop rendering, call `onUnavailable()`.
+9. Resize via `ResizeObserver` on the canvas parent and update camera aspect/renderer size.
+10. `destroy()` cancels RAF, removes events/observer, disposes scene-owned geometry/materials/renderer.
 
-- [ ] **Step 4: Enforce containment in scene coordinates and CSS clipping contract**
+- [ ] **Step 4: Enforce containment**
 
-`setStoryState(state)` must clamp vertical group lift so the system cannot drift downward out of its scene box. Use the story state’s compact scale floor rather than allowing arbitrary shrink. The stronger DOM-level containment is implemented in Task 7 with `overflow: clip`; both protections stay in place.
+Clamp scene/root downward lift and never allow scale below state floor. Task 7 also clips visual overflow at DOM level, so both scene and CSS prevent entering article content.
 
-- [ ] **Step 5: Implement reduced-motion behavior**
+- [ ] **Step 5: Implement reduced-motion scene behavior**
 
-When `reducedMotion` is true:
-
-- keep a static or extremely slow solar-system rotation;
-- never show hero portal;
-- never run orange-planet absorption;
-- do not run an extra high-frequency visual effect loop beyond the basic scene draw.
+When reduced motion is true: static/extremely slow solar-system drift, hero portal always hidden, no orange absorption, no high-motion choreography.
 
 - [ ] **Step 6: Run tests**
 
@@ -578,10 +548,10 @@ git commit -m "feat: add resilient threejs scene lifecycle"
 - Modify: `tests/space-scene-contract.test.mjs`
 
 **Interfaces:**
-- Produces `getIndicatorGeometry(trackRect, buttonRect)` as a pure function.
-- Produces `getDropGeometry(indicatorGeometry, { mobile })` returning `{ portal, dropStart, target, targetWidth, targetHeight }`.
-- Produces `createNavPortal(node, { indicator, allButton, mobile })` returning `{ measure(), setState(state), destroy() }`.
-- `home.js` combines `getDropGeometry()` with `buildEjectionPath()` from `scrollStory.mjs`.
+- `getIndicatorGeometry(trackRect, buttonRect)` is pure.
+- `getDropGeometry(indicatorGeometry, { mobile })` returns `{ portal, dropStart, target, targetWidth, targetHeight }`.
+- `createNavPortal(node, { indicator, allButton })` returns `{ measure(), setState(state), destroy() }`.
+- `home.js` combines drop geometry with `buildEjectionPath()`.
 
 - [ ] **Step 1: Add failing geometry tests**
 
@@ -597,12 +567,14 @@ test('navigation portal anchors to the measured All indicator center', () => {
   assert.equal(geometry.centerX, 243)
   assert.equal(geometry.centerY, 714.25)
   assert.equal(geometry.width, 46)
+  assert.equal(geometry.offsetX, 120)
 })
 
 test('drop geometry keeps exact target and uses smaller mobile drop height', () => {
   const indicator = { centerX: 243, centerY: 714.25, width: 46, height: 1.5, offsetX: 120 }
   const desktop = getDropGeometry(indicator, { mobile: false })
   const mobile = getDropGeometry(indicator, { mobile: true })
+  assert.deepEqual(desktop.portal, { x: 243, y: 714.25 })
   assert.deepEqual(desktop.target, { x: 243, y: 714.25 })
   assert.equal(desktop.dropStart.y, 622.25)
   assert.equal(mobile.dropStart.y, 648.25)
@@ -615,11 +587,9 @@ test('drop geometry keeps exact target and uses smaller mobile drop height', () 
 node --test tests/scroll-story.test.mjs
 ```
 
-Expected: FAIL because `navPortal.mjs` does not exist.
+Expected: FAIL.
 
-- [ ] **Step 3: Implement pure geometry helpers**
-
-Use the existing indicator semantics exactly:
+- [ ] **Step 3: Implement geometry helpers**
 
 ```js
 const width = Math.max(18, buttonRect.width)
@@ -628,11 +598,11 @@ const centerX = buttonRect.left + buttonRect.width / 2
 const centerY = trackRect.bottom - 5 - height / 2
 ```
 
-`getDropGeometry()` uses desktop drop height `92px` and mobile `66px`.
+`offsetX = buttonRect.left - trackRect.left`. `getDropGeometry()` uses drop height `92px` desktop and `66px` mobile; portal and landing target are the measured indicator center.
 
 - [ ] **Step 4: Implement DOM portal controller**
 
-The nav portal is a fixed-position, pointer-events-none node. `measure()` reads the real filter-list/button rectangles and positions the node at the measured indicator center. `setState({ opacity, scale, pulse })` only changes CSS custom properties/transform/opacity; it must not alter layout.
+`measure()` reads real filter-list/button rects and positions the fixed node at the center. `setState({ opacity, scale, pulse })` changes only transform/opacity/CSS custom properties; no layout shifts or pointer capture.
 
 - [ ] **Step 5: Run tests**
 
@@ -652,23 +622,20 @@ git commit -m "feat: anchor portal to article navigation"
 
 ---
 
-### Task 6: Rewire `home.js` around the new story while preserving the proven landing physics
+### Task 6: Rewire `home.js` around the new story while preserving landing physics
 
 **Files:**
 - Modify: `src/scripts/home.js`
 - Modify: `tests/ui-contract.test.mjs`
-- Modify: `tests/orbit-motion.test.mjs` only if obsolete SVG-transition-only tests fail after production migration.
 
 **Interfaces:**
 - Consumes `getScrollStoryState`, `buildEjectionPath`, `sampleEjectionPath`.
 - Consumes `createSpaceScene`.
-- Consumes `createNavPortal`, `getIndicatorGeometry`, `getDropGeometry`.
+- Consumes `createNavPortal`, `getDropGeometry`.
 - Continues consuming `getLandingMotionState` and `landingProgressFromElapsed` from `orbitMotion.mjs`.
 - Existing article/filter/theme functions remain behaviorally unchanged.
 
-- [ ] **Step 1: Update UI-contract test to require the new coordinator boundaries**
-
-Add assertions that `home.js` imports the new modules and still imports `filterArticleMetadata` and landing helpers:
+- [ ] **Step 1: Update UI-contract test**
 
 ```js
 assert.match(script, /getScrollStoryState/)
@@ -677,38 +644,28 @@ assert.match(script, /createNavPortal/)
 assert.match(script, /getLandingMotionState/)
 assert.match(script, /landingProgressFromElapsed/)
 assert.match(script, /filterArticleMetadata/)
-```
-
-Also assert it no longer owns the old SVG node map:
-
-```js
 assert.doesNotMatch(script, /orbitNodes\s*=|orbit-ring-a|setSvgPoint/)
 ```
 
-- [ ] **Step 2: Run the UI contract and verify failure**
+- [ ] **Step 2: Run and verify failure**
 
 ```bash
 node --test tests/ui-contract.test.mjs
 ```
 
-Expected: FAIL until `home.js` is migrated.
+Expected: FAIL.
 
-- [ ] **Step 3: Replace SVG orbit initialization with scene/nav initialization**
-
-At module setup:
+- [ ] **Step 3: Replace SVG initialization with scene/nav initialization**
 
 ```js
 const spaceCanvas = document.querySelector('[data-space-canvas]')
 const spaceSceneNode = document.querySelector('[data-space-scene]')
-const fallbackNode = document.querySelector('[data-space-fallback]')
 const navPortalNode = document.querySelector('.nav-portal')
 ```
 
-Create scene using current media/theme state. `onUnavailable()` adds `is-fallback` to the scene wrapper so CSS shows SVG fallback and hides the canvas.
+Create the scene with current mobile/reduced/theme state. `onUnavailable()` adds `is-fallback` to the wrapper.
 
-- [ ] **Step 4: Keep one scroll progress source and map it through `scrollStory.mjs`**
-
-Use:
+- [ ] **Step 4: Use one scroll progress source**
 
 ```js
 function getScrollProgress() {
@@ -717,24 +674,13 @@ function getScrollProgress() {
 }
 ```
 
-Then:
+Map only through `getScrollStoryState()` and send the same state to the scene/nav portal. Do not duplicate phase thresholds in `home.js`.
 
-```js
-currentStory = getScrollStoryState(getScrollProgress(), {
-  mobile: mobileMedia.matches,
-  reducedMotion: reducedMotion.matches
-})
-spaceScene.setStoryState(currentStory)
-navPortal.setState(currentStory.navPortal)
-```
+- [ ] **Step 5: Replace tangent flight with portal ejection**
 
-Do not map scroll thresholds independently in `home.js`.
+When ejection progress becomes positive, cache measured drop geometry and one ejection path from `geometry.portal` to `geometry.dropStart`. Place `.flight-orb` using `sampleEjectionPath`. Use restrained echoes only while ejecting.
 
-- [ ] **Step 5: Replace the old tangent flight with portal ejection**
-
-When `currentStory.ejection.progress > 0`, ensure measured drop geometry exists, build one cached ejection path from `geometry.portal` to `geometry.dropStart`, and place `.flight-orb` at `sampleEjectionPath(path, currentStory.ejection.progress)`. Show restrained echoes only during ejection.
-
-At `currentStory.landingReady === true`, stop scroll-driving the orb and start the existing elapsed-time landing micro-sequence:
+When `landingReady` becomes true, start the existing elapsed-time landing sequence:
 
 ```js
 if (landingStartedAt === null) landingStartedAt = performance.now()
@@ -745,65 +691,49 @@ const landingProgress = landingProgressFromElapsed(
 const landing = getLandingMotionState(landingProgress, { mobile: mobileMedia.matches })
 ```
 
-During fall, interpolate from `dropStart` to exact `target` using `landing.fall`; during impact/bounce use `landing.yOffset`; during morph interpolate orb width/height to `targetWidth/targetHeight` exactly as the existing implementation does.
+During fall interpolate `dropStart → target` with `landing.fall`; during impact/bounce use `landing.yOffset`; during morph interpolate orb width/height to target width/height exactly as current production code does.
 
-- [ ] **Step 6: Preserve user-interruption behavior**
+- [ ] **Step 6: Preserve interruption behavior**
 
-If a user clicks any category before the story completes:
+User category click sets `filterStoryInterrupted = true`, hides nav portal/orb/echoes, shows real indicator immediately, and filtering continues. Reduced motion follows the simple indicator-visible path from the start.
 
-- set `filterStoryInterrupted = true`;
-- hide nav portal and flight orb/echoes;
-- show the real filter indicator immediately;
-- keep category filtering functional.
+- [ ] **Step 7: Preserve theme/search/keyboard/article logic**
 
-Reduced-motion follows the same simple indicator-visible path from the start.
+Keep `glenn-blog-theme`; after `applyTheme(theme)`, call `spaceScene.setTheme(theme)`. Preserve `⌘/Ctrl + K`, clear-filters, filtering, result count, and reveal observer.
 
-- [ ] **Step 7: Preserve theme, search, keyboard shortcut, article filtering, and reveal behavior**
+- [ ] **Step 8: Preserve resize/media behavior**
 
-Keep the current `glenn-blog-theme` key. After `applyTheme(theme)`, call `spaceScene.setTheme(theme)`. Do not alter search query/category filtering logic or the `⌘/Ctrl + K` shortcut.
+Clear cached ejection geometry, call `spaceScene.resize()`, call `navPortal.measure()`, reposition active indicator, and recalculate story state.
 
-- [ ] **Step 8: Preserve resize behavior**
-
-On resize/media changes:
-
-- clear cached ejection geometry;
-- call `spaceScene.resize()`;
-- call `navPortal.measure()`;
-- reposition active indicator;
-- recalculate story state.
-
-- [ ] **Step 9: Run regression tests**
+- [ ] **Step 9: Run regressions**
 
 ```bash
 node --test tests/ui-contract.test.mjs tests/orbit-motion.test.mjs tests/scroll-story.test.mjs
 npm test
 ```
 
-If old tests asserting `getOrbitTransitionState()` describe only the retired SVG release/breakup path, remove those specific assertions. Do not remove landing/free-fall/impact/bounce/settle/morph regression tests.
+Expected: all existing orbit/landing regressions remain PASS without editing `orbitMotion.mjs` or `tests/orbit-motion.test.mjs`.
 
 - [ ] **Step 10: Commit**
 
 ```bash
-git add src/scripts/home.js tests/ui-contract.test.mjs tests/orbit-motion.test.mjs
+git add src/scripts/home.js tests/ui-contract.test.mjs
 git commit -m "feat: connect scroll portals to existing landing physics"
 ```
 
 ---
 
-### Task 7: Style the deep-space scene, portal handoff, containment, mobile, and fallbacks
+### Task 7: Style deep space, portal handoff, containment, mobile, and fallbacks
 
 **Files:**
 - Modify: `src/styles/global.css`
 - Modify: `tests/ui-contract.test.mjs`
 
 **Interfaces:**
-- CSS classes/data state are visual only; no layout API changes to article/search/filter components.
-- `.space-scene.is-fallback` displays `[data-space-fallback]` and hides the WebGL canvas.
-- `.hero`/`.orbit-wrap` enforce clipping so the compact system cannot enter the article region.
+- `.space-scene.is-fallback` shows fallback/hides canvas.
+- `.hero`/`.orbit-wrap` clip visual overflow so the compact system cannot enter article content.
 
 - [ ] **Step 1: Add failing CSS contract assertions**
-
-Add to the responsive/reduced-motion test:
 
 ```js
 assert.match(styles, /\.space-scene/)
@@ -820,13 +750,11 @@ assert.match(styles, /pointer-events:\s*none/)
 node --test tests/ui-contract.test.mjs
 ```
 
-Expected: FAIL until CSS is added.
+Expected: FAIL.
 
-- [ ] **Step 3: Replace old orbit-specific visual CSS with the 3D scene shell**
+- [ ] **Step 3: Replace production orbit styling with 3D scene styling**
 
-Keep `.orbit-wrap` as the positioning/containment wrapper but remove production reliance on `.orbit-stage`, `.orbit-svg`, `.orbit-ring-*`, and `.orbit-planet-*` styling except fallback classes.
-
-Desktop target:
+Keep `.orbit-wrap` as containment but remove production reliance on old `.orbit-stage/.orbit-svg/.orbit-ring-*` styles except fallback equivalents.
 
 ```css
 .orbit-wrap {
@@ -856,13 +784,11 @@ Desktop target:
 }
 ```
 
-The scene must not become a rectangular dark card in light mode; its edge fades into the page through the radial mask.
+The light theme keeps its light page surface; the deep-space object fades into it instead of becoming a rectangular dark card.
 
 - [ ] **Step 4: Style fallback and nav portal**
 
-Fallback is hidden by default and shown only under `.is-fallback` or reduced motion where chosen. The nav portal uses layered radial/conic gradients with a near-black center and thin orange/blue-white rim. It stays small enough to read as a transient portal, not a second hero.
-
-Example structural properties:
+Fallback hidden by default; shown under `.is-fallback`. Portal:
 
 ```css
 .nav-portal {
@@ -879,27 +805,17 @@ Example structural properties:
 }
 ```
 
-- [ ] **Step 5: Add mobile quality/layout treatment**
+Keep it a transient portal, not a second hero subject.
 
-At `max-width: 760px`:
+- [ ] **Step 5: Add mobile treatment**
 
-- scene width `min(86vw, 390px)`;
-- smaller minimum wrapper height;
-- keep all visual overflow clipped;
-- nav portal slightly smaller;
-- flight orb keeps existing mobile shadow restraint;
-- no horizontal overflow.
+At `max-width: 760px`: scene width `min(86vw, 390px)`, smaller wrapper min-height, clipped overflow, slightly smaller nav portal, existing mobile flight-orb shadow, no horizontal overflow.
 
 - [ ] **Step 6: Add reduced-motion CSS**
 
-Under `prefers-reduced-motion: reduce`:
+Hide nav portal/flight orb/echoes, force filter indicator visible, suppress wrapper transform animation, leave static fallback/scene visible.
 
-- hide `.nav-portal`, `.flight-orb`, `.flight-echo`;
-- make `.filter-indicator` visible;
-- avoid transform animation on the 3D wrapper;
-- permit the static fallback/scene to remain visible.
-
-- [ ] **Step 7: Run tests and build**
+- [ ] **Step 7: Run tests/build**
 
 ```bash
 node --test tests/ui-contract.test.mjs
@@ -907,7 +823,7 @@ npm test
 npm run build
 ```
 
-Expected: PASS and Astro production build completes.
+Expected: PASS.
 
 - [ ] **Step 8: Commit**
 
@@ -918,79 +834,62 @@ git commit -m "style: add deep space hero and portal states"
 
 ---
 
-### Task 8: Performance, visual-frame verification, production regression, and final branch review
+### Task 8: Performance, visual-frame verification, production regression, and final review
 
 **Files:**
-- Modify only files from Tasks 1–7 when verification finds a concrete defect.
-- Do not change content/deployment architecture during this task.
+- Change only a file from Tasks 1–7 when a specific verification failure proves a correction is needed.
+- Do not change content or deployment architecture here.
 
-**Interfaces:**
-- Final feature contract is the approved spec plus all automated tests.
-
-- [ ] **Step 1: Run the complete automated gate from a clean install**
+- [ ] **Step 1: Run clean automated gate**
 
 ```bash
 rm -rf node_modules dist .astro
-npm install
+npm install --package-lock=false
 npm test
 npm run build
 ```
 
-Expected: all tests PASS; `dist/index.html`, article route, archive, tags, RSS, sitemap, and 404 are still generated by the existing build.
+Expected: all tests PASS and all existing production routes still build.
 
 - [ ] **Step 2: Verify dependency scope**
-
-Run:
 
 ```bash
 npm ls --depth=0
 ```
 
-Expected new visual runtime dependency: `three`; no React, React Three Fiber, GSAP, or unrelated UI framework added.
+Expected only new visual dependency: `three`; no React/R3F/GSAP/unrelated framework.
 
-- [ ] **Step 3: Verify story frames on desktop**
+- [ ] **Step 3: Verify desktop story frames**
 
-Run the dev/preview server and inspect at approximately these normalized scroll states:
+Inspect these approximate progress points:
 
 ```text
 p=0.05  large readable 3D solar system, no portal
-p=0.24  portal grows behind orange planet, system begins mild rotation/shrink
+p=0.24  portal grows behind orange planet; mild system rotate/shrink
 p=0.38  orange planet visibly curves toward portal
-p=0.52  orange planet hidden; compact system still visible inside hero
-p=0.62  navigation portal visible at All indicator; hero portal gone
-p=0.71  orange planet visibly ejecting from nav portal
-p>=0.76 landing sequence begins, then squash → bounce → settle → horizontal indicator
+p=0.52  orange hidden; compact system still visible inside hero
+p=0.62  nav portal at All indicator; hero portal gone
+p=0.71  orange planet visibly ejecting
+p>=0.76 existing landing begins → squash → bounce → settle → indicator
 ```
 
-Reject the implementation if the compact system overlaps the controls/article area, the black hole replaces the sun, or the orange ball jumps between anchors.
+Reject if system overlaps controls/articles, black hole replaces sun, or ball jumps between anchors.
 
-- [ ] **Step 4: Verify aggressive wheel scrolling cannot skip the landing micro-sequence**
+- [ ] **Step 4: Verify aggressive scroll cannot skip landing**
 
-Scroll quickly through the trigger. Observe that once ejection completes, impact and bounce still play because landing progress comes from elapsed time, not raw scroll progress. Confirm the existing `landingProgressFromElapsed` tests remain green.
+Scroll rapidly through trigger; after ejection, impact/bounce must still play from elapsed-time landing progress. Confirm `landingProgressFromElapsed` regression remains green.
 
-- [ ] **Step 5: Verify mobile at 390 × 844**
+- [ ] **Step 5: Verify 390 × 844 mobile**
 
-Check:
-
-- no horizontal overflow;
-- 3D system readable but smaller;
-- same phase order;
-- portal remains aligned to the real `All` indicator after horizontal filter layout;
-- bounce/sink amplitude stays at existing mobile values;
-- article list begins cleanly below the hero without solar-system overlap.
+Confirm no horizontal overflow, same phase order, smaller readable system, nav portal aligned to real `All`, existing smaller mobile bounce/sink, and no system overlap with articles.
 
 - [ ] **Step 6: Verify reduced motion**
 
-Enable `prefers-reduced-motion: reduce` and confirm:
-
-- no swallow/eject travel;
-- no rapid system transform;
-- active filter indicator is visible normally;
-- search, categories, theme, article links work.
+With `prefers-reduced-motion: reduce`: no swallow/eject travel, no rapid scale/rotation, active indicator visible, search/categories/theme/article links functional.
 
 - [ ] **Step 7: Verify WebGL fallback**
 
-Force `createSpaceScene` into its unavailable path (temporarily stub WebGL renderer creation in local verification or trigger context loss in browser devtools). Confirm SVG fallback appears and all UI stays usable. Restore the normal code before commit.
+Trigger `webglcontextlost` from browser devtools or locally force renderer construction to throw, verify SVG fallback and usable UI, then restore normal source before final diff.
 
 - [ ] **Step 8: Compare branch to main**
 
@@ -999,7 +898,7 @@ git diff --stat main...HEAD
 git diff main...HEAD -- src/pages/index.astro src/scripts/home.js src/styles/global.css package.json
 ```
 
-Review for accidental copy changes to typography, category labels, search behavior, article markup, or footer.
+Check there are no accidental changes to typography, category labels, search behavior, article markup, or footer.
 
 - [ ] **Step 9: Final test/build evidence**
 
@@ -1008,36 +907,34 @@ npm test
 npm run build
 ```
 
-Record exact pass/fail output in the implementation report. Do not claim completion from visual inspection alone.
+Record exact outputs in the implementation report; do not claim completion from visuals alone.
 
-- [ ] **Step 10: Commit any verification fixes**
+- [ ] **Step 10: Commit concrete verification fixes only when needed**
 
-If verification required fixes, commit only those concrete fixes:
+If Step 3–8 reveals a defect, make the smallest correction, verify the failing check again, stage interactively, and commit:
 
 ```bash
-git add <verified-files-only>
+git add -p
 git commit -m "fix: harden 3d scroll story verification"
 ```
 
-If no fixes were required, do not create an empty commit.
+If no source changes were necessary, create no commit.
 
 ## Completion Checklist
 
-The branch is ready for review only if all of the following are true:
-
-- [ ] Three.js solar system is visibly 3D and larger than the old SVG treatment.
+- [ ] Three.js solar system is visibly 3D and larger than old SVG treatment.
 - [ ] Deep-space star field has three restrained depth layers and no wallpaper-like blinking.
 - [ ] Orange accent planet orbits normally before capture.
 - [ ] Hero portal appears behind the orange planet, not at the sun.
 - [ ] Absorption is curved/continuous and completes before nav ejection.
-- [ ] Compact solar system remains visible but cannot enter the article section.
+- [ ] Compact solar system remains visible but cannot enter article section.
 - [ ] Hero portal is gone before navigation portal becomes dominant.
-- [ ] Navigation portal is measured from the actual `All` indicator geometry.
-- [ ] Ejected orange planet reaches the exact existing drop-start contract.
+- [ ] Navigation portal is measured from actual `All` indicator geometry.
+- [ ] Ejected orange planet reaches exact existing drop-start contract.
 - [ ] Existing free-fall, impact squash, bounce, settle, and morph tests remain intact.
-- [ ] User category interaction can interrupt the decorative story safely.
+- [ ] User category interaction can interrupt decorative story safely.
 - [ ] Search, theme, article list, archive/tags/RSS/content model are unchanged.
 - [ ] Mobile and reduced-motion behavior are usable.
-- [ ] WebGL failure falls back without breaking the page.
+- [ ] WebGL failure falls back without breaking page.
 - [ ] `npm test` passes.
 - [ ] `npm run build` passes.
