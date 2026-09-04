@@ -1,16 +1,28 @@
 # Glenn Blog
 
-Glenn 的个人静态博客。首页保留原有极简视觉、轨道滚动动画、搜索、分类筛选、深浅色主题和移动端适配；文章内容由 Markdown 驱动，并在构建时生成真实文章页面。
+**Study in public.**
+
+Glenn 的正式个人博客，生产域名为 `https://blog.minglingyun.com`。站点保留原首页 UI、轨道滚动动画、搜索、分类按钮、深浅色主题和移动端适配；内容、SEO、归档、标签、RSS、Sitemap、404 与部署能力由 Astro 提供。
+
+## 当前正式内容
+
+目前只发布一篇文章：
+
+- `Commerce Agent 的 24 条设计法则`
+- URL：`/writing/commerce-agent-rules/`
+
+另外 4 篇原 Demo 文章已删除，不会出现在生产站点。
 
 ## 技术结构
 
-- Astro：静态站点构建
-- Astro Content Collections：文章 schema 与内容读取
-- Markdown：文章唯一内容源
-- 原生 JavaScript / CSS / SVG：首页交互与轨道动画
-- GitHub：内容版本管理与发布入口
+- Astro 7.3.1：静态站点生成
+- Astro Content Collections：文章 Schema 与 Markdown 内容
+- `@astrojs/sitemap`：Sitemap
+- `@astrojs/rss`：RSS
+- 原生 JavaScript / CSS / SVG：首页 UI 与轨道动画
+- GitHub Actions：测试、构建与 GitHub Pages 部署
 
-V1 没有 CMS、后台管理界面、登录、数据库、评论系统，也没有额外的 Projects / About 导航页面。
+没有 CMS、登录、数据库或服务端运行时。GitHub + Markdown 就是内容后台。
 
 ## 本地运行
 
@@ -19,26 +31,33 @@ npm install
 npm run dev
 ```
 
-Astro 会输出本地开发地址。
-
-## 测试与构建
+## 验证
 
 ```bash
 npm test
 npm run build
 ```
 
-生产构建输出到 `dist/`，该目录是生成物，不提交到 Git。
+构建后会生成：
 
-## 发布一篇文章
+- `/` 首页
+- `/writing/<slug>/` 文章页
+- `/archive/` 归档
+- `/tags/` 标签索引
+- `/tags/<tag>/` 标签文章页
+- `/rss.xml` RSS
+- `/sitemap-index.xml` Sitemap
+- `/404.html` 404 页面
 
-只需要创建一个 Markdown 文件：
+## 发布文章
+
+新建：
 
 ```text
 src/content/posts/<slug>.md
 ```
 
-例如：
+模板：
 
 ```md
 ---
@@ -53,61 +72,52 @@ visual: paper
 draft: false
 ---
 
-这里开始写 Markdown 正文。
+Markdown 正文。
 ```
 
-然后运行：
+可选字段：
 
-```bash
-npm test
-npm run build
-```
+- `updated`：更新时间
+- `cover`：文章封面 URL
+- `sourceUrl`：灵感/参考来源
+- `sourceLabel`：来源显示名称
+- `draft`：`true` 时不公开
 
-提交并 push 后，这篇文章会自动：
+提交到 GitHub 后，首页、归档、标签页、RSS、Sitemap 和独立文章路由都会自动更新。
 
-1. 出现在首页文章列表中；
-2. 参与首页搜索和分类筛选；
-3. 生成 `/writing/<slug>/` 文章页。
+## SEO 与发现
 
-添加文章不需要修改 `src/pages/index.astro`、`src/scripts/home.js` 或任何文章注册表。
+站点自动提供：
 
-## 文章字段
+- Canonical URL
+- Open Graph / Twitter Card 元信息
+- BlogPosting / WebSite JSON-LD
+- RSS 自动发现
+- robots.txt
+- Sitemap
+- 语义化文章标题、日期、标签和阅读时间
 
-- `title`：标题
-- `description`：摘要
-- `date`：发布日期
-- `category`：`AI | Agent | Development | Product | Thinking`
-- `tags`：标签数组
-- `visual`：首页右侧装饰样式，可选
-- `draft`：草稿标记；`true` 时不会生成公开文章
+## Umami
 
-## 主要目录
+BaseLayout 已支持可选 Umami 环境变量：
 
 ```text
-src/
-├── content.config.ts
-├── content/posts/          # Markdown 文章
-├── components/
-│   └── ArticleRow.astro
-├── layouts/
-│   ├── BaseLayout.astro
-│   └── ArticleLayout.astro
-├── pages/
-│   ├── index.astro
-│   └── writing/[...slug].astro
-├── scripts/
-│   ├── home.js
-│   ├── filterArticles.mjs
-│   └── orbitMotion.mjs
-└── styles/
-    └── global.css
-
-tests/                      # 内容、筛选、路由、UI 合约和轨道物理回归测试
+PUBLIC_UMAMI_WEBSITE_ID=<website-id>
+PUBLIC_UMAMI_SCRIPT_URL=https://<your-umami-host>/script.js
 ```
 
-## 当前页面
+不配置时不会加载统计脚本。
 
-- `/`：Glenn 首页 / 文章列表
-- `/writing/<slug>/`：文章阅读页
+## 部署
 
-GitHub 就是当前的发布后台：编辑 Markdown → 测试/构建 → commit/push。
+`.github/workflows/deploy.yml` 在 `main` push 后执行：
+
+`test → build → upload Pages artifact → deploy-pages`
+
+`public/CNAME` 已写入：
+
+```text
+blog.minglingyun.com
+```
+
+首次上线还需要在 GitHub 仓库 Settings → Pages 启用 GitHub Actions，并在 DNS 中把 `blog.minglingyun.com` 指向 GitHub Pages 对应域名。之后文章发布只需要改 Markdown 并 push。
