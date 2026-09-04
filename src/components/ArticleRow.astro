@@ -1,0 +1,27 @@
+---
+const { post, readTime } = Astro.props
+const { title, description, date, category, tags, visual = 'paper' } = post.data
+const href = `/writing/${post.id}/`
+const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase()
+const day = String(date.getDate()).padStart(2, '0')
+const dateLabel = `${month} ${day}\n${date.getFullYear()}`
+---
+<article
+  class="article-row reveal-item is-visible"
+  data-title={title}
+  data-description={description}
+  data-category={category}
+  data-tags={tags.join('|')}
+>
+  <div class="article-date">{dateLabel}</div>
+  <div class="article-main">
+    <a class="article-title" href={href}>{title}</a>
+    <p class="article-summary">{description}</p>
+    <div class="article-meta">
+      <span class="read-time">{readTime} min read</span>
+      <span class="meta-separator">·</span>
+      <div class="tag-list">{tags.map(tag => <span class="tag">{tag}</span>)}</div>
+    </div>
+  </div>
+  <div class={`article-visual visual-${visual}`} aria-hidden="true"><span></span></div>
+</article>
