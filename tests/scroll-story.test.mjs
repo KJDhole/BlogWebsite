@@ -6,6 +6,7 @@ import {
   buildEjectionPath,
   sampleEjectionPath
 } from '../src/scripts/scrollStory.mjs'
+import { getIndicatorGeometry, getDropGeometry } from '../src/scripts/navPortal.mjs'
 
 test('scroll story keeps the approved phase order', () => {
   const samples = [0.05, 0.24, 0.38, 0.52, 0.62, 0.71, 0.84]
@@ -63,4 +64,22 @@ test('ejection curve starts at the portal and ends exactly at drop start', () =>
   const middle = sampleEjectionPath(path, 0.5)
   assert.ok(middle.y < portal.y)
   assert.notEqual(middle.x, portal.x)
+})
+
+test('navigation portal anchors to the measured All indicator center', () => {
+  const track = { left: 100, bottom: 720 }
+  const button = { left: 220, width: 46 }
+  const geometry = getIndicatorGeometry(track, button)
+  assert.equal(geometry.centerX, 243)
+  assert.equal(geometry.centerY, 714.25)
+  assert.equal(geometry.width, 46)
+})
+
+test('drop geometry keeps exact target and uses smaller mobile drop height', () => {
+  const indicator = { centerX: 243, centerY: 714.25, width: 46, height: 1.5, offsetX: 120 }
+  const desktop = getDropGeometry(indicator, { mobile: false })
+  const mobile = getDropGeometry(indicator, { mobile: true })
+  assert.deepEqual(desktop.target, { x: 243, y: 714.25 })
+  assert.equal(desktop.dropStart.y, 622.25)
+  assert.equal(mobile.dropStart.y, 648.25)
 })
