@@ -4,10 +4,10 @@ import { readFile } from 'node:fs/promises'
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8')
 
-test('Astro homepage keeps the approved hero orbit search and category controls', async () => {
+test('Astro homepage keeps the approved hero search and category controls around the 3D scene', async () => {
   const page = await read('../src/pages/index.astro')
   assert.match(page, /class="hero/)
-  assert.match(page, /orbit-svg/)
+  assert.match(page, /<SpaceScene/)
   assert.match(page, /id="article-search"/)
   assert.match(page, /data-category="All"/)
   assert.match(page, /getCollection\('posts'/)
