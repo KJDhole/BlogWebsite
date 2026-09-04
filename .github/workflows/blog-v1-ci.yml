@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: blog-v1-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -22,8 +26,8 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Existing prototype tests
-        run: npm test
+        run: node --test prototype/tests/*.test.mjs
       - name: Blog V1 migration tests
-        run: node --test tests/*.test.mjs
+        run: npm test
       - name: Build
         run: npm run build
