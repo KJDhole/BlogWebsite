@@ -32,3 +32,15 @@ test('3d scene responsibilities stay split into focused modules', async () => {
   assert.match(portal, /createBlackHolePortal/)
   assert.doesNotMatch(portal, /createSolarSystem/)
 })
+
+test('space scene exposes a small lifecycle API and quality protections', async () => {
+  const scene = await read('../src/scripts/spaceScene.mjs')
+  assert.match(scene, /createSpaceScene/)
+  assert.match(scene, /setStoryState/)
+  assert.match(scene, /setTheme/)
+  assert.match(scene, /resize/)
+  assert.match(scene, /destroy/)
+  assert.match(scene, /setPixelRatio/)
+  assert.match(scene, /webglcontextlost/)
+  assert.match(scene, /onUnavailable/)
+})
