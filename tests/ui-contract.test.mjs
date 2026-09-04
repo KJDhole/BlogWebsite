@@ -28,7 +28,7 @@ test('homepage client code coordinates the new 3d story without owning article d
 })
 
 test('responsive reduced-motion and deep-space containment rules survive the migration', async () => {
-  const styles = await read('../src/styles/global.css')
+  const styles = `${await read('../src/styles/global.css')}\n${await read('../src/styles/space.css')}`
   assert.match(styles, /prefers-reduced-motion/)
   assert.match(styles, /max-width:\s*760px/)
   assert.match(styles, /\.space-scene/)
