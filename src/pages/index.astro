@@ -4,7 +4,7 @@ import ArticleRow from '../components/ArticleRow.astro'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import { estimateReadingTime } from '../lib/readingTime.mjs'
 
-const posts = (await getCollection('posts', ({ data }) => import.meta.env.PROD ? data.draft !== true : true))
+const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
 ---
 <BaseLayout>
