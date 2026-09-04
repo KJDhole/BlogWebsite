@@ -21,7 +21,9 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
-      - name: Test
+      - name: Existing prototype tests
         run: npm test
+      - name: Blog V1 migration tests
+        run: node --test tests/*.test.mjs
       - name: Build
         run: npm run build
