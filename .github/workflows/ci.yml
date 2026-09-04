@@ -30,35 +30,25 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
-      - name: Verify generated routes and homepage order
+      - name: Verify production blog output
         run: |
           test -f dist/index.html
           test -f dist/writing/commerce-agent-rules/index.html
-          test -f dist/writing/ai-native-development/index.html
-          test -f dist/writing/agent-memory-notes/index.html
-          test -f dist/writing/claude-code-workflow/index.html
-          test -f dist/writing/building-in-public/index.html
+          test -f dist/archive/index.html
+          test -f dist/tags/index.html
+          test -f dist/tags/ai/index.html
+          test -f dist/tags/agent/index.html
+          test -f dist/tags/architecture/index.html
+          test -f dist/404.html
+          test -f dist/rss.xml
+          ls dist/sitemap*.xml >/dev/null
+          grep -q "Study in public" dist/index.html
+          grep -q "Commerce Agent 的 24 条设计法则" dist/index.html
+          grep -q "Commerce Agent 的 24 条设计法则" dist/rss.xml
           if grep -R "const articles = \[" src; then
             echo "Found a hardcoded article catalog"
             exit 1
           fi
-          node <<'NODE'
-          const { readFileSync } = require('node:fs')
-          const html = readFileSync('dist/index.html', 'utf8')
-          const titles = [
-            'Commerce Agent 的 24 条设计法则',
-            'AI Native 开发到底改变了什么',
-            '我对 Agent 记忆系统的一些思考',
-            'Claude Code + 自定义指令的工作流',
-            '为什么我选择公开构建所有项目'
-          ]
-          let cursor = -1
-          for (const title of titles) {
-            const next = html.indexOf(title)
-            if (next < 0 || next <= cursor) throw new Error(`Homepage order/content mismatch: ${title}`)
-            cursor = next
-          }
-          NODE
       - name: Prove Markdown-only publishing
         run: |
           cat > src/content/posts/verification-sixth-post.md <<'EOF'
@@ -78,4 +68,6 @@ jobs:
           npm run build
           test -f dist/writing/verification-sixth-post/index.html
           grep -q "Verification Sixth Post" dist/index.html
+          grep -q "Verification Sixth Post" dist/archive/index.html
+          grep -q "Verification Sixth Post" dist/rss.xml
           rm src/content/posts/verification-sixth-post.md

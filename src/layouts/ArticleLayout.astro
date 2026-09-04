@@ -1,24 +1,54 @@
 ---
 import BaseLayout from './BaseLayout.astro'
+import SiteHeader from '../components/SiteHeader.astro'
+import { SITE } from '../config/site.mjs'
+import { slugifyTag } from '../lib/slug.mjs'
 
-const { post, readTime } = Astro.props
-const { title, description, date, category, tags } = post.data
+const { post, readTime, headings = [], previousPost = null, nextPost = null } = Astro.props
+const { title, description, date, updated, category, tags, cover, sourceUrl, sourceLabel } = post.data
 const dateLabel = date.toLocaleDateString('en-US', {
   year: 'numeric',
   month: 'short',
   day: '2-digit'
 }).toUpperCase()
-const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined
+const canonical = new URL(Astro.url.pathname, SITE.url).href
+const tocItems = headings.filter(heading => heading.depth === 2 || heading.depth === 3)
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: title,
+  description,
+  datePublished: date.toISOString(),
+  dateModified: (updated ?? date).toISOString(),
+  mainEntityOfPage: canonical,
+  inLanguage: SITE.language,
+  author: {
+    '@type': 'Person',
+    name: SITE.author,
+    url: SITE.url,
+    sameAs: [SITE.github, SITE.x]
+  },
+  publisher: {
+    '@type': 'Person',
+    name: SITE.author
+  },
+  keywords: tags.join(', ')
+}
 ---
-<BaseLayout title={`${title} — Glenn`} description={description} canonical={canonical} ogTitle={title} ogDescription={description}>
+<BaseLayout
+  title={`${title} — Glenn`}
+  description={description}
+  canonical={canonical}
+  ogTitle={title}
+  ogDescription={description}
+  ogType="article"
+  ogImage={cover}
+  publishedTime={date.toISOString()}
+  modifiedTime={(updated ?? date).toISOString()}
+  jsonLd={articleSchema}
+>
   <div class="article-page-shell">
-    <header class="site-topbar article-topbar">
-      <a class="brand" href="/" aria-label="返回首页">GLENN<span class="brand-dot" aria-hidden="true"></span></a>
-      <button id="theme-toggle" class="icon-button theme-toggle" type="button" aria-label="切换深浅主题" title="切换主题">
-        <span class="theme-icon theme-icon-sun" aria-hidden="true">☼</span>
-        <span class="theme-icon theme-icon-moon" aria-hidden="true">◐</span>
-      </button>
-    </header>
+    <SiteHeader className="article-topbar" />
 
     <main class="article-page">
       <header class="article-header">
@@ -31,42 +61,64 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : un
           <span>{readTime} min read</span>
         </div>
         <div class="tag-list article-page-tags">
-          {tags.map(tag => <span class="tag">{tag}</span>)}
+          {tags.map(tag => <a class="tag" href={`/tags/${slugifyTag(tag)}/`}>{tag}</a>)}
         </div>
       </header>
 
+      {cover && <img class="article-cover" src={cover} alt="" loading="eager" decoding="async" />}
+
+      {tocItems.length > 0 && (
+        <details class="article-toc">
+          <summary>目录</summary>
+          <ol>
+            {tocItems.map(heading => (
+              <li class={`toc-depth-${heading.depth}`}><a href={`#${heading.slug}`}>{heading.text}</a></li>
+            ))}
+          </ol>
+        </details>
+      )}
+
       <article class="article-body"><slot /></article>
-      <a class="article-back" href="/">← Back to home</a>
+
+      <footer class="article-end">
+        {sourceUrl && (
+          <p class="article-source">灵感来源：<a href={sourceUrl} target="_blank" rel="noreferrer">{sourceLabel ?? sourceUrl}</a></p>
+        )}
+        {(previousPost || nextPost) && (
+          <nav class="article-pagination" aria-label="文章翻页">
+            {previousPost ? <a href={`/writing/${previousPost.id}/`}>← {previousPost.data.title}</a> : <span></span>}
+            {nextPost ? <a href={`/writing/${nextPost.id}/`}>{nextPost.data.title} →</a> : <span></span>}
+          </nav>
+        )}
+        <div class="article-end-links">
+          <a class="article-back" href="/">← Back to home</a>
+          <a class="article-back" href="/archive/">Archive</a>
+        </div>
+      </footer>
     </main>
   </div>
-
-  <script is:inline>
-    (() => {
-      const button = document.querySelector('#theme-toggle')
-      if (!button) return
-      const applyTheme = theme => {
-        document.documentElement.dataset.theme = theme
-        localStorage.setItem('glenn-blog-theme', theme)
-        button.setAttribute('aria-label', theme === 'dark' ? '切换到浅色主题' : '切换到深色主题')
-      }
-      button.addEventListener('click', () => {
-        applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark')
-      })
-    })()
-  </script>
 
   <style is:global>
     .article-page-shell { width: min(920px, calc(100% - 56px)); margin: 0 auto; }
     .article-topbar { margin-bottom: 28px; }
     .article-page { padding-bottom: 96px; }
-    .article-header { max-width: 760px; margin: 54px auto 62px; border-bottom: 1px solid var(--line); padding-bottom: 36px; }
+    .article-header { max-width: 760px; margin: 54px auto 42px; border-bottom: 1px solid var(--line); padding-bottom: 36px; }
     .article-header h1 { margin: 12px 0 18px; max-width: 14em; font-family: var(--serif); font-size: clamp(38px, 6.2vw, 66px); font-weight: 500; line-height: 1.08; letter-spacing: -.035em; }
     .article-dek { margin: 0; max-width: 680px; color: var(--text-soft); font-family: var(--serif); font-size: clamp(18px, 2.2vw, 22px); line-height: 1.65; }
     .article-page-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; color: var(--text-faint); font-size: 11px; letter-spacing: .09em; text-transform: uppercase; }
     .article-page-tags { margin-top: 16px; }
+    .article-page-tags .tag { text-decoration: none; }
+    .article-cover { display: block; width: min(760px, 100%); height: auto; margin: 0 auto 42px; border-radius: 14px; border: 1px solid var(--line); }
+    .article-toc { max-width: 720px; margin: 0 auto 42px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-elevated); }
+    .article-toc summary { cursor: pointer; font-size: 13px; font-weight: 600; }
+    .article-toc ol { margin: 14px 0 0; padding-left: 20px; columns: 2; column-gap: 32px; }
+    .article-toc li { break-inside: avoid; margin: 5px 0; color: var(--text-soft); font-size: 12px; line-height: 1.55; }
+    .article-toc .toc-depth-3 { margin-left: 6px; }
+    .article-toc a { color: inherit; text-decoration: none; }
+    .article-toc a:hover { color: var(--text); }
     .article-body { max-width: 720px; margin: 0 auto; font-family: var(--serif); font-size: 18px; line-height: 1.86; color: var(--text); }
     .article-body > :first-child { margin-top: 0; }
-    .article-body h2, .article-body h3, .article-body h4 { font-family: var(--sans); line-height: 1.28; letter-spacing: -.02em; margin: 2.2em 0 .8em; }
+    .article-body h2, .article-body h3, .article-body h4 { font-family: var(--sans); line-height: 1.28; letter-spacing: -.02em; margin: 2.2em 0 .8em; scroll-margin-top: 24px; }
     .article-body h2 { font-size: 28px; }
     .article-body h3 { font-size: 22px; }
     .article-body p, .article-body ul, .article-body ol, .article-body blockquote { margin: 1.2em 0; }
@@ -78,15 +130,26 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : un
     .article-body pre code { background: transparent; padding: 0; }
     .article-body img { display: block; max-width: 100%; height: auto; margin: 2em auto; border-radius: 10px; }
     .article-body hr { border: 0; border-top: 1px solid var(--line); margin: 3em 0; }
-    .article-back { display: block; max-width: 720px; margin: 64px auto 0; color: var(--text-soft); font-size: 13px; text-decoration: none; }
+    .article-end { max-width: 720px; margin: 58px auto 0; padding-top: 28px; border-top: 1px solid var(--line); }
+    .article-source { margin: 0; color: var(--text-faint); font-size: 12px; line-height: 1.7; }
+    .article-source a { color: inherit; text-underline-offset: .18em; }
+    .article-pagination { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 32px; }
+    .article-pagination a { color: var(--text-soft); font-family: var(--serif); font-size: 15px; line-height: 1.5; text-decoration: none; }
+    .article-pagination a:last-child { text-align: right; }
+    .article-pagination a:hover { color: var(--text); }
+    .article-end-links { display: flex; justify-content: space-between; gap: 16px; margin-top: 42px; }
+    .article-back { color: var(--text-soft); font-size: 13px; text-decoration: none; }
     .article-back:hover { color: var(--text); }
     @media (max-width: 760px) {
       .article-page-shell { width: calc(100% - 36px); }
-      .article-header { margin: 32px auto 44px; padding-bottom: 28px; }
+      .article-header { margin: 32px auto 36px; padding-bottom: 28px; }
       .article-header h1 { font-size: clamp(34px, 10vw, 48px); }
+      .article-toc ol { columns: 1; }
       .article-body { font-size: 17px; line-height: 1.8; }
       .article-body pre { margin-inline: -4px; padding: 16px; }
       .article-page { padding-bottom: 68px; }
+      .article-pagination { grid-template-columns: 1fr; }
+      .article-pagination a:last-child { text-align: left; }
     }
   </style>
 </BaseLayout>

@@ -32,9 +32,13 @@ test('query searches title description and tags case-insensitively', () => {
   )
 })
 
-test('category combines with query', () => {
+test('visible category buttons can match either category or same-named tag', () => {
   assert.deepEqual(
-    filterArticleMetadata(items, { query: 'ai', category: 'Agent' }).map(item => item.title),
+    filterArticleMetadata(items, { query: '', category: 'AI' }).map(item => item.title),
+    ['Agent Memory', 'AI Native 开发']
+  )
+  assert.deepEqual(
+    filterArticleMetadata(items, { query: 'memory', category: 'AI' }).map(item => item.title),
     ['Agent Memory']
   )
   assert.deepEqual(

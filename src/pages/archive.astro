@@ -1,0 +1,26 @@
+---
+import { getCollection } from 'astro:content'
+import ArticleRow from '../components/ArticleRow.astro'
+import SiteHeader from '../components/SiteHeader.astro'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { estimateReadingTime } from '../lib/readingTime.mjs'
+
+const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+---
+<BaseLayout title="Archive — Glenn" description="Glenn 的全部公开文章归档。">
+  <div class="page-shell inner-shell">
+    <SiteHeader className="inner-topbar" />
+    <main class="inner-page">
+      <header class="inner-page-header">
+        <p class="eyebrow">ALL WRITING</p>
+        <h1>Archive</h1>
+        <p>{posts.length} {posts.length === 1 ? 'article' : 'articles'}</p>
+      </header>
+      <div class="article-list">
+        {posts.map(post => <ArticleRow post={post} readTime={estimateReadingTime(post.body ?? '')} />)}
+      </div>
+    </main>
+    <footer class="inner-footer"><a href="/">← Home</a><a href="/rss.xml">RSS</a></footer>
+  </div>
+</BaseLayout>

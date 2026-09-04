@@ -1,0 +1,28 @@
+---
+import { getCollection } from 'astro:content'
+import SiteHeader from '../../components/SiteHeader.astro'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { slugifyTag } from '../../lib/slug.mjs'
+
+const posts = await getCollection('posts', ({ data }) => data.draft !== true)
+const counts = new Map()
+for (const post of posts) {
+  for (const tag of post.data.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1)
+}
+const tags = [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+---
+<BaseLayout title="Tags — Glenn" description="Glenn 博客的文章标签。">
+  <div class="page-shell inner-shell">
+    <SiteHeader className="inner-topbar" />
+    <main class="inner-page">
+      <header class="inner-page-header">
+        <p class="eyebrow">TOPICS</p>
+        <h1>Tags</h1>
+      </header>
+      <div class="tag-cloud">
+        {tags.map(([tag, count]) => <a href={`/tags/${slugifyTag(tag)}/`}><span>{tag}</span><small>{count}</small></a>)}
+      </div>
+    </main>
+    <footer class="inner-footer"><a href="/">← Home</a><a href="/archive/">Archive</a></footer>
+  </div>
+</BaseLayout>

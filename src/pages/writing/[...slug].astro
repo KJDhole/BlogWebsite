@@ -4,17 +4,23 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro'
 import { estimateReadingTime } from '../../lib/readingTime.mjs'
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts', ({ data }) => data.draft !== true)
-  return posts.map(post => ({
+  const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
+    .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+
+  return posts.map((post, index) => ({
     params: { slug: post.id },
-    props: { post }
+    props: {
+      post,
+      previousPost: posts[index + 1] ?? null,
+      nextPost: posts[index - 1] ?? null
+    }
   }))
 }
 
-const { post } = Astro.props
-const { Content } = await render(post)
+const { post, previousPost, nextPost } = Astro.props
+const { Content, headings } = await render(post)
 const readTime = estimateReadingTime(post.body ?? '')
 ---
-<ArticleLayout post={post} readTime={readTime}>
+<ArticleLayout post={post} readTime={readTime} headings={headings} previousPost={previousPost} nextPost={nextPost}>
   <Content />
 </ArticleLayout>

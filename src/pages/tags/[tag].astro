@@ -1,0 +1,45 @@
+---
+import { getCollection } from 'astro:content'
+import ArticleRow from '../../components/ArticleRow.astro'
+import SiteHeader from '../../components/SiteHeader.astro'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { estimateReadingTime } from '../../lib/readingTime.mjs'
+import { slugifyTag } from '../../lib/slug.mjs'
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts', ({ data }) => data.draft !== true)
+  const byTag = new Map()
+  for (const post of posts) {
+    for (const tag of post.data.tags) {
+      const list = byTag.get(tag) ?? []
+      list.push(post)
+      byTag.set(tag, list)
+    }
+  }
+  return [...byTag.entries()].map(([tag, taggedPosts]) => ({
+    params: { tag: slugifyTag(tag) },
+    props: {
+      tag,
+      posts: taggedPosts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+    }
+  }))
+}
+
+const { tag, posts } = Astro.props
+---
+<BaseLayout title={`${tag} — Glenn`} description={`Glenn 关于 ${tag} 的文章。`}>
+  <div class="page-shell inner-shell">
+    <SiteHeader className="inner-topbar" />
+    <main class="inner-page">
+      <header class="inner-page-header">
+        <p class="eyebrow">TAG</p>
+        <h1>{tag}</h1>
+        <p>{posts.length} {posts.length === 1 ? 'article' : 'articles'}</p>
+      </header>
+      <div class="article-list">
+        {posts.map(post => <ArticleRow post={post} readTime={estimateReadingTime(post.body ?? '')} />)}
+      </div>
+    </main>
+    <footer class="inner-footer"><a href="/tags/">← All tags</a><a href="/">Home</a></footer>
+  </div>
+</BaseLayout>

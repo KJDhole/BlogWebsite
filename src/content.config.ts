@@ -7,9 +7,13 @@ const posts = defineCollection({
     title: z.string().min(1),
     description: z.string().min(1),
     date: z.coerce.date(),
+    updated: z.coerce.date().optional(),
     category: z.enum(['AI', 'Agent', 'Development', 'Product', 'Thinking']),
     tags: z.array(z.string().min(1)),
     visual: z.string().optional(),
+    cover: z.string().optional(),
+    sourceUrl: z.string().url().optional(),
+    sourceLabel: z.string().optional(),
     draft: z.boolean().default(false)
   })
 })

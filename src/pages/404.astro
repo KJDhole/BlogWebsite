@@ -1,0 +1,15 @@
+---
+import SiteHeader from '../components/SiteHeader.astro'
+import BaseLayout from '../layouts/BaseLayout.astro'
+---
+<BaseLayout title="404 — Glenn" description="页面不存在。" noindex={true}>
+  <div class="page-shell inner-shell">
+    <SiteHeader className="inner-topbar" />
+    <main class="error-page">
+      <p class="eyebrow">404</p>
+      <h1>Nothing here.</h1>
+      <p>这个页面不存在，或者已经被移动。</p>
+      <a href="/">← Back to home</a>
+    </main>
+  </div>
+</BaseLayout>
