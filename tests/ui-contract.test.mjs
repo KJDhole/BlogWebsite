@@ -14,11 +14,17 @@ test('Astro homepage keeps the approved hero search and category controls around
   assert.match(page, /<ArticleRow/)
 })
 
-test('homepage client code filters generated rows instead of owning an article catalog', async () => {
+test('homepage client code coordinates the new 3d story without owning article data or old svg geometry', async () => {
   const script = await read('../src/scripts/home.js')
   assert.doesNotMatch(script, /const\s+articles\s*=\s*\[/)
   assert.match(script, /querySelectorAll\(['"]\.article-row['"]\)/)
   assert.match(script, /filterArticleMetadata/)
+  assert.match(script, /getScrollStoryState/)
+  assert.match(script, /createSpaceScene/)
+  assert.match(script, /createNavPortal/)
+  assert.match(script, /getLandingMotionState/)
+  assert.match(script, /landingProgressFromElapsed/)
+  assert.doesNotMatch(script, /orbitNodes\s*=|orbit-ring-a|setSvgPoint/)
 })
 
 test('responsive and reduced-motion rules survive the migration', async () => {
