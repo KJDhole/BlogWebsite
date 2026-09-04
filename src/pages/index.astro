@@ -2,12 +2,13 @@
 import { getCollection } from 'astro:content'
 import ArticleRow from '../components/ArticleRow.astro'
 import BaseLayout from '../layouts/BaseLayout.astro'
+import { SITE } from '../config/site.mjs'
 import { estimateReadingTime } from '../lib/readingTime.mjs'
 
 const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
 ---
-<BaseLayout>
+<BaseLayout title={SITE.title} description={SITE.description}>
   <span class="flight-echo flight-echo-two" aria-hidden="true"></span>
   <span class="flight-echo flight-echo-one" aria-hidden="true"></span>
   <span class="flight-orb" aria-hidden="true"></span>
@@ -24,13 +25,12 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
     <main id="top">
       <section class="hero reveal-block" aria-labelledby="hero-title">
         <div class="hero-copy">
-          <p class="eyebrow">PERSONAL NOTES · 2026</p>
+          <p class="eyebrow">STUDY IN PUBLIC · 2026</p>
           <h1 id="hero-title">Hi, I’m Glenn.</h1>
-          <p class="hero-intro">CS student exploring <strong>AI</strong>, <strong>Agents</strong>, and building things that matter.</p>
+          <p class="hero-intro">Study in public.</p>
           <div class="social-row" aria-label="社交链接">
-            <a href="https://x.com" target="_blank" rel="noreferrer" aria-label="X / Twitter" class="social-link">X</a>
-            <a href="https://github.com/KJDhole" target="_blank" rel="noreferrer" aria-label="GitHub" class="social-link">GH</a>
-            <a href="mailto:hello@example.com" aria-label="Email" class="social-link">↗</a>
+            <a href={SITE.x} target="_blank" rel="noreferrer" aria-label="X / Twitter" class="social-link">X</a>
+            <a href={SITE.github} target="_blank" rel="noreferrer" aria-label="GitHub" class="social-link">GH</a>
           </div>
         </div>
 
@@ -103,7 +103,8 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
       <a class="brand brand-small" href="#top">GLENN<span class="brand-dot" aria-hidden="true"></span></a>
       <div class="footer-meta">
         <span>© 2026 Glenn</span>
-        <span>Building in public.</span>
+        <span>Study in public.</span>
+        <span class="footer-links"><a href="/archive/">Archive</a><a href="/tags/">Tags</a><a href="/rss.xml">RSS</a></span>
       </div>
     </footer>
   </div>
