@@ -27,8 +27,14 @@ test('homepage client code coordinates the new 3d story without owning article d
   assert.doesNotMatch(script, /orbitNodes\s*=|orbit-ring-a|setSvgPoint/)
 })
 
-test('responsive and reduced-motion rules survive the migration', async () => {
+test('responsive reduced-motion and deep-space containment rules survive the migration', async () => {
   const styles = await read('../src/styles/global.css')
   assert.match(styles, /prefers-reduced-motion/)
   assert.match(styles, /max-width:\s*760px/)
+  assert.match(styles, /\.space-scene/)
+  assert.match(styles, /\.space-canvas/)
+  assert.match(styles, /\.nav-portal/)
+  assert.match(styles, /is-fallback/)
+  assert.match(styles, /overflow:\s*(clip|hidden)/)
+  assert.match(styles, /pointer-events:\s*none/)
 })
