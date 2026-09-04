@@ -1,0 +1,183 @@
+---
+import BaseLayout from './BaseLayout.astro'
+
+const { post, readTime } = Astro.props
+const { title, description, date, category, tags } = post.data
+const dateLabel = date.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: '2-digit'
+}).toUpperCase()
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined
+---
+<BaseLayout title={`${title} — Glenn`} description={description} canonical={canonical} ogTitle={title} ogDescription={description}>
+  <div class="article-page-shell">
+    <header class="site-topbar article-topbar">
+      <a class="brand" href="/" aria-label="返回首页">GLENN<span class="brand-dot" aria-hidden="true"></span></a>
+      <button id="theme-toggle" class="icon-button theme-toggle" type="button" aria-label="切换深浅主题" title="切换主题">
+        <span class="theme-icon theme-icon-sun" aria-hidden="true">☼</span>
+        <span class="theme-icon theme-icon-moon" aria-hidden="true">◐</span>
+      </button>
+    </header>
+
+    <main class="article-page">
+      <header class="article-header">
+        <p class="eyebrow">{category}</p>
+        <h1>{title}</h1>
+        <p class="article-dek">{description}</p>
+        <div class="article-page-meta">
+          <span>{dateLabel}</span>
+          <span aria-hidden="true">·</span>
+          <span>{readTime} min read</span>
+        </div>
+        <div class="tag-list article-page-tags">
+          {tags.map(tag => <span class="tag">{tag}</span>)}
+        </div>
+      </header>
+
+      <article class="article-body"><slot /></article>
+      <a class="article-back" href="/">← Back to home</a>
+    </main>
+  </div>
+
+  <script is:inline>
+    (() => {
+      const button = document.querySelector('#theme-toggle')
+      if (!button) return
+      const applyTheme = theme => {
+        document.documentElement.dataset.theme = theme
+        localStorage.setItem('glenn-theme', theme)
+        button.setAttribute('aria-label', theme === 'dark' ? '切换到浅色主题' : '切换到深色主题')
+      }
+      button.addEventListener('click', () => {
+        applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark')
+      })
+    })()
+  </script>
+
+  <style is:global>
+    .article-page-shell {
+      width: min(920px, calc(100% - 56px));
+      margin: 0 auto;
+    }
+    .article-topbar { margin-bottom: 28px; }
+    .article-page { padding-bottom: 96px; }
+    .article-header {
+      max-width: 760px;
+      margin: 54px auto 62px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 36px;
+    }
+    .article-header h1 {
+      margin: 12px 0 18px;
+      max-width: 14em;
+      font-family: var(--serif);
+      font-size: clamp(38px, 6.2vw, 66px);
+      font-weight: 500;
+      line-height: 1.08;
+      letter-spacing: -.035em;
+    }
+    .article-dek {
+      margin: 0;
+      max-width: 680px;
+      color: var(--text-soft);
+      font-family: var(--serif);
+      font-size: clamp(18px, 2.2vw, 22px);
+      line-height: 1.65;
+    }
+    .article-page-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 24px;
+      color: var(--text-faint);
+      font-size: 11px;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+    .article-page-tags { margin-top: 16px; }
+    .article-body {
+      max-width: 720px;
+      margin: 0 auto;
+      font-family: var(--serif);
+      font-size: 18px;
+      line-height: 1.86;
+      color: var(--text);
+    }
+    .article-body > :first-child { margin-top: 0; }
+    .article-body h2,
+    .article-body h3,
+    .article-body h4 {
+      font-family: var(--sans);
+      line-height: 1.28;
+      letter-spacing: -.02em;
+      margin: 2.2em 0 .8em;
+    }
+    .article-body h2 { font-size: 28px; }
+    .article-body h3 { font-size: 22px; }
+    .article-body p,
+    .article-body ul,
+    .article-body ol,
+    .article-body blockquote { margin: 1.2em 0; }
+    .article-body ul,
+    .article-body ol { padding-left: 1.5em; }
+    .article-body a {
+      color: inherit;
+      text-decoration-color: color-mix(in srgb, var(--accent) 65%, transparent);
+      text-underline-offset: .18em;
+    }
+    .article-body blockquote {
+      margin-left: 0;
+      padding-left: 20px;
+      border-left: 2px solid var(--accent);
+      color: var(--text-soft);
+    }
+    .article-body code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .88em;
+      background: var(--pill);
+      border-radius: 5px;
+      padding: .12em .35em;
+    }
+    .article-body pre {
+      overflow-x: auto;
+      margin: 1.7em 0;
+      padding: 18px 20px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--bg-elevated);
+      line-height: 1.65;
+      -webkit-overflow-scrolling: touch;
+    }
+    .article-body pre code { background: transparent; padding: 0; }
+    .article-body img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      margin: 2em auto;
+      border-radius: 10px;
+    }
+    .article-body hr {
+      border: 0;
+      border-top: 1px solid var(--line);
+      margin: 3em 0;
+    }
+    .article-back {
+      display: block;
+      max-width: 720px;
+      margin: 64px auto 0;
+      color: var(--text-soft);
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .article-back:hover { color: var(--text); }
+    @media (max-width: 760px) {
+      .article-page-shell { width: calc(100% - 36px); }
+      .article-header { margin: 32px auto 44px; padding-bottom: 28px; }
+      .article-header h1 { font-size: clamp(34px, 10vw, 48px); }
+      .article-body { font-size: 17px; line-height: 1.8; }
+      .article-body pre { margin-inline: -4px; padding: 16px; }
+      .article-page { padding-bottom: 68px; }
+    }
+  </style>
+</BaseLayout>

@@ -1,0 +1,33 @@
+---
+import '../styles/global.css'
+
+const {
+  title = 'GLENN — Personal Blog',
+  description = "Glenn's personal writing on AI, Agents, software and ideas.",
+  canonical,
+  ogTitle = title,
+  ogDescription = description
+} = Astro.props
+---
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    {canonical && <link rel="canonical" href={canonical} />}
+    <meta property="og:title" content={ogTitle} />
+    <meta property="og:description" content={ogDescription} />
+    <script is:inline>
+      (() => {
+        try {
+          const saved = localStorage.getItem('glenn-theme')
+          const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          document.documentElement.dataset.theme = saved === 'light' || saved === 'dark' ? saved : preferred
+        } catch {}
+      })()
+    </script>
+  </head>
+  <body><slot /></body>
+</html>
