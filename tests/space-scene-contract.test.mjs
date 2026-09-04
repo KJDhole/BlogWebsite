@@ -21,3 +21,14 @@ test('homepage preserves all controls while mounting space scene and nav portal'
   assert.match(page, /data-category="All"/)
   assert.match(page, /<ArticleRow/)
 })
+
+test('3d scene responsibilities stay split into focused modules', async () => {
+  const stars = await read('../src/scripts/starField.mjs')
+  const solar = await read('../src/scripts/solarSystem3d.mjs')
+  const portal = await read('../src/scripts/blackHolePortal.mjs')
+  assert.match(stars, /createStarField/)
+  assert.match(solar, /createSolarSystem/)
+  assert.match(solar, /accentPlanet/)
+  assert.match(portal, /createBlackHolePortal/)
+  assert.doesNotMatch(portal, /createSolarSystem/)
+})
