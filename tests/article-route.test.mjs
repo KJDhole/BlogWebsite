@@ -18,9 +18,9 @@ test('article layout stays restrained and returns to the homepage', async () => 
   assert.doesNotMatch(layout, /table of contents|related posts|comments/i)
 })
 
-test('home and article pages share one persisted theme key', async () => {
+test('home and article pages preserve one persisted theme key', async () => {
   const base = await read('../src/layouts/BaseLayout.astro')
   const home = await read('../src/scripts/home.js')
-  assert.match(base, /glenn-theme/)
-  assert.match(home, /glenn-theme/)
+  assert.match(base, /glenn-blog-theme/)
+  assert.match(home, /glenn-blog-theme/)
 })
