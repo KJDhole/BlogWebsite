@@ -53,3 +53,13 @@ test('homepage still preserves the single existing motion language and core util
   assert.match(home, /getScrollStoryState/)
   assert.match(home, /getLandingMotionState/)
 })
+
+test('delivery stylesheet is consolidated and contains no critic-round override layers', async () => {
+  const base = await read('../src/layouts/BaseLayout.astro')
+  const editorial = await read('../src/styles/editorial.css')
+  assert.doesNotMatch(base, /critic-r1\.css|identity-r2\.css/)
+  assert.match(editorial, /--article-toc-width:/)
+  assert.match(editorial, /\.article-body h2::before/)
+  await assert.rejects(read('../src/styles/critic-r1.css'), /ENOENT/)
+  await assert.rejects(read('../src/styles/identity-r2.css'), /ENOENT/)
+})
