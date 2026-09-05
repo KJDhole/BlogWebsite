@@ -1,10 +1,8 @@
 ---
 const { post, readTime } = Astro.props
-const { title, description, date, category, tags, visual = 'paper' } = post.data
+const { title, description, date, category, tags } = post.data
 const href = `/writing/${post.id}/`
-const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase()
-const day = String(date.getDate()).padStart(2, '0')
-const dateLabel = `${month} ${day}\n${date.getFullYear()}`
+const dateLabel = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()
 ---
 <article
   class="article-row reveal-item is-visible"
@@ -13,15 +11,13 @@ const dateLabel = `${month} ${day}\n${date.getFullYear()}`
   data-category={category}
   data-tags={tags.join('|')}
 >
-  <div class="article-date">{dateLabel}</div>
+  <time class="article-date" datetime={date.toISOString()}>{dateLabel}</time>
   <div class="article-main">
     <a class="article-title" href={href}>{title}</a>
     <p class="article-summary">{description}</p>
-    <div class="article-meta">
-      <span class="read-time">{readTime} min read</span>
-      <span class="meta-separator">·</span>
-      <div class="tag-list">{tags.map(tag => <span class="tag">{tag}</span>)}</div>
-    </div>
   </div>
-  <div class={`article-visual visual-${visual}`} aria-hidden="true"><span></span></div>
+  <div class="article-index-meta" aria-label="文章信息">
+    <span class="article-category">{category}</span>
+    <span class="read-time">{readTime} MIN</span>
+  </div>
 </article>
