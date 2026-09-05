@@ -1,0 +1,40 @@
+name: Full Story QA
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  full-story:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install app dependencies
+        run: npm install
+      - name: Test
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Install Playwright for QA only
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start preview
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4321 > /tmp/blog-preview.log 2>&1 &
+          curl --retry 30 --retry-all-errors --retry-delay 1 http://127.0.0.1:4321/ -o /dev/null
+      - name: Verify desktop mobile and reduced-motion story
+        run: node scripts/full-story-qa.mjs
+      - name: Upload full story QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-story-qa
+          path: full-story-qa/
