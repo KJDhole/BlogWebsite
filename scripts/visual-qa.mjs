@@ -38,8 +38,9 @@ async function inspectViewport(browser, { name, viewport, reducedMotion = false 
     const frameName = `${name}-p${String(Math.round(progress * 100)).padStart(2, '0')}.png`
     await page.screenshot({ path: `visual-qa/${frameName}`, fullPage: false })
 
-    const metrics = await page.evaluate(() => {
-      const hero = document.querySelector('.hero')?.getBoundingClientRect()
+    const metrics = await page.evaluate(({ requestedProgress, mobile }) => {
+      const heroNode = document.querySelector('.hero')
+      const hero = heroNode?.getBoundingClientRect()
       const scene = document.querySelector('[data-space-scene]')?.getBoundingClientRect()
       const all = document.querySelector('[data-category="All"]')?.getBoundingClientRect()
       const list = document.querySelector('.filter-list')?.getBoundingClientRect()
@@ -47,7 +48,16 @@ async function inspectViewport(browser, { name, viewport, reducedMotion = false 
       const portalStyle = getComputedStyle(document.querySelector('.nav-portal'))
       const orbStyle = getComputedStyle(document.querySelector('.flight-orb'))
       const indicatorStyle = getComputedStyle(document.querySelector('.filter-indicator'))
+      const heroHeight = heroNode?.offsetHeight ?? 0
+      const distance = Math.max(heroHeight * (mobile ? 0.92 : 0.96), 1)
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
       return {
+        requestedProgress,
+        actualProgress: window.scrollY / distance,
+        scrollY: window.scrollY,
+        maxScroll,
+        heroHeight,
+        distance,
         hero: hero && { top: hero.top, bottom: hero.bottom },
         scene: scene && { top: scene.top, bottom: scene.bottom },
         allCenterX: all ? all.left + all.width / 2 : null,
@@ -60,7 +70,11 @@ async function inspectViewport(browser, { name, viewport, reducedMotion = false 
         scrollWidth: document.documentElement.scrollWidth,
         innerWidth: window.innerWidth
       }
-    })
+    }, { requestedProgress: progress, mobile: viewport.width <= 760 })
+
+    console.log('VISUAL_QA_FRAME', JSON.stringify({ name, ...metrics }))
+    report.frames.push({ progress, ...metrics })
+    await writeFile('visual-qa/report-partial.json', JSON.stringify(report, null, 2))
 
     assert(metrics.scrollWidth <= metrics.innerWidth + 1, `${name} p=${progress}: horizontal overflow`)
     if (metrics.hero && metrics.scene) {
@@ -84,8 +98,6 @@ async function inspectViewport(browser, { name, viewport, reducedMotion = false 
     if (reducedMotion) {
       assert(metrics.indicatorOpacity > 0.9, `${name}: reduced motion must keep indicator visible`)
     }
-
-    report.frames.push({ progress, ...metrics })
   }
 
   await context.close()
