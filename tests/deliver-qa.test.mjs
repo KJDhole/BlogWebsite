@@ -70,3 +70,8 @@ test('Signal Ledger QA workflow builds the temporary real-content post, runs Chr
   assert.match(workflow, /artifacts\/signal-ledger-qa/)
   assert.match(workflow, /signal-ledger-qa/)
 })
+
+test('legacy Deliver QA infrastructure is retired after the new browser gate proves green', async () => {
+  await assert.rejects(read('../scripts/deliver-qa.mjs'), /ENOENT/)
+  await assert.rejects(read('../.github/workflows/deliver-qa.yml'), /ENOENT/)
+})
