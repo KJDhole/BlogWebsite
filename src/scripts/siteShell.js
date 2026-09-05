@@ -128,12 +128,5 @@ function initSearch() {
   })
 }
 
-function initMobileMenu() {
-  document.querySelectorAll('.signal-menu a').forEach(link => {
-    link.addEventListener('click', () => link.closest('details')?.removeAttribute('open'))
-  })
-}
-
 initTheme()
 initSearch()
-initMobileMenu()
