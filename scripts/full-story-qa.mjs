@@ -122,6 +122,74 @@ async function captureViewport(browser, { name, viewport, reducedMotion = 'no-pr
   return { name, viewport, reducedMotion, storyDistance: distance, report }
 }
 
+async function verifyAggressiveLanding(browser) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 })
+  const page = await context.newPage()
+  await page.goto(BASE_URL, { waitUntil: 'networkidle' })
+  const distance = await storyDistance(page, false)
+  await page.evaluate(y => {
+    document.documentElement.style.scrollBehavior = 'auto'
+    window.scrollTo(0, y)
+  }, distance * 0.95)
+  await page.waitForTimeout(40)
+
+  const samples = []
+  for (const delay of [0, 90, 180, 320, 520]) {
+    if (delay) await page.waitForTimeout(delay - samples.at(-1).delay)
+    const orb = await page.evaluate(() => {
+      const node = document.querySelector('.flight-orb')
+      const rect = node?.getBoundingClientRect()
+      const style = node ? getComputedStyle(node) : null
+      return rect ? {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+        width: rect.width,
+        height: rect.height,
+        opacity: Number(style?.opacity ?? 0)
+      } : null
+    })
+    samples.push({ delay, orb })
+  }
+
+  const visible = samples.filter(sample => (sample.orb?.opacity ?? 0) > 0.05)
+  assert(visible.length >= 3, 'aggressive-scroll: landing orb should remain visible across multiple elapsed-time samples')
+  const changedGeometry = visible.some((sample, index) => index > 0 && (
+    Math.abs(sample.orb.y - visible[index - 1].orb.y) > 0.5 ||
+    Math.abs(sample.orb.width - visible[index - 1].orb.width) > 0.5 ||
+    Math.abs(sample.orb.height - visible[index - 1].orb.height) > 0.5
+  ))
+  assert(changedGeometry, 'aggressive-scroll: landing must animate after a direct jump instead of snapping immediately')
+  await page.screenshot({ path: 'full-story-qa/aggressive-landing.png', fullPage: false })
+  await context.close()
+  return { samples }
+}
+
+async function verifyWebglFallback(browser) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 })
+  await context.addInitScript(() => {
+    const original = HTMLCanvasElement.prototype.getContext
+    HTMLCanvasElement.prototype.getContext = function(type, ...args) {
+      if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') return null
+      return original.call(this, type, ...args)
+    }
+  })
+  const page = await context.newPage()
+  await page.goto(BASE_URL, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(400)
+  const state = await page.evaluate(() => ({
+    fallback: document.querySelector('[data-space-scene]')?.classList.contains('is-fallback') ?? false,
+    fallbackDisplay: getComputedStyle(document.querySelector('[data-space-fallback]')).display,
+    searchVisible: Boolean(document.querySelector('#article-search')?.getBoundingClientRect().width),
+    allVisible: Boolean(document.querySelector('.filter-button[data-category="All"]')?.getBoundingClientRect().width)
+  }))
+  assert(state.fallback, 'webgl-fallback: wrapper should enter is-fallback when renderer creation fails')
+  assert(state.fallbackDisplay !== 'none', 'webgl-fallback: SVG fallback should be displayed')
+  assert(state.searchVisible && state.allVisible, 'webgl-fallback: core homepage controls should remain usable')
+  await page.screenshot({ path: 'full-story-qa/webgl-fallback.png', fullPage: false })
+  await context.close()
+  return state
+}
+
 await mkdir('full-story-qa', { recursive: true })
 const browser = await chromium.launch({ headless: true })
 try {
@@ -130,7 +198,9 @@ try {
     await captureViewport(browser, { name: 'mobile', viewport: { width: 390, height: 844 } }),
     await captureViewport(browser, { name: 'reduced', viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' })
   ]
-  await writeFile('full-story-qa/report.json', JSON.stringify(reports, null, 2))
+  const aggressiveLanding = await verifyAggressiveLanding(browser)
+  const webglFallback = await verifyWebglFallback(browser)
+  await writeFile('full-story-qa/report.json', JSON.stringify({ reports, aggressiveLanding, webglFallback }, null, 2))
   console.log('Full story QA passed')
 } finally {
   await browser.close()
