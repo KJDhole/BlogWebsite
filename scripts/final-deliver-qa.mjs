@@ -11,11 +11,19 @@ function check(condition, message, detail = null) {
   if (!condition) failures.push({ message, detail })
 }
 
-function parseRgb(value) {
-  const match = String(value).match(/rgba?\(([^)]+)\)/)
-  if (!match) return null
-  const parts = match[1].split(/[\s,\/]+/).filter(Boolean).slice(0, 3).map(Number)
-  return parts.length === 3 && parts.every(Number.isFinite) ? parts : null
+function parseColor(value) {
+  const text = String(value).trim()
+  const rgbMatch = text.match(/rgba?\(([^)]+)\)/)
+  if (rgbMatch) {
+    const parts = rgbMatch[1].split(/[\s,\/]+/).filter(Boolean).slice(0, 3).map(Number)
+    return parts.length === 3 && parts.every(Number.isFinite) ? parts : null
+  }
+  const hexMatch = text.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i)
+  if (!hexMatch) return null
+  const hex = hexMatch[1].length === 3
+    ? hexMatch[1].split('').map(char => char + char).join('')
+    : hexMatch[1]
+  return [0, 2, 4].map(index => Number.parseInt(hex.slice(index, index + 2), 16))
 }
 
 function luminance(rgb) {
@@ -27,8 +35,8 @@ function luminance(rgb) {
 }
 
 function contrastRatio(foreground, background) {
-  const fg = parseRgb(foreground)
-  const bg = parseRgb(background)
+  const fg = parseColor(foreground)
+  const bg = parseColor(background)
   if (!fg || !bg) return null
   const a = luminance(fg)
   const b = luminance(bg)
@@ -121,7 +129,8 @@ async function browserGate() {
     await page.goto(`${BASE_URL}${STRESS_PATH}`, { waitUntil: 'domcontentloaded' })
     await page.waitForTimeout(180)
     const articleA11y = await page.evaluate(() => {
-      const h1s = [...document.querySelectorAll('h1')]
+      const pageH1s = [...document.querySelectorAll('.article-opening h1')]
+      const bodyH1s = [...document.querySelectorAll('.article-body h1')]
       const h2s = [...document.querySelectorAll('.article-body h2')]
       const tocCurrent = document.querySelector('.article-context-rail a[aria-current="location"]')
       const currentBefore = tocCurrent ? getComputedStyle(tocCurrent, '::before').content : null
@@ -131,7 +140,8 @@ async function browserGate() {
       const rootStyle = getComputedStyle(document.documentElement)
       const bodyLinkStyle = articleLink ? getComputedStyle(articleLink) : null
       return {
-        h1Count: h1s.length,
+        pageH1Count: pageH1s.length,
+        preservedSourceH1Count: bodyH1s.length,
         h2Count: h2s.length,
         currentToc: Boolean(tocCurrent),
         currentBefore,
@@ -143,7 +153,7 @@ async function browserGate() {
         muted: rootStyle.getPropertyValue('--muted').trim()
       }
     })
-    check(articleA11y.h1Count === 1, 'Article does not have exactly one H1', articleA11y)
+    check(articleA11y.pageH1Count === 1, 'Article opening does not have exactly one page-level H1', articleA11y)
     check(articleA11y.h2Count > 0, 'Stress article has no semantic H2 sections', articleA11y)
     check(articleA11y.currentToc, 'Active desktop TOC item lacks aria-current', articleA11y)
     check(Boolean(articleA11y.currentBefore && articleA11y.currentBefore !== 'none' && articleA11y.currentBefore !== 'normal'), 'Active TOC lacks a non-color marker', articleA11y)
@@ -182,6 +192,7 @@ async function browserGate() {
     check(darkMutedContrast !== null && darkMutedContrast >= 4.5, 'Dark muted contrast below 4.5:1', { darkMutedContrast, darkMetrics })
     details.contrast = { lightBodyContrast, lightMutedContrast, darkBodyContrast, darkMutedContrast }
     details.tabStops = tabStops
+    details.sourceHeadingPreservation = { bodyH1Count: articleA11y.preservedSourceH1Count }
     await darkContext.close()
   } finally {
     await browser.close()
