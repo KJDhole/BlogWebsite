@@ -33,6 +33,12 @@ test('3d scene responsibilities stay split into focused modules', async () => {
   assert.doesNotMatch(portal, /createSolarSystem/)
 })
 
+test('hero black hole core fades with semantic portal opacity instead of popping off', async () => {
+  const portal = await read('../src/scripts/blackHolePortal.mjs')
+  assert.match(portal, /coreMaterial\.opacity\s*=\s*opacity/)
+  assert.match(portal, /coreMaterial\s*=\s*new THREE\.MeshBasicMaterial\(\{[^}]*transparent:\s*true[^}]*opacity:\s*0/s)
+})
+
 test('space scene exposes a small lifecycle API and quality protections', async () => {
   const scene = await read('../src/scripts/spaceScene.mjs')
   assert.match(scene, /createSpaceScene/)
