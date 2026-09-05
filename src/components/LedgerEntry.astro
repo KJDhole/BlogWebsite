@@ -1,0 +1,19 @@
+---
+const { post, readTime, index = 0, compact = false } = Astro.props
+const date = post.data.date
+const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+const dateLabel = `${String(date.getUTCDate()).padStart(2, '0')} ${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`
+const sequence = String(index + 1).padStart(3, '0')
+---
+<article class:list={['ledger-entry', compact && 'is-compact']} data-ledger-entry>
+  <span class="ledger-seq" aria-hidden="true">{sequence}</span>
+  <div class="ledger-main">
+    <p class="ledger-meta">
+      <time datetime={date.toISOString()}>{dateLabel}</time>
+      <span>{post.data.category}</span>
+    </p>
+    <h3><a href={`/writing/${post.id}/`}>{post.data.title}</a></h3>
+    {!compact && <p class="ledger-description">{post.data.description}</p>}
+  </div>
+  <p class="ledger-readtime">{readTime} MIN</p>
+</article>

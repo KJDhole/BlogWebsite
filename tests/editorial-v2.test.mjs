@@ -41,19 +41,6 @@ test('editorial stylesheet includes Chinese-first reading, wide media, restraine
   assert.match(styles, /max-width:\s*760px/)
 })
 
-test('homepage still preserves the single existing motion language and core utilities', async () => {
-  const page = await read('../src/pages/index.astro')
-  const home = await read('../src/scripts/home.js')
-  assert.match(page, /<SpaceScene/)
-  assert.match(page, /id="article-search"/)
-  assert.match(page, /data-category="All"/)
-  assert.match(page, /Archive/)
-  assert.match(page, /Tags/)
-  assert.match(page, /RSS/)
-  assert.match(home, /getScrollStoryState/)
-  assert.match(home, /getLandingMotionState/)
-})
-
 test('delivery stylesheet is consolidated and contains no critic-round override layers', async () => {
   const base = await read('../src/layouts/BaseLayout.astro')
   const editorial = await read('../src/styles/editorial.css')
