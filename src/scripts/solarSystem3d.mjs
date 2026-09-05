@@ -39,6 +39,40 @@ function placeOrbitalBody(mesh, angle, orbit) {
   mesh.position.set(x, y, z)
 }
 
+function clamp01(value) {
+  return Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
+}
+
+export function getAbsorptionPosition(start, portal, rawAbsorption, startAngle = 0, out = { x: 0, y: 0, z: 0 }) {
+  const t = clamp01(rawAbsorption)
+  if (t === 0) {
+    out.x = start.x
+    out.y = start.y
+    out.z = start.z
+    return out
+  }
+  if (t === 1) {
+    out.x = portal.x
+    out.y = portal.y
+    out.z = portal.z
+    return out
+  }
+
+  const travel = t * t
+  const dx = portal.x - start.x
+  const dy = portal.y - start.y
+  const dz = portal.z - start.z
+  const distance = Math.hypot(dx, dy, dz)
+  const phase = startAngle + t * Math.PI * 4.4
+  const envelope = Math.sin(Math.PI * t) * (1 - 0.35 * t)
+  const amplitude = distance * 0.18 * envelope
+
+  out.x = start.x + dx * travel + Math.cos(phase) * amplitude * 0.35
+  out.y = start.y + dy * travel + Math.sin(phase * 0.72) * amplitude * 0.24
+  out.z = start.z + dz * travel + Math.sin(phase) * amplitude * 0.55
+  return out
+}
+
 export function createSolarSystem(scene, { mobile = false, portalPosition } = {}) {
   const group = new THREE.Group()
   group.name = 'solar-system'
@@ -74,6 +108,7 @@ export function createSolarSystem(scene, { mobile = false, portalPosition } = {}
   let absorptionStartAngle = null
   let storyState = null
   const capturePoint = portalPosition?.clone?.() ?? new THREE.Vector3(2.15, 0.18, 0.55)
+  const absorptionStartPosition = new THREE.Vector3()
 
   placeOrbitalBody(innerPlanet.mesh, innerAngle, ORBITS.inner)
   placeOrbitalBody(middlePlanet.mesh, middleAngle, ORBITS.middle)
@@ -98,14 +133,17 @@ export function createSolarSystem(scene, { mobile = false, portalPosition } = {}
     }
 
     if (mode === 'absorbing') {
-      if (absorptionStartAngle === null) absorptionStartAngle = accentAngle
-      const absorption = Math.min(1, Math.max(0, storyState?.accent?.absorption ?? 0))
-      const angle = absorptionStartAngle + absorption * Math.PI * 2.2
-      const radius = ORBITS.accent.radius * (1 - absorption) * (1 - 0.35 * absorption)
-      accentPlanet.mesh.position.set(
-        capturePoint.x + Math.cos(angle) * radius,
-        capturePoint.y + Math.sin(angle * 0.72) * radius * 0.24,
-        capturePoint.z + Math.sin(angle) * radius * 0.48
+      if (absorptionStartAngle === null) {
+        absorptionStartAngle = accentAngle
+        absorptionStartPosition.copy(accentPlanet.mesh.position)
+      }
+      const absorption = clamp01(storyState?.accent?.absorption ?? 0)
+      getAbsorptionPosition(
+        absorptionStartPosition,
+        capturePoint,
+        absorption,
+        absorptionStartAngle,
+        accentPlanet.mesh.position
       )
       const shrink = Math.max(0.02, 1 - absorption * 0.98)
       const stretch = 1 + Math.sin(absorption * Math.PI) * 0.55
