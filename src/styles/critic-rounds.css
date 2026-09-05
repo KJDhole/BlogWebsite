@@ -83,6 +83,12 @@
   padding-bottom: 18px;
 }
 
+@media (max-width: 1040px) {
+  .article-opening {
+    grid-template-columns: 84px minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 760px) {
   .ledger-opening__copy h1 {
     max-width: 100%;
@@ -99,7 +105,14 @@
     font-size: 23px;
     line-height: 1.24;
   }
+  .article-opening {
+    grid-template-columns: 1fr;
+  }
+  .article-opening__main {
+    grid-column: 1;
+  }
   .article-opening h1 {
+    max-width: 100%;
     font-size: clamp(37px, 10vw, 48px);
     line-height: 1.055;
     letter-spacing: -.04em;
