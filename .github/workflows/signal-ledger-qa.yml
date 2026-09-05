@@ -35,6 +35,8 @@ jobs:
         run: node scripts/signal-ledger-qa.mjs
       - name: Guard mobile article title geometry
         run: node scripts/mobile-layout-qa.mjs
+      - name: Run final Deliver accessibility and performance gate
+        run: node scripts/final-deliver-qa.mjs
       - name: Upload Signal Ledger QA evidence
         if: always()
         uses: actions/upload-artifact@v4
