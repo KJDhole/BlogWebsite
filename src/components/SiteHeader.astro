@@ -1,25 +1,34 @@
 ---
-const { className = '' } = Astro.props
----
-<header class={`site-topbar ${className}`}>
-  <a class="brand" href="/" aria-label="返回首页">GLENN<span class="brand-dot" aria-hidden="true"></span></a>
-  <button id="theme-toggle" class="icon-button theme-toggle" type="button" aria-label="切换深浅主题" title="切换主题">
-    <span class="theme-icon theme-icon-sun" aria-hidden="true">☼</span>
-    <span class="theme-icon theme-icon-moon" aria-hidden="true">◐</span>
-  </button>
-</header>
+import SearchOverlay from './SearchOverlay.astro'
 
-<script is:inline>
-  (() => {
-    const button = document.querySelector('#theme-toggle')
-    if (!button) return
-    const applyTheme = theme => {
-      document.documentElement.dataset.theme = theme
-      localStorage.setItem('glenn-blog-theme', theme)
-      button.setAttribute('aria-label', theme === 'dark' ? '切换到浅色主题' : '切换到深色主题')
-    }
-    button.addEventListener('click', () => {
-      applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark')
-    })
-  })()
-</script>
+const { className = '', active } = Astro.props
+const current = key => active === key ? 'page' : undefined
+---
+<header class:list={['site-topbar', 'signal-header', className]}>
+  <a class="signal-brand" href="/" aria-label="Glenn 首页">
+    <strong>GLENN</strong><span aria-hidden="true">/ INDEX</span>
+  </a>
+
+  <nav class="signal-nav signal-nav--desktop" aria-label="主导航">
+    <a href="/#writing" aria-current={current('home')}>Writing</a>
+    <a href="/archive/" aria-current={current('archive')}>Archive</a>
+    <a href="/tags/" aria-current={current('tags')}>Tags</a>
+    <button class="signal-nav__button" type="button" data-search-open>Search <kbd>⌘K</kbd></button>
+    <button class="signal-theme" type="button" data-theme-toggle aria-label="切换深浅主题"><span aria-hidden="true">◐</span></button>
+  </nav>
+
+  <div class="signal-nav signal-nav--mobile">
+    <button class="signal-nav__button" type="button" data-search-open aria-label="打开搜索">Search</button>
+    <details class="signal-menu">
+      <summary>Index</summary>
+      <nav aria-label="移动导航">
+        <a href="/#writing">Writing</a>
+        <a href="/archive/">Archive</a>
+        <a href="/tags/">Tags</a>
+      </nav>
+    </details>
+    <button class="signal-theme" type="button" data-theme-toggle aria-label="切换深浅主题"><span aria-hidden="true">◐</span></button>
+  </div>
+
+  <SearchOverlay />
+</header>
