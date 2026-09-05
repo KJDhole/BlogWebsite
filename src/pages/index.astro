@@ -31,9 +31,9 @@ const activeTopics = [...new Set(posts.flatMap(post => [post.data.category, ...(
         <p>{activeTopics.length ? activeTopics.join(' / ') : 'Writing'}</p>
         <div class="ledger-opening__tools">
           <span>TOOLS</span>
-          <button class="signal-text-button" type="button" data-search-open>Search / ⌘K</button>
-          <span aria-hidden="true">/</span>
-          <button class="signal-text-button" type="button" data-theme-toggle>Theme / ◐</button>
+          <button class="signal-text-button" type="button" data-search-open>Search ⌘K</button>
+          <span aria-hidden="true">·</span>
+          <button class="signal-text-button" type="button" data-theme-toggle>Theme ◐</button>
         </div>
       </aside>
     </section>
