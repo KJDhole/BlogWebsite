@@ -8,46 +8,50 @@ const updateProgress = () => {
   const rect = article.getBoundingClientRect()
   const articleTop = window.scrollY + rect.top
   const articleBottom = articleTop + article.offsetHeight
-  const start = articleTop - window.innerHeight * 0.18
-  const end = Math.max(start + 1, articleBottom - window.innerHeight * 0.42)
-  const ratio = clamp01((window.scrollY - start) / (end - start))
-  progress.style.transform = `scaleX(${ratio})`
+  const start = articleTop - window.innerHeight * 0.16
+  const end = Math.max(start + 1, articleBottom - window.innerHeight * 0.4)
+  progress.style.transform = `scaleX(${clamp01((window.scrollY - start) / (end - start))})`
 }
 
 const copyText = async (button, text) => {
+  const previous = button.textContent
   try {
     await navigator.clipboard.writeText(text)
-    const previous = button.textContent
     button.textContent = 'Copied'
-    window.setTimeout(() => { button.textContent = previous }, 1200)
+    button.setAttribute('aria-label', '已复制')
   } catch {
     button.textContent = 'Copy failed'
-    window.setTimeout(() => { button.textContent = 'Copy' }, 1200)
   }
+  window.setTimeout(() => {
+    button.textContent = previous
+    button.removeAttribute('aria-label')
+  }, 1200)
 }
 
 const enhanceCodeBlocks = () => {
   if (!article) return
   article.querySelectorAll('pre').forEach(pre => {
-    if (pre.parentElement?.classList.contains('code-block')) return
+    if (pre.closest('.code-frame')) return
     const code = pre.querySelector('code')
     if (!code) return
     const languageClass = [...code.classList].find(name => name.startsWith('language-'))
     const language = languageClass ? languageClass.replace('language-', '').toUpperCase() : 'CODE'
-    const wrapper = document.createElement('div')
-    wrapper.className = 'code-block'
+    const frame = document.createElement('div')
+    frame.className = 'code-frame'
     const head = document.createElement('div')
-    head.className = 'code-block-head'
+    head.className = 'code-frame__head'
     const label = document.createElement('span')
+    label.className = 'code-language'
     label.textContent = language
     const button = document.createElement('button')
     button.type = 'button'
     button.className = 'copy-control'
+    button.dataset.copyCode = ''
     button.textContent = 'Copy'
     button.addEventListener('click', () => copyText(button, code.textContent ?? ''))
     head.append(label, button)
-    pre.before(wrapper)
-    wrapper.append(head, pre)
+    pre.before(frame)
+    frame.append(head, pre)
   })
 }
 
@@ -57,16 +61,18 @@ const enhancePromptBlocks = () => {
     const first = block.querySelector('p')
     if (!first) return
     const marker = '[!PROMPT]'
-    if (!first.textContent?.trim().startsWith(marker)) return
-    first.innerHTML = first.innerHTML.replace('[!PROMPT]', '').trim()
+    const raw = first.textContent?.trim() ?? ''
+    if (!raw.startsWith(marker)) return
+    first.textContent = raw.slice(marker.length).trim()
     block.classList.add('prompt-block')
     const head = document.createElement('div')
-    head.className = 'prompt-block-head'
+    head.className = 'prompt-block__head'
     const label = document.createElement('span')
     label.textContent = 'PROMPT'
     const button = document.createElement('button')
     button.type = 'button'
     button.className = 'copy-control'
+    button.dataset.copyPrompt = ''
     button.textContent = 'Copy'
     button.addEventListener('click', () => {
       const text = [...block.children]
@@ -104,16 +110,20 @@ const enhanceMedia = () => {
   })
 }
 
-const setupToc = () => {
-  if (!article || !('IntersectionObserver' in window)) return
-  const headings = [...article.querySelectorAll('h2[id], h3[id]')]
-  const links = [...document.querySelectorAll('.article-toc-desktop a, .article-toc-mobile a')]
-  if (!headings.length || !links.length) return
+const setupSectionsAndToc = () => {
+  if (!article) return
+  const sections = [...article.querySelectorAll('h2[id]')]
+  sections.forEach((heading, index) => {
+    heading.dataset.sectionIndex = String(index + 1).padStart(2, '0')
+  })
+
+  if (!('IntersectionObserver' in window)) return
+  const links = [...document.querySelectorAll('.article-context-rail a[href^="#"], .article-toc-mobile a[href^="#"]')]
+  if (!sections.length || !links.length) return
 
   const setCurrent = id => {
     links.forEach(link => {
-      const active = link.getAttribute('href') === `#${id}`
-      link.classList.toggle('is-current', active)
+      const active = decodeURIComponent(link.hash.slice(1)) === id
       if (active) link.setAttribute('aria-current', 'location')
       else link.removeAttribute('aria-current')
     })
@@ -124,17 +134,17 @@ const setupToc = () => {
       .filter(entry => entry.isIntersecting)
       .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
     if (visible?.target?.id) setCurrent(visible.target.id)
-  }, { rootMargin: '-12% 0px -72% 0px', threshold: [0, 1] })
+  }, { rootMargin: '-18% 0px -68% 0px', threshold: 0 })
 
-  headings.forEach(heading => observer.observe(heading))
-  setCurrent(headings[0].id)
+  sections.forEach(section => observer.observe(section))
+  setCurrent(sections[0].id)
 }
 
-updateProgress()
 enhanceCodeBlocks()
 enhancePromptBlocks()
 enhanceMedia()
-setupToc()
+setupSectionsAndToc()
+updateProgress()
 
 window.addEventListener('scroll', updateProgress, { passive: true })
 window.addEventListener('resize', updateProgress)

@@ -1,0 +1,48 @@
+name: Signal Ledger QA
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Unit and contract tests
+        run: npm test
+      - name: Prepare real-content stress fixture
+        run: node scripts/prepare-signal-stress-fixture.mjs
+      - name: Build production site with temporary stress post
+        run: npm run build
+      - name: Install Playwright 1.55.0
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start production preview
+        run: npm run preview -- --host 127.0.0.1 --port 4321 > /tmp/signal-ledger-preview.log 2>&1 &
+      - name: Run Signal Ledger browser QA
+        run: node scripts/signal-ledger-qa.mjs
+      - name: Guard mobile article title geometry
+        run: node scripts/mobile-layout-qa.mjs
+      - name: Run final Deliver accessibility and performance gate
+        run: node scripts/final-deliver-qa.mjs
+      - name: Upload Signal Ledger QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: signal-ledger-qa
+          path: artifacts/signal-ledger-qa
+      - name: Remove temporary stress post
+        if: always()
+        run: rm -f src/content/posts/__qa-ai-design-99.md

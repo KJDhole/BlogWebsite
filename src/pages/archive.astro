@@ -1,26 +1,72 @@
 ---
 import { getCollection } from 'astro:content'
-import ArticleRow from '../components/ArticleRow.astro'
-import SiteHeader from '../components/SiteHeader.astro'
+import SignalFooter from '../components/SignalFooter.astro'
 import BaseLayout from '../layouts/BaseLayout.astro'
-import { estimateReadingTime } from '../lib/readingTime.mjs'
+import { groupPostsByYearMonth } from '../lib/postIndex.mjs'
 
 const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+
+const groups = groupPostsByYearMonth(posts.map(post => ({
+  post,
+  id: post.id,
+  title: post.data.title,
+  description: post.data.description,
+  date: post.data.date,
+  category: post.data.category,
+  tags: post.data.tags ?? []
+})))
+
+const monthName = month => new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' })
+  .format(new Date(Date.UTC(2026, month - 1, 1)))
+  .toUpperCase()
 ---
 <BaseLayout title="Archive — Glenn" description="Glenn 的全部公开文章归档。">
-  <div class="page-shell inner-shell">
-    <SiteHeader className="inner-topbar" />
-    <main class="inner-page">
-      <header class="inner-page-header">
-        <p class="eyebrow">ALL WRITING</p>
-        <h1>Archive</h1>
-        <p>{posts.length} {posts.length === 1 ? 'article' : 'articles'}</p>
-      </header>
-      <div class="article-list">
-        {posts.map(post => <ArticleRow post={post} readTime={estimateReadingTime(post.body ?? '')} />)}
-      </div>
-    </main>
-    <footer class="inner-footer"><a href="/">← Home</a><a href="/rss.xml">RSS</a></footer>
-  </div>
+  <main class="archive-page">
+    <header class="archive-opening">
+      <p class="signal-kicker">GLENN / CHRONOLOGY</p>
+      <h1>Archive</h1>
+      <p>{posts.length} {posts.length === 1 ? 'entry' : 'entries'}，按真实发布时间排列。</p>
+    </header>
+
+    <div class="archive-ledger">
+      {groups.map(group => (
+        <section class="archive-year" aria-labelledby={`archive-year-${group.year}`}>
+          <div class="archive-year__register">
+            <span aria-hidden="true"></span>
+            <h2 id={`archive-year-${group.year}`}>{group.year}</h2>
+          </div>
+
+          <div class="archive-year__months">
+            {group.months.map(month => (
+              <section class="archive-month" aria-labelledby={`archive-month-${group.year}-${month.label}`}>
+                <div class="archive-month__label">
+                  <span>{month.label}</span>
+                  <h3 id={`archive-month-${group.year}-${month.label}`}>{monthName(month.month)}</h3>
+                </div>
+
+                <ol class="archive-month__entries">
+                  {month.posts.map(item => {
+                    const day = String(new Date(item.date).getUTCDate()).padStart(2, '0')
+                    return (
+                      <li class="archive-entry">
+                        <time datetime={new Date(item.date).toISOString()}>{day}</time>
+                        <div>
+                          <p>{item.category}</p>
+                          <a href={`/writing/${item.id}/`}>{item.title}</a>
+                        </div>
+                        <span aria-hidden="true">↗</span>
+                      </li>
+                    )
+                  })}
+                </ol>
+              </section>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  </main>
+
+  <SignalFooter />
 </BaseLayout>

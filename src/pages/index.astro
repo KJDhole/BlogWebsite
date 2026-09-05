@@ -1,97 +1,76 @@
 ---
 import { getCollection } from 'astro:content'
-import ArticleRow from '../components/ArticleRow.astro'
-import SpaceScene from '../components/SpaceScene.astro'
+import LedgerEntry from '../components/LedgerEntry.astro'
+import SignalFooter from '../components/SignalFooter.astro'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import { SITE } from '../config/site.mjs'
 import { estimateReadingTime } from '../lib/readingTime.mjs'
 
 const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+
+const activeTopics = [...new Set(posts.flatMap(post => [post.data.category, ...(post.data.tags ?? [])]))]
+  .filter(Boolean)
 ---
 <BaseLayout title={SITE.title} description={SITE.description}>
-  <span class="nav-portal" aria-hidden="true"></span>
-  <span class="flight-echo flight-echo-two" aria-hidden="true"></span>
-  <span class="flight-echo flight-echo-one" aria-hidden="true"></span>
-  <span class="flight-orb" aria-hidden="true"></span>
-
-  <div class="page-shell">
-    <header class="site-topbar">
-      <a class="brand" href="#top" aria-label="返回首页">GLENN<span class="brand-dot" aria-hidden="true"></span></a>
-      <button id="theme-toggle" class="icon-button theme-toggle" type="button" aria-label="切换深浅主题" title="切换主题">
-        <span class="theme-icon theme-icon-sun" aria-hidden="true">☼</span>
-        <span class="theme-icon theme-icon-moon" aria-hidden="true">◐</span>
-      </button>
-    </header>
-
-    <main id="top">
-      <section class="hero reveal-block" aria-labelledby="hero-title">
-        <div class="hero-copy">
-          <p class="eyebrow">STUDY IN PUBLIC · 2026</p>
-          <h1 id="hero-title">Hi, I’m Glenn.</h1>
-          <p class="hero-intro">Study in public.</p>
-          <div class="social-row" aria-label="社交链接">
-            <a href={SITE.x} target="_blank" rel="noreferrer" aria-label="X / Twitter" class="social-link">X ↗</a>
-            <a href={SITE.github} target="_blank" rel="noreferrer" aria-label="GitHub" class="social-link">GitHub ↗</a>
-          </div>
-        </div>
-
-        <div class="orbit-wrap" aria-hidden="true">
-          <SpaceScene />
-          <p class="orbit-caption">slow systems · clear thinking</p>
-        </div>
-      </section>
-
-      <section class="content-section" aria-label="文章">
-        <div class="controls reveal-block">
-          <label class="search-box" for="article-search">
-            <span class="search-icon" aria-hidden="true">⌕</span>
-            <input id="article-search" type="search" autocomplete="off" placeholder="Search writing…" aria-label="搜索文章" />
-            <kbd>⌘ K</kbd>
-          </label>
-
-          <div class="filter-wrap" aria-label="文章分类">
-            <div class="filter-list" role="tablist" aria-label="文章分类筛选">
-              <button class="filter-button is-active" type="button" role="tab" aria-selected="true" data-category="All">All</button>
-              <button class="filter-button" type="button" role="tab" aria-selected="false" data-category="AI">AI</button>
-              <button class="filter-button" type="button" role="tab" aria-selected="false" data-category="Agent">Agent</button>
-              <button class="filter-button" type="button" role="tab" aria-selected="false" data-category="Development">Development</button>
-              <button class="filter-button" type="button" role="tab" aria-selected="false" data-category="Product">Product</button>
-              <button class="filter-button" type="button" role="tab" aria-selected="false" data-category="Thinking">Thinking</button>
-              <span class="filter-indicator" aria-hidden="true"></span>
-            </div>
-          </div>
-        </div>
-
-        <div class="section-heading reveal-block">
-          <div>
-            <p class="eyebrow">LATEST WRITING</p>
-            <h2>Writing</h2>
-          </div>
-          <p id="result-count" class="result-count" aria-live="polite"></p>
-        </div>
-
-        <div id="article-list" class="article-list" aria-live="polite">
-          {posts.map(post => <ArticleRow post={post} readTime={estimateReadingTime(post.body ?? '')} />)}
-        </div>
-        <div id="empty-state" class="empty-state" hidden>
-          <p>No matching articles.</p>
-          <button id="clear-filters" type="button">Clear filters</button>
-        </div>
-      </section>
-    </main>
-
-    <footer class="site-footer">
-      <a class="brand brand-small" href="#top">GLENN<span class="brand-dot" aria-hidden="true"></span></a>
-      <div class="footer-meta">
-        <span>© 2026 Glenn</span>
-        <span>Study in public.</span>
-        <span class="footer-links"><a href="/archive/">Archive</a><a href="/tags/">Tags</a><a href="/rss.xml">RSS</a></span>
+  <main class="signal-index-shell" data-signal-index>
+    <section class="ledger-opening" aria-labelledby="ledger-opening-title">
+      <div class="signal-rail signal-rail--opening" aria-hidden="true">
+        <span class="signal-rail__index">00</span>
+        <span class="signal-rail__locator"></span>
       </div>
-    </footer>
-  </div>
 
-  <script>
-    import '../scripts/home.js'
-  </script>
+      <div class="ledger-opening__copy">
+        <p class="signal-kicker">GLENN / WORKING NOTES</p>
+        <h1 id="ledger-opening-title">Notes on things I’m building and trying to understand.</h1>
+        <p>AI、Agent、Product、Development、Systems，以及长期实验中留下的观察、判断和复盘。</p>
+      </div>
+
+      <aside class="ledger-opening__scope" aria-label="当前内容主题与工具">
+        <span>INDEXED TOPICS</span>
+        <p>{activeTopics.length ? activeTopics.join(' / ') : 'Writing'}</p>
+        <div class="ledger-opening__tools">
+          <span>TOOLS</span>
+          <button class="signal-text-button" type="button" data-search-open>Search ⌘K</button>
+          <span aria-hidden="true">·</span>
+          <button class="signal-text-button" type="button" data-theme-toggle>Theme ◐</button>
+        </div>
+      </aside>
+    </section>
+
+    <section class="writing-ledger" id="writing" aria-labelledby="writing-title">
+      <header class="ledger-section-head">
+        <div class="signal-rail signal-rail--section" aria-hidden="true">
+          <span class="signal-rail__index">01</span>
+          <span class="signal-rail__locator"></span>
+        </div>
+        <div>
+          <p class="signal-kicker">CHRONOLOGICAL INDEX</p>
+          <h2 id="writing-title">Writing</h2>
+        </div>
+        <p>{String(posts.length).padStart(2, '0')} {posts.length === 1 ? 'NOTE' : 'NOTES'}</p>
+      </header>
+
+      <div class="ledger-list">
+        {posts.map((post, index) => (
+          <LedgerEntry post={post} readTime={estimateReadingTime(post.body ?? '')} index={index} />
+        ))}
+      </div>
+    </section>
+
+    <nav class="ledger-pathways" aria-label="继续浏览">
+      <a href="/archive/">
+        <span>02 / TIME</span>
+        <strong>Archive</strong>
+        <em>Browse the chronology.</em>
+      </a>
+      <a href="/tags/">
+        <span>03 / TOPICS</span>
+        <strong>Tags</strong>
+        <em>Browse the knowledge index.</em>
+      </a>
+    </nav>
+  </main>
+
+  <SignalFooter />
 </BaseLayout>

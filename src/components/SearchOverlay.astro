@@ -1,0 +1,46 @@
+---
+import { getCollection } from 'astro:content'
+
+const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+
+const searchIndex = posts.map(post => ({
+  id: post.id,
+  href: `/writing/${post.id}/`,
+  title: post.data.title,
+  description: post.data.description,
+  date: post.data.date.toISOString(),
+  category: post.data.category,
+  tags: post.data.tags ?? []
+}))
+
+const serializedIndex = JSON.stringify(searchIndex).replace(/</g, '\\u003c')
+---
+<dialog class="signal-search" data-search-dialog aria-labelledby="signal-search-title" style="background:var(--paper)">
+  <div class="signal-search__panel">
+    <header class="signal-search__header">
+      <div>
+        <p class="signal-kicker">INDEX / SEARCH</p>
+        <h2 id="signal-search-title">Find a note.</h2>
+      </div>
+      <button class="signal-text-button" type="button" data-search-close aria-label="关闭搜索">Close</button>
+    </header>
+
+    <label class="signal-search__field">
+      <span class="sr-only">搜索文章</span>
+      <span aria-hidden="true">⌕</span>
+      <input
+        type="text"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="Title, topic, phrase…"
+        data-search-input
+      />
+      <kbd>ESC</kbd>
+    </label>
+
+    <div class="signal-search__status" data-search-status aria-live="polite"></div>
+    <ol class="signal-search__results" data-search-results></ol>
+    <script type="application/json" data-search-index set:html={serializedIndex}></script>
+  </div>
+</dialog>

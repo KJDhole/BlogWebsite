@@ -1,0 +1,17 @@
+---
+import { SITE } from '../config/site.mjs'
+---
+<footer class="signal-footer">
+  <div class="signal-footer__register" aria-hidden="true"><span></span></div>
+  <p class="signal-footer__mark">GLENN / INDEX</p>
+  <nav class="signal-footer__links" aria-label="站点与外部链接">
+    <a href="/">Home</a>
+    <button class="signal-text-button" type="button" data-search-open>Search</button>
+    <button class="signal-text-button" type="button" data-theme-toggle aria-label="切换深浅主题">Theme</button>
+    <a href="/archive/">Archive</a>
+    <a href="/tags/">Tags</a>
+    <a href="/rss.xml">RSS</a>
+    <a href={SITE.x} rel="me noopener noreferrer">X</a>
+    <a href={SITE.github} rel="me noopener noreferrer">GitHub</a>
+  </nav>
+</footer>

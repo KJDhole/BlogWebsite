@@ -1,28 +1,44 @@
 ---
 import { getCollection } from 'astro:content'
-import SiteHeader from '../../components/SiteHeader.astro'
+import SignalFooter from '../../components/SignalFooter.astro'
 import BaseLayout from '../../layouts/BaseLayout.astro'
+import { summarizeTopics } from '../../lib/postIndex.mjs'
 import { slugifyTag } from '../../lib/slug.mjs'
 
-const posts = await getCollection('posts', ({ data }) => data.draft !== true)
-const counts = new Map()
-for (const post of posts) {
-  for (const tag of post.data.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1)
-}
-const tags = [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+
+const topics = summarizeTopics(posts.map(post => ({
+  id: post.id,
+  title: post.data.title,
+  description: post.data.description,
+  date: post.data.date,
+  category: post.data.category,
+  tags: post.data.tags ?? []
+})))
+
+const formatLatest = value => new Date(value).toISOString().slice(0, 10).replaceAll('-', '.')
 ---
-<BaseLayout title="Tags — Glenn" description="Glenn 博客的文章标签。">
-  <div class="page-shell inner-shell">
-    <SiteHeader className="inner-topbar" />
-    <main class="inner-page">
-      <header class="inner-page-header">
-        <p class="eyebrow">TOPICS</p>
-        <h1>Tags</h1>
-      </header>
-      <div class="tag-cloud">
-        {tags.map(([tag, count]) => <a href={`/tags/${slugifyTag(tag)}/`}><span>{tag}</span><small>{count}</small></a>)}
-      </div>
-    </main>
-    <footer class="inner-footer"><a href="/">← Home</a><a href="/archive/">Archive</a></footer>
-  </div>
+<BaseLayout title="Tags — Glenn" description="Glenn 博客的主题索引。">
+  <main class="topic-page">
+    <header class="topic-opening">
+      <p class="signal-kicker">GLENN / TOPIC INDEX</p>
+      <h1>Topics</h1>
+      <p>按真实文章标签建立的主题入口，不制造额外分类。</p>
+    </header>
+
+    <div class="topic-index" aria-label="主题索引">
+      {topics.map((topic, index) => (
+        <a class="topic-row" href={`/tags/${slugifyTag(topic.name)}/`}>
+          <span class="topic-seq" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+          <strong>{topic.name}</strong>
+          <span class="topic-count">{String(topic.count).padStart(2, '0')} {topic.count === 1 ? 'ENTRY' : 'ENTRIES'}</span>
+          <span class="topic-latest">LATEST / {formatLatest(topic.latestDate)}</span>
+          <span class="topic-arrow" aria-hidden="true">↗</span>
+        </a>
+      ))}
+    </div>
+  </main>
+
+  <SignalFooter />
 </BaseLayout>
