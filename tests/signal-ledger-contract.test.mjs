@@ -50,6 +50,25 @@ test('Signal Ledger has no top navigation bar; search/theme live in the document
   assert.match(baseLayout, /#171715/i)
 })
 
+test('final CSS architecture has only production layers and no dead header or critic residue', () => {
+  const baseLayout = read('src/layouts/BaseLayout.astro')
+  const styles = [
+    read('src/styles/global.css'),
+    read('src/styles/signal-ledger.css'),
+    read('src/styles/reading.css')
+  ].join('\n')
+
+  assert.equal(existsSync(new URL('../src/styles/critic-rounds.css', import.meta.url)), false)
+  assert.doesNotMatch(baseLayout, /critic-rounds\.css/)
+  assert.match(baseLayout, /global\.css/)
+  assert.match(baseLayout, /signal-ledger\.css/)
+  assert.match(baseLayout, /reading\.css/)
+  assert.doesNotMatch(styles, /\.signal-header|\.signal-brand|\.signal-nav|\.signal-menu|\.signal-theme/)
+  assert.doesNotMatch(styles, /linear-gradient|radial-gradient/)
+  assert.doesNotMatch(styles, /border-radius\s*:/)
+  assert.doesNotMatch(styles, /box-shadow\s*:/)
+})
+
 test('Signal Ledger keeps semantic discovery metadata and a visible keyboard focus contract', () => {
   const baseLayout = read('src/layouts/BaseLayout.astro')
   const signalCss = read('src/styles/signal-ledger.css')
