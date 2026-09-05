@@ -37,6 +37,8 @@ let filterStoryInterrupted = false
 let scrollStoryLayoutSettled = false
 let landingStartedAt = null
 let storyScrollFrame = 0
+let currentDropGeometry = null
+let currentEjectionPath = null
 
 const navPortal = createNavPortal(navPortalNode, {
   indicator: filterIndicator,
@@ -62,10 +64,18 @@ function hideFlight() {
   if (flightEchoTwo) flightEchoTwo.style.opacity = '0'
 }
 
-function getCurrentDropGeometry() {
-  const geometry = navPortal.measure()
-  if (!geometry) return null
-  return getDropGeometry(geometry, { mobile: mobileMedia.matches })
+function refreshFlightGeometry() {
+  const indicatorGeometry = navPortal.measure()
+  if (!indicatorGeometry) {
+    currentDropGeometry = null
+    currentEjectionPath = null
+    return
+  }
+
+  currentDropGeometry = getDropGeometry(indicatorGeometry, { mobile: mobileMedia.matches })
+  currentEjectionPath = buildEjectionPath(currentDropGeometry.portal, currentDropGeometry.dropStart, {
+    mobile: mobileMedia.matches
+  })
 }
 
 function paintEjectionEchoes(path, progress) {
@@ -110,7 +120,7 @@ function paintFlight(frameTime = performance.now()) {
     return
   }
 
-  const geometry = getCurrentDropGeometry()
+  const geometry = currentDropGeometry
   if (!geometry) {
     hideFlight()
     return
@@ -120,17 +130,14 @@ function paintFlight(frameTime = performance.now()) {
     landingStartedAt = null
     filterIndicator.style.opacity = '0'
 
-    if (currentStory.ejection.progress <= 0) {
+    if (currentStory.ejection.progress <= 0 || !currentEjectionPath) {
       hideFlight()
       return
     }
 
-    const path = buildEjectionPath(geometry.portal, geometry.dropStart, {
-      mobile: mobileMedia.matches
-    })
-    const point = sampleEjectionPath(path, currentStory.ejection.progress)
+    const point = sampleEjectionPath(currentEjectionPath, currentStory.ejection.progress)
     placeFlightDot(flightOrb, point, 1, 14, 14)
-    paintEjectionEchoes(path, currentStory.ejection.progress)
+    paintEjectionEchoes(currentEjectionPath, currentStory.ejection.progress)
     return
   }
 
@@ -201,6 +208,7 @@ function updateScrollStory() {
   if (currentStory.progress > 0.18) settleScrollStoryLayout()
   if (!currentStory.landingReady) landingStartedAt = null
 
+  refreshFlightGeometry()
   spaceScene?.setStoryState(currentStory)
   if (filterStoryInterrupted || reducedMotion.matches) {
     navPortal.setState({ opacity: 0, scale: 0, pulse: 0 })
@@ -365,7 +373,6 @@ function handleViewportChange() {
   if (qualityChanged) initializeSpaceScene()
   else spaceScene?.resize()
 
-  navPortal.measure()
   const active = document.querySelector('.filter-button.is-active')
   if (active) moveIndicator(active)
   updateScrollStory()
@@ -385,7 +392,6 @@ function animateFlight(frameTime) {
 renderArticles()
 requestAnimationFrame(() => {
   moveIndicator(document.querySelector('.filter-button.is-active'))
-  navPortal.measure()
   initializeSpaceScene()
   updateScrollStory()
   requestAnimationFrame(animateFlight)
