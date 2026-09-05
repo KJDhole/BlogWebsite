@@ -13,7 +13,12 @@ export function createBlackHolePortal({ position } = {}) {
   group.visible = false
 
   const coreGeometry = new THREE.SphereGeometry(0.25, 32, 24)
-  const coreMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 })
+  const coreMaterial = new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false
+  })
   const core = new THREE.Mesh(coreGeometry, coreMaterial)
 
   const ringGeometry = new THREE.TorusGeometry(0.34, 0.018, 12, 72)
@@ -60,6 +65,7 @@ export function createBlackHolePortal({ position } = {}) {
     const pulse = Math.min(1, Math.max(0, portalState.pulse ?? 0))
     group.visible = opacity > 0.002
     group.scale.setScalar(scale * (1 + pulse * 0.08))
+    coreMaterial.opacity = opacity
     ringMaterial.opacity = opacity * (0.48 + distortion * 0.32)
     ringTwoMaterial.opacity = opacity * (0.24 + distortion * 0.22)
     haloMaterial.opacity = opacity * (0.045 + distortion * 0.07)
