@@ -15,14 +15,24 @@ const tags = [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]))
   <div class="page-shell inner-shell">
     <SiteHeader className="inner-topbar" />
     <main class="inner-page">
-      <header class="inner-page-header">
-        <p class="eyebrow">TOPICS</p>
-        <h1>Tags</h1>
+      <header class="inner-page-header register-header">
+        <div>
+          <p class="eyebrow">INDEX / SUBJECTS</p>
+          <h1>Tags</h1>
+        </div>
+        <p class="register-summary">{tags.length} subjects across {posts.length} published {posts.length === 1 ? 'entry' : 'entries'}.</p>
       </header>
-      <div class="tag-cloud">
-        {tags.map(([tag, count]) => <a href={`/tags/${slugifyTag(tag)}/`}><span>{tag}</span><small>{count}</small></a>)}
+      <div class="taxonomy-index" aria-label="文章主题索引">
+        {tags.map(([tag, count], index) => (
+          <a href={`/tags/${slugifyTag(tag)}/`}>
+            <span class="taxonomy-number">{String(index + 1).padStart(2, '0')}</span>
+            <span class="taxonomy-name">{tag}</span>
+            <small>{count} {count === 1 ? 'entry' : 'entries'}</small>
+            <span class="taxonomy-arrow" aria-hidden="true">↗</span>
+          </a>
+        ))}
       </div>
     </main>
-    <footer class="inner-footer"><a href="/">← Home</a><a href="/archive/">Archive</a></footer>
+    <footer class="inner-footer"><a href="/">← Home</a><a href="/archive/">Archive</a><a href="/rss.xml">RSS</a></footer>
   </div>
 </BaseLayout>
