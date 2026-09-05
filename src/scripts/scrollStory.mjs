@@ -42,6 +42,13 @@ function lerp(start, end, amount) {
   return start + (end - start) * amount
 }
 
+export function getStoryScrollDistance({ heroHeight, mobile = false, maxScroll } = {}) {
+  const height = Math.max(0, Number.isFinite(heroHeight) ? heroHeight : 0)
+  const preferred = height * (mobile ? 0.92 : 0.96)
+  const available = Number.isFinite(maxScroll) ? Math.max(0, maxScroll) : preferred
+  return Math.max(1, Math.min(Math.max(preferred, 1), available))
+}
+
 function phaseFor(progress) {
   if (progress < STORY_LIMITS.stableEnd) return 'stable-orbit'
   if (progress < STORY_LIMITS.portalEnd) return 'portal-emerge'
