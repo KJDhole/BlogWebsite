@@ -1,16 +1,17 @@
 ---
 import BaseLayout from './BaseLayout.astro'
 import SiteHeader from '../components/SiteHeader.astro'
+import SignalFooter from '../components/SignalFooter.astro'
 import { SITE } from '../config/site.mjs'
 import { slugifyTag } from '../lib/slug.mjs'
 
 const { post, readTime, headings = [], previousPost = null, nextPost = null } = Astro.props
 const { title, description, date, updated, category, tags, cover, sourceUrl, sourceLabel } = post.data
-const dateLabel = date.toLocaleDateString('en-GB', {
-  year: 'numeric',
-  month: 'short',
-  day: '2-digit'
+const formatDate = value => value.toLocaleDateString('en-GB', {
+  year: 'numeric', month: 'short', day: '2-digit', timeZone: 'UTC'
 }).toUpperCase()
+const dateLabel = formatDate(date)
+const updatedLabel = updated ? formatDate(updated) : null
 const canonical = new URL(Astro.url.pathname, SITE.url).href
 const tocItems = headings.filter(heading => heading.depth === 2 || heading.depth === 3)
 const articleSchema = {
@@ -28,10 +29,7 @@ const articleSchema = {
     url: SITE.url,
     sameAs: [SITE.github, SITE.x]
   },
-  publisher: {
-    '@type': 'Person',
-    name: SITE.author
-  },
+  publisher: { '@type': 'Person', name: SITE.author },
   keywords: tags.join(', ')
 }
 ---
@@ -48,19 +46,15 @@ const articleSchema = {
   jsonLd={articleSchema}
 >
   <div class="reading-progress" aria-hidden="true"><span></span></div>
-  <div class="article-page-shell">
-    <SiteHeader className="article-topbar" />
+  <SiteHeader active="article" />
 
-    <main class="article-page">
-      <header class="article-header">
-        <p class="eyebrow">{category}</p>
+  <main class="signal-article">
+    <header class="article-opening">
+      <div class="article-opening__register" aria-hidden="true"><span>NOTE</span><i></i></div>
+      <div class="article-opening__main">
+        <p class="signal-kicker">{category} / WRITING</p>
         <h1>{title}</h1>
         <p class="article-dek">{description}</p>
-        <div class="article-page-meta">
-          <time datetime={date.toISOString()}>{dateLabel}</time>
-          <span aria-hidden="true">·</span>
-          <span>{readTime} MIN READ</span>
-        </div>
         <nav class="article-page-tags" aria-label="文章标签">
           {tags.map((tag, index) => (
             <>
@@ -69,52 +63,70 @@ const articleSchema = {
             </>
           ))}
         </nav>
-      </header>
+      </div>
+    </header>
 
-      {cover && <img class="article-cover media-wide" src={cover} alt="" loading="eager" decoding="async" />}
+    {cover && (
+      <figure class="article-cover media-wide">
+        <img src={cover} alt="" loading="eager" decoding="async" />
+      </figure>
+    )}
+
+    {tocItems.length > 0 && (
+      <details class="article-toc article-toc-mobile">
+        <summary>Contents <span>{tocItems.length}</span></summary>
+        <ol>
+          {tocItems.map(heading => (
+            <li class={`toc-depth-${heading.depth}`}><a href={`#${heading.slug}`}>{heading.text}</a></li>
+          ))}
+        </ol>
+      </details>
+    )}
+
+    <div class={`article-frame ${tocItems.length === 0 ? 'without-toc' : ''}`}>
+      <aside class="article-meta-rail" aria-label="文章信息">
+        <div class="article-meta-rail__signal" aria-hidden="true"><span></span></div>
+        <dl>
+          <div><dt>Published</dt><dd><time datetime={date.toISOString()}>{dateLabel}</time></dd></div>
+          <div><dt>Reading</dt><dd>{readTime} MIN</dd></div>
+          {updatedLabel && <div><dt>Updated</dt><dd><time datetime={updated.toISOString()}>{updatedLabel}</time></dd></div>}
+          {sourceUrl && <div><dt>灵感来源</dt><dd><a href={sourceUrl} target="_blank" rel="noreferrer">{sourceLabel ?? 'Source ↗'}</a></dd></div>}
+        </dl>
+      </aside>
+
+      <article class="article-body"><slot /></article>
 
       {tocItems.length > 0 && (
-        <details class="article-toc article-toc-mobile">
-          <summary>目录 <span>{tocItems.length}</span></summary>
+        <aside class="article-toc article-context-rail" aria-label="文章目录">
+          <p>CONTENTS</p>
           <ol>
             {tocItems.map(heading => (
               <li class={`toc-depth-${heading.depth}`}><a href={`#${heading.slug}`}>{heading.text}</a></li>
             ))}
           </ol>
-        </details>
+        </aside>
       )}
+    </div>
 
-      <div class={`article-reading-grid ${tocItems.length === 0 ? 'without-toc' : ''}`}>
-        <article class="article-body"><slot /></article>
-        {tocItems.length > 0 && (
-          <aside class="article-toc article-toc-desktop" aria-label="文章目录">
-            <p>CONTENTS</p>
-            <ol>
-              {tocItems.map(heading => (
-                <li class={`toc-depth-${heading.depth}`}><a href={`#${heading.slug}`}>{heading.text}</a></li>
-              ))}
-            </ol>
-          </aside>
-        )}
+    <footer class="article-end">
+      {(previousPost || nextPost) && (
+        <nav class="article-pagination" aria-label="文章翻页">
+          {previousPost ? (
+            <a href={`/writing/${previousPost.id}/`} rel="prev"><span>PREVIOUS</span><strong>{previousPost.data.title}</strong></a>
+          ) : <span></span>}
+          {nextPost ? (
+            <a href={`/writing/${nextPost.id}/`} rel="next"><span>NEXT</span><strong>{nextPost.data.title}</strong></a>
+          ) : <span></span>}
+        </nav>
+      )}
+      <div class="article-end-links">
+        <a href="/">← Back to home</a>
+        <a href="/archive/">Archive</a>
       </div>
+    </footer>
+  </main>
 
-      <footer class="article-end">
-        {sourceUrl && (
-          <p class="article-source">灵感来源：<a href={sourceUrl} target="_blank" rel="noreferrer">{sourceLabel ?? sourceUrl}</a></p>
-        )}
-        {(previousPost || nextPost) && (
-          <nav class="article-pagination" aria-label="文章翻页">
-            {previousPost ? <a href={`/writing/${previousPost.id}/`}><span>PREVIOUS</span>{previousPost.data.title}</a> : <span></span>}
-            {nextPost ? <a href={`/writing/${nextPost.id}/`}><span>NEXT</span>{nextPost.data.title}</a> : <span></span>}
-          </nav>
-        )}
-        <div class="article-end-links">
-          <a class="article-back" href="/">← Back to home</a>
-          <a class="article-back" href="/archive/">Archive</a>
-        </div>
-      </footer>
-    </main>
-  </div>
+  <SignalFooter />
 
   <script>
     import '../scripts/articleEnhance.js'
