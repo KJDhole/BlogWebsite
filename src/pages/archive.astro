@@ -12,15 +12,22 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
   <div class="page-shell inner-shell">
     <SiteHeader className="inner-topbar" />
     <main class="inner-page">
-      <header class="inner-page-header">
-        <p class="eyebrow">ALL WRITING</p>
-        <h1>Archive</h1>
-        <p>{posts.length} {posts.length === 1 ? 'article' : 'articles'}</p>
+      <header class="inner-page-header register-header">
+        <div>
+          <p class="eyebrow">WRITING / COMPLETE REGISTER</p>
+          <h1>Archive</h1>
+        </div>
+        <p class="register-summary">{posts.length} {posts.length === 1 ? 'published entry' : 'published entries'} · chronological</p>
       </header>
-      <div class="article-list">
+      <div class="index-register-head inner-register-head" aria-hidden="true">
+        <span>DATE</span>
+        <span>ENTRY</span>
+        <span>FIELD / READ</span>
+      </div>
+      <div class="article-list publication-register">
         {posts.map(post => <ArticleRow post={post} readTime={estimateReadingTime(post.body ?? '')} />)}
       </div>
     </main>
-    <footer class="inner-footer"><a href="/">← Home</a><a href="/rss.xml">RSS</a></footer>
+    <footer class="inner-footer"><a href="/">← Home</a><a href="/tags/">Tags</a><a href="/rss.xml">RSS</a></footer>
   </div>
 </BaseLayout>
