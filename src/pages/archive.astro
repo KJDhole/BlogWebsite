@@ -1,6 +1,5 @@
 ---
 import { getCollection } from 'astro:content'
-import SiteHeader from '../components/SiteHeader.astro'
 import SignalFooter from '../components/SignalFooter.astro'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import { groupPostsByYearMonth } from '../lib/postIndex.mjs'
@@ -23,11 +22,9 @@ const monthName = month => new Intl.DateTimeFormat('en', { month: 'short', timeZ
   .toUpperCase()
 ---
 <BaseLayout title="Archive — Glenn" description="Glenn 的全部公开文章归档。">
-  <SiteHeader active="archive" />
-
   <main class="archive-page">
     <header class="archive-opening">
-      <p class="signal-kicker">CHRONOLOGY / ALL WRITING</p>
+      <p class="signal-kicker">GLENN / CHRONOLOGY</p>
       <h1>Archive</h1>
       <p>{posts.length} {posts.length === 1 ? 'entry' : 'entries'}，按真实发布时间排列。</p>
     </header>

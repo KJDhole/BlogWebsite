@@ -2,6 +2,7 @@
 import '../styles/global.css'
 import '../styles/signal-ledger.css'
 import '../styles/reading.css'
+import SearchOverlay from '../components/SearchOverlay.astro'
 import { SITE } from '../config/site.mjs'
 
 const defaultCanonical = new URL(Astro.url.pathname, SITE.url).href
@@ -78,6 +79,7 @@ const umamiScriptUrl = import.meta.env.PUBLIC_UMAMI_SCRIPT_URL || 'https://cloud
   </head>
   <body>
     <slot />
+    <SearchOverlay />
     <script>
       import '../scripts/siteShell.js'
     </script>

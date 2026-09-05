@@ -2,7 +2,6 @@
 import { getCollection } from 'astro:content'
 import LedgerEntry from '../components/LedgerEntry.astro'
 import SignalFooter from '../components/SignalFooter.astro'
-import SiteHeader from '../components/SiteHeader.astro'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import { SITE } from '../config/site.mjs'
 import { estimateReadingTime } from '../lib/readingTime.mjs'
@@ -14,8 +13,6 @@ const activeTopics = [...new Set(posts.flatMap(post => [post.data.category, ...(
   .filter(Boolean)
 ---
 <BaseLayout title={SITE.title} description={SITE.description}>
-  <SiteHeader active="home" />
-
   <main class="signal-index-shell" data-signal-index>
     <section class="ledger-opening" aria-labelledby="ledger-opening-title">
       <div class="signal-rail signal-rail--opening" aria-hidden="true">
@@ -29,9 +26,11 @@ const activeTopics = [...new Set(posts.flatMap(post => [post.data.category, ...(
         <p>AI、Agent、Product、Development、Systems，以及长期实验中留下的观察、判断和复盘。</p>
       </div>
 
-      <aside class="ledger-opening__scope" aria-label="当前内容主题">
+      <aside class="ledger-opening__scope" aria-label="当前内容主题与工具">
         <span>INDEXED TOPICS</span>
         <p>{activeTopics.length ? activeTopics.join(' / ') : 'Writing'}</p>
+        <p><button class="signal-text-button" type="button" data-search-open>Search / ⌘K</button></p>
+        <p><button class="signal-text-button" type="button" data-theme-toggle>Theme / ◐</button></p>
       </aside>
     </section>
 
