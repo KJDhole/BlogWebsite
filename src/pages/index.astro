@@ -16,8 +16,14 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
   <span class="flight-orb" aria-hidden="true"></span>
 
   <div class="page-shell">
-    <header class="site-topbar">
+    <header class="site-topbar folio-topbar">
       <a class="brand" href="#top" aria-label="返回首页">GLENN<span class="brand-dot" aria-hidden="true"></span></a>
+      <nav class="folio-nav" aria-label="主要导航">
+        <a href="#writing">Writing</a>
+        <a href="/archive/">Archive</a>
+        <a href="/tags/">Tags</a>
+        <a href="/rss.xml">RSS</a>
+      </nav>
       <button id="theme-toggle" class="icon-button theme-toggle" type="button" aria-label="切换深浅主题" title="切换主题">
         <span class="theme-icon theme-icon-sun" aria-hidden="true">☼</span>
         <span class="theme-icon theme-icon-moon" aria-hidden="true">◐</span>
@@ -26,10 +32,11 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
 
     <main id="top">
       <section class="hero reveal-block" aria-labelledby="hero-title">
-        <div class="hero-copy">
-          <p class="eyebrow">STUDY IN PUBLIC · 2026</p>
-          <h1 id="hero-title">Hi, I’m Glenn.</h1>
-          <p class="hero-intro">Study in public.</p>
+        <div class="hero-copy folio-intro">
+          <p class="eyebrow">GLENN / RESEARCH FOLIO / 2026</p>
+          <h1 id="hero-title">Build things.<br />Study the systems behind them.</h1>
+          <p class="hero-intro"><span class="folio-principles">Build · Analyze · Think</span></p>
+          <p class="folio-note">关于 AI Agent、产品、工程与判断。记录我真正做过、拆过、验证过的东西。</p>
           <div class="social-row" aria-label="社交链接">
             <a href={SITE.x} target="_blank" rel="noreferrer" aria-label="X / Twitter" class="social-link">X ↗</a>
             <a href={SITE.github} target="_blank" rel="noreferrer" aria-label="GitHub" class="social-link">GitHub ↗</a>
@@ -42,11 +49,19 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
         </div>
       </section>
 
-      <section class="content-section" aria-label="文章">
-        <div class="controls reveal-block">
-          <label class="search-box" for="article-search">
-            <span class="search-icon" aria-hidden="true">⌕</span>
-            <input id="article-search" type="search" autocomplete="off" placeholder="Search writing…" aria-label="搜索文章" />
+      <section id="writing" class="content-section publication-index" aria-label="文章索引">
+        <header class="index-heading reveal-block">
+          <div>
+            <p class="eyebrow">WRITING / CHRONOLOGICAL INDEX</p>
+            <h2>Notes, systems,<br />and working ideas.</h2>
+          </div>
+          <p class="index-description">按时间整理的公开笔记。搜索标题、主题或标签，或按领域筛选。</p>
+        </header>
+
+        <div class="index-tools controls reveal-block">
+          <label class="index-search" for="article-search">
+            <span class="index-search-label">SEARCH</span>
+            <input id="article-search" type="search" autocomplete="off" placeholder="Title, topic, tag…" aria-label="搜索文章" />
             <kbd>⌘ K</kbd>
           </label>
 
@@ -63,19 +78,18 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
           </div>
         </div>
 
-        <div class="section-heading reveal-block">
-          <div>
-            <p class="eyebrow">LATEST WRITING</p>
-            <h2>Writing</h2>
-          </div>
-          <p id="result-count" class="result-count" aria-live="polite"></p>
+        <div class="index-register-head reveal-block" aria-hidden="true">
+          <span>DATE</span>
+          <span>ENTRY</span>
+          <span>FIELD / READ</span>
         </div>
+        <p id="result-count" class="result-count" aria-live="polite"></p>
 
-        <div id="article-list" class="article-list" aria-live="polite">
+        <div id="article-list" class="article-list publication-register" aria-live="polite">
           {posts.map(post => <ArticleRow post={post} readTime={estimateReadingTime(post.body ?? '')} />)}
         </div>
         <div id="empty-state" class="empty-state" hidden>
-          <p>No matching articles.</p>
+          <p>No matching entries.</p>
           <button id="clear-filters" type="button">Clear filters</button>
         </div>
       </section>

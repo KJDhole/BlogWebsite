@@ -12,6 +12,27 @@ test('writing index is editorial-first and does not force synthetic thumbnails o
   assert.doesNotMatch(row, /class="tag"/)
 })
 
+test('homepage reads as a research folio rather than a product template', async () => {
+  const page = await read('../src/pages/index.astro')
+  assert.match(page, /folio-intro/)
+  assert.match(page, /folio-nav/)
+  assert.match(page, /index-tools/)
+  assert.match(page, /publication-index/)
+  assert.match(page, /Build · Analyze · Think/)
+  assert.doesNotMatch(page, /class="search-box"/)
+  assert.doesNotMatch(page, /class="controls reveal-block"/)
+})
+
+test('archive and tags share the same quiet publication register language', async () => {
+  const archive = await read('../src/pages/archive.astro')
+  const tags = await read('../src/pages/tags/index.astro')
+  const tagPage = await read('../src/pages/tags/[tag].astro')
+  assert.match(archive, /publication-register/)
+  assert.match(tags, /taxonomy-index/)
+  assert.match(tagPage, /publication-register/)
+  assert.doesNotMatch(tags, /tag-cloud/)
+})
+
 test('article layout provides quiet desktop and mobile navigation without replacing the reading column', async () => {
   const layout = await read('../src/layouts/ArticleLayout.astro')
   assert.match(layout, /reading-progress/)
@@ -60,6 +81,8 @@ test('delivery stylesheet is consolidated and contains no critic-round override 
   assert.doesNotMatch(base, /critic-r1\.css|identity-r2\.css/)
   assert.match(editorial, /--article-toc-width:/)
   assert.match(editorial, /\.article-body h2::before/)
+  assert.match(editorial, /\.folio-intro/)
+  assert.match(editorial, /\.taxonomy-index/)
   await assert.rejects(read('../src/styles/critic-r1.css'), /ENOENT/)
   await assert.rejects(read('../src/styles/identity-r2.css'), /ENOENT/)
 })
