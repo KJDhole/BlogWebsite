@@ -1,5 +1,6 @@
 import { chromium } from 'playwright'
 import { mkdir, writeFile } from 'node:fs/promises'
+import { getStoryScrollDistance } from '../src/scripts/scrollStory.mjs'
 
 const BASE_URL = 'http://127.0.0.1:4321/'
 const frames = [0.05, 0.24, 0.38, 0.52, 0.62, 0.71, 0.80]
@@ -19,28 +20,33 @@ async function inspectViewport(browser, { name, viewport, reducedMotion = false 
   const initial = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
     innerWidth: window.innerWidth,
-    fallback: document.querySelector('[data-space-scene]')?.classList.contains('is-fallback') ?? true
+    fallback: document.querySelector('[data-space-scene]')?.classList.contains('is-fallback') ?? true,
+    heroHeight: document.querySelector('.hero')?.offsetHeight ?? 0,
+    maxScroll: Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
   }))
   assert(initial.scrollWidth <= initial.innerWidth + 1, `${name}: horizontal overflow ${initial.scrollWidth} > ${initial.innerWidth}`)
   if (!reducedMotion) assert(!initial.fallback, `${name}: WebGL unexpectedly fell back`)
 
-  const report = { name, viewport, reducedMotion, frames: [] }
+  const mobile = viewport.width <= 760
+  const storyDistance = getStoryScrollDistance({
+    heroHeight: initial.heroHeight,
+    mobile,
+    maxScroll: initial.maxScroll
+  })
+  const report = { name, viewport, reducedMotion, storyDistance, frames: [] }
 
   for (const progress of frames) {
-    await page.evaluate(({ progress, mobile }) => {
+    await page.evaluate(y => {
       document.documentElement.style.scrollBehavior = 'auto'
-      const hero = document.querySelector('.hero')
-      const distance = Math.max(hero.offsetHeight * (mobile ? 0.92 : 0.96), 1)
-      window.scrollTo(0, distance * progress)
-    }, { progress, mobile: viewport.width <= 760 })
+      window.scrollTo(0, y)
+    }, storyDistance * progress)
 
     await page.waitForTimeout(progress >= 0.80 ? 1100 : 260)
     const frameName = `${name}-p${String(Math.round(progress * 100)).padStart(2, '0')}.png`
     await page.screenshot({ path: `visual-qa/${frameName}`, fullPage: false })
 
-    const metrics = await page.evaluate(({ requestedProgress, mobile }) => {
-      const heroNode = document.querySelector('.hero')
-      const hero = heroNode?.getBoundingClientRect()
+    const metrics = await page.evaluate(({ requestedProgress, storyDistance }) => {
+      const hero = document.querySelector('.hero')?.getBoundingClientRect()
       const scene = document.querySelector('[data-space-scene]')?.getBoundingClientRect()
       const all = document.querySelector('[data-category="All"]')?.getBoundingClientRect()
       const list = document.querySelector('.filter-list')?.getBoundingClientRect()
@@ -48,16 +54,11 @@ async function inspectViewport(browser, { name, viewport, reducedMotion = false 
       const portalStyle = getComputedStyle(document.querySelector('.nav-portal'))
       const orbStyle = getComputedStyle(document.querySelector('.flight-orb'))
       const indicatorStyle = getComputedStyle(document.querySelector('.filter-indicator'))
-      const heroHeight = heroNode?.offsetHeight ?? 0
-      const distance = Math.max(heroHeight * (mobile ? 0.92 : 0.96), 1)
-      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
       return {
         requestedProgress,
-        actualProgress: window.scrollY / distance,
+        actualProgress: window.scrollY / storyDistance,
         scrollY: window.scrollY,
-        maxScroll,
-        heroHeight,
-        distance,
+        maxScroll: Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
         hero: hero && { top: hero.top, bottom: hero.bottom },
         scene: scene && { top: scene.top, bottom: scene.bottom },
         allCenterX: all ? all.left + all.width / 2 : null,
@@ -70,12 +71,13 @@ async function inspectViewport(browser, { name, viewport, reducedMotion = false 
         scrollWidth: document.documentElement.scrollWidth,
         innerWidth: window.innerWidth
       }
-    }, { requestedProgress: progress, mobile: viewport.width <= 760 })
+    }, { requestedProgress: progress, storyDistance })
 
     console.log('VISUAL_QA_FRAME', JSON.stringify({ name, ...metrics }))
     report.frames.push({ progress, ...metrics })
     await writeFile('visual-qa/report-partial.json', JSON.stringify(report, null, 2))
 
+    assert(Math.abs(metrics.actualProgress - progress) < 0.01, `${name} p=${progress}: requested story progress was not reached`)
     assert(metrics.scrollWidth <= metrics.innerWidth + 1, `${name} p=${progress}: horizontal overflow`)
     if (metrics.hero && metrics.scene) {
       assert(metrics.scene.bottom <= metrics.hero.bottom + 1, `${name} p=${progress}: space scene crosses hero bottom`)
