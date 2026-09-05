@@ -31,8 +31,8 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
           <h1 id="hero-title">Hi, I’m Glenn.</h1>
           <p class="hero-intro">Study in public.</p>
           <div class="social-row" aria-label="社交链接">
-            <a href={SITE.x} target="_blank" rel="noreferrer" aria-label="X / Twitter" class="social-link">X</a>
-            <a href={SITE.github} target="_blank" rel="noreferrer" aria-label="GitHub" class="social-link">GH</a>
+            <a href={SITE.x} target="_blank" rel="noreferrer" aria-label="X / Twitter" class="social-link">X ↗</a>
+            <a href={SITE.github} target="_blank" rel="noreferrer" aria-label="GitHub" class="social-link">GitHub ↗</a>
           </div>
         </div>
 
@@ -46,7 +46,7 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
         <div class="controls reveal-block">
           <label class="search-box" for="article-search">
             <span class="search-icon" aria-hidden="true">⌕</span>
-            <input id="article-search" type="search" autocomplete="off" placeholder="Search articles…" aria-label="搜索文章" />
+            <input id="article-search" type="search" autocomplete="off" placeholder="Search writing…" aria-label="搜索文章" />
             <kbd>⌘ K</kbd>
           </label>
 
@@ -66,7 +66,7 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
         <div class="section-heading reveal-block">
           <div>
             <p class="eyebrow">LATEST WRITING</p>
-            <h2>Articles</h2>
+            <h2>Writing</h2>
           </div>
           <p id="result-count" class="result-count" aria-live="polite"></p>
         </div>
