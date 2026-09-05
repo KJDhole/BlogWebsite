@@ -18,22 +18,25 @@ function collectSourceText(directory) {
     .join('\n')
 }
 
-test('Signal Ledger shared shell exposes publication navigation, command search and theme persistence', () => {
-  const headerSource = read('src/components/SiteHeader.astro')
+test('Signal Ledger has no top navigation bar; search/theme live in the document system', () => {
   const searchSource = read('src/components/SearchOverlay.astro')
   const footerSource = read('src/components/SignalFooter.astro')
   const siteShellSource = read('src/scripts/siteShell.js')
   const signalCss = read('src/styles/signal-ledger.css')
   const baseLayout = read('src/layouts/BaseLayout.astro')
+  const productionSource = collectSourceText('src')
 
-  assert.match(headerSource, /GLENN/)
-  assert.match(headerSource, /data-search-open/)
-  assert.match(headerSource, /Writing/)
-  assert.match(headerSource, /Archive/)
-  assert.match(headerSource, /Tags/)
+  assert.equal(existsSync(new URL('../src/components/SiteHeader.astro', import.meta.url)), false)
+  assert.doesNotMatch(productionSource, /SiteHeader|site-topbar|signal-header|signal-nav--desktop|signal-nav--mobile/)
+  assert.match(baseLayout, /SearchOverlay/)
+  assert.match(baseLayout, /<SearchOverlay/)
   assert.match(searchSource, /<dialog/)
   assert.match(searchSource, /data-search-index/)
   assert.match(searchSource, /data-search-results/)
+  assert.doesNotMatch(searchSource, /type="search"/)
+  assert.match(footerSource, /GLENN/)
+  assert.match(footerSource, /data-search-open/)
+  assert.match(footerSource, /data-theme-toggle/)
   assert.match(footerSource, /rss\.xml/i)
   assert.match(footerSource, /GitHub/)
   assert.match(footerSource, /X/)
