@@ -8,6 +8,7 @@ import {
   sampleEjectionPath
 } from '../src/scripts/scrollStory.mjs'
 import { getIndicatorGeometry, getDropGeometry } from '../src/scripts/navPortal.mjs'
+import { getAbsorptionPosition } from '../src/scripts/solarSystem3d.mjs'
 
 test('scroll story keeps the approved phase order', () => {
   const samples = [0.05, 0.24, 0.38, 0.52, 0.62, 0.71, 0.84]
@@ -28,6 +29,33 @@ test('story scroll distance caps at available page scroll so late phases stay re
   assert.equal(getStoryScrollDistance({ heroHeight: 577, mobile: false, maxScroll: 313 }), 313)
   assert.equal(getStoryScrollDistance({ heroHeight: 700, mobile: true, maxScroll: 400 }), 400)
   assert.equal(getStoryScrollDistance({ heroHeight: 700, mobile: true, maxScroll: 900 }), 644)
+})
+
+test('absorption path starts exactly at the live orbit position and ends at the portal', () => {
+  const start = { x: -1.1, y: 0.28, z: 1.84 }
+  const portal = { x: 2.15, y: 0.18, z: 0.55 }
+  assert.deepEqual(getAbsorptionPosition(start, portal, 0, 5.5), start)
+  const end = getAbsorptionPosition(start, portal, 1, 5.5)
+  assert.ok(Math.abs(end.x - portal.x) < 1e-9)
+  assert.ok(Math.abs(end.y - portal.y) < 1e-9)
+  assert.ok(Math.abs(end.z - portal.z) < 1e-9)
+})
+
+test('absorption path curves instead of teleporting or moving on a straight line', () => {
+  const start = { x: -1.1, y: 0.28, z: 1.84 }
+  const portal = { x: 2.15, y: 0.18, z: 0.55 }
+  const middle = getAbsorptionPosition(start, portal, 0.5, 5.5)
+  const linearMiddle = {
+    x: (start.x + portal.x) / 2,
+    y: (start.y + portal.y) / 2,
+    z: (start.z + portal.z) / 2
+  }
+  const curvature = Math.hypot(
+    middle.x - linearMiddle.x,
+    middle.y - linearMiddle.y,
+    middle.z - linearMiddle.z
+  )
+  assert.ok(curvature > 0.05)
 })
 
 test('absorption finishes before ejection begins', () => {
