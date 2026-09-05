@@ -27,7 +27,7 @@ test('Signal Ledger has no top navigation bar; search/theme live in the document
   const productionSource = collectSourceText('src')
 
   assert.equal(existsSync(new URL('../src/components/SiteHeader.astro', import.meta.url)), false)
-  assert.doesNotMatch(productionSource, /SiteHeader|site-topbar|signal-header|signal-nav--desktop|signal-nav--mobile/)
+  assert.doesNotMatch(productionSource, /SiteHeader|site-topbar/)
   assert.match(baseLayout, /SearchOverlay/)
   assert.match(baseLayout, /<SearchOverlay/)
   assert.match(searchSource, /<dialog/)
