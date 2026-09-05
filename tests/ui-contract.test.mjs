@@ -4,9 +4,12 @@ import { readFile } from 'node:fs/promises'
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8')
 
-test('homepage is a Signal Ledger index rather than a landing-page hero', async () => {
+test('homepage is a Signal Ledger index rather than a landing-page hero or top-nav shell', async () => {
   const page = await read('../src/pages/index.astro')
-  assert.match(page, /<SiteHeader/)
+  assert.doesNotMatch(page, /SiteHeader|site-topbar/)
+  assert.match(page, /GLENN \/ WORKING NOTES/)
+  assert.match(page, /data-search-open/)
+  assert.match(page, /data-theme-toggle/)
   assert.match(page, /id="writing"/)
   assert.match(page, /<LedgerEntry/)
   assert.match(page, /<SignalFooter/)
