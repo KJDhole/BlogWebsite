@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import {
   STORY_LIMITS,
   getScrollStoryState,
+  getStoryScrollDistance,
   buildEjectionPath,
   sampleEjectionPath
 } from '../src/scripts/scrollStory.mjs'
@@ -20,6 +21,13 @@ test('scroll story keeps the approved phase order', () => {
     'eject',
     'landing'
   ])
+})
+
+test('story scroll distance caps at available page scroll so late phases stay reachable', () => {
+  assert.equal(getStoryScrollDistance({ heroHeight: 577, mobile: false, maxScroll: 1200 }), 553.92)
+  assert.equal(getStoryScrollDistance({ heroHeight: 577, mobile: false, maxScroll: 313 }), 313)
+  assert.equal(getStoryScrollDistance({ heroHeight: 700, mobile: true, maxScroll: 400 }), 400)
+  assert.equal(getStoryScrollDistance({ heroHeight: 700, mobile: true, maxScroll: 900 }), 644)
 })
 
 test('absorption finishes before ejection begins', () => {
