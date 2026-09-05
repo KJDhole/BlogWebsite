@@ -86,3 +86,19 @@ test('homepage uses LedgerEntry and the retired Orbit runtime is absent from pro
     assert.equal(existsSync(new URL(`../${path}`, import.meta.url)), false, `${path} should be retired`)
   }
 })
+
+test('archive is a chronological Signal Ledger grouped by real year and month', () => {
+  const archiveSource = read('src/pages/archive.astro')
+  const signalCss = read('src/styles/signal-ledger.css')
+
+  assert.match(archiveSource, /groupPostsByYearMonth/)
+  assert.match(archiveSource, /archive-ledger/)
+  assert.match(archiveSource, /archive-year/)
+  assert.match(archiveSource, /archive-month/)
+  assert.match(archiveSource, /archive-entry/)
+  assert.match(archiveSource, /<SignalFooter/)
+  assert.doesNotMatch(archiveSource, /<ArticleRow/)
+  assert.match(signalCss, /\.archive-ledger/)
+  assert.match(signalCss, /\.archive-year/)
+  assert.match(signalCss, /max-width:\s*760px/)
+})
