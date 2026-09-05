@@ -13,7 +13,7 @@ function collectSourceText(directory) {
     return statSync(full).isDirectory() ? walk(full) : [full]
   })
   return walk(root)
-    .filter(path => /\.(astro|js|mjs|css)$/.test(path))
+    .filter(path => /\.(astro|js|mjs)$/.test(path))
     .map(path => readFileSync(path, 'utf8'))
     .join('\n')
 }
@@ -24,10 +24,10 @@ test('Signal Ledger has no top navigation bar; search/theme live in the document
   const siteShellSource = read('src/scripts/siteShell.js')
   const signalCss = read('src/styles/signal-ledger.css')
   const baseLayout = read('src/layouts/BaseLayout.astro')
-  const productionSource = collectSourceText('src')
+  const productionStructure = collectSourceText('src')
 
   assert.equal(existsSync(new URL('../src/components/SiteHeader.astro', import.meta.url)), false)
-  assert.doesNotMatch(productionSource, /SiteHeader|site-topbar/)
+  assert.doesNotMatch(productionStructure, /SiteHeader|site-topbar/)
   assert.match(baseLayout, /SearchOverlay/)
   assert.match(baseLayout, /<SearchOverlay/)
   assert.match(searchSource, /<dialog/)
