@@ -4,7 +4,8 @@ const fixturePath = new URL('../tests/fixtures/ai-design-99-workflow.md', import
 const outputPath = new URL('../src/content/posts/__qa-ai-design-99.md', import.meta.url)
 
 const source = await readFile(fixturePath, 'utf8')
-const converted = source.replace(
+const withoutDuplicateDocumentTitle = source.replace(/^#\s+[^\n]+\r?\n+/, '')
+const converted = withoutDuplicateDocumentTitle.replace(
   /^\[image\]\((https?:\/\/[^)]+)\)$/gm,
   '![Article figure]($1)'
 )
