@@ -102,3 +102,25 @@ test('archive is a chronological Signal Ledger grouped by real year and month', 
   assert.match(signalCss, /\.archive-year/)
   assert.match(signalCss, /max-width:\s*760px/)
 })
+
+test('tags are a topic index and tag detail reuses compact LedgerEntry rows', () => {
+  const tagsIndexSource = read('src/pages/tags/index.astro')
+  const tagDetailSource = read('src/pages/tags/[tag].astro')
+  const signalCss = read('src/styles/signal-ledger.css')
+
+  assert.match(tagsIndexSource, /summarizeTopics/)
+  assert.match(tagsIndexSource, /topic-index/)
+  assert.match(tagsIndexSource, /topic-row/)
+  assert.match(tagsIndexSource, /topic-count/)
+  assert.match(tagsIndexSource, /topic-latest/)
+  assert.match(tagsIndexSource, /<SignalFooter/)
+  assert.doesNotMatch(tagsIndexSource, /pill|chip|badge/i)
+
+  assert.match(tagDetailSource, /LedgerEntry/)
+  assert.match(tagDetailSource, /compact=\{true\}/)
+  assert.match(tagDetailSource, /<SignalFooter/)
+  assert.doesNotMatch(tagDetailSource, /<ArticleRow/)
+
+  assert.match(signalCss, /\.topic-index/)
+  assert.match(signalCss, /\.topic-row/)
+})
