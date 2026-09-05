@@ -1,4 +1,4 @@
-name: Design Baseline
+name: Deliver QA
 
 on:
   pull_request:
@@ -8,15 +8,19 @@ permissions:
   contents: read
 
 jobs:
-  capture:
+  browser-qa:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
-      - run: npm run build
+      - name: Install dependencies
+        run: npm install
+      - name: Unit and contract tests
+        run: npm test
+      - name: Build
+        run: npm run build
       - name: Install Playwright
         run: |
           npm install --no-save playwright@1.55.0
@@ -25,9 +29,10 @@ jobs:
         run: |
           npm run preview -- --host 127.0.0.1 --port 4321 >/tmp/blog-preview.log 2>&1 &
           curl --retry 30 --retry-all-errors --retry-delay 1 http://127.0.0.1:4321/ -o /dev/null
-      - run: node scripts/design-baseline.mjs
+      - name: Run final browser QA matrix
+        run: node scripts/deliver-qa.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: design-baseline
-          path: design-baseline/
+          name: deliver-qa
+          path: deliver-qa/
