@@ -41,21 +41,28 @@ test('absorption path starts exactly at the live orbit position and ends at the 
   assert.ok(Math.abs(end.z - portal.z) < 1e-9)
 })
 
-test('absorption path curves instead of teleporting or moving on a straight line', () => {
+test('absorption path curves away from the straight start-to-portal segment', () => {
   const start = { x: -1.1, y: 0.28, z: 1.84 }
   const portal = { x: 2.15, y: 0.18, z: 0.55 }
   const middle = getAbsorptionPosition(start, portal, 0.5, 5.5)
-  const linearMiddle = {
-    x: (start.x + portal.x) / 2,
-    y: (start.y + portal.y) / 2,
-    z: (start.z + portal.z) / 2
+  const vx = portal.x - start.x
+  const vy = portal.y - start.y
+  const vz = portal.z - start.z
+  const wx = middle.x - start.x
+  const wy = middle.y - start.y
+  const wz = middle.z - start.z
+  const projection = Math.max(0, Math.min(1, (wx * vx + wy * vy + wz * vz) / (vx * vx + vy * vy + vz * vz)))
+  const closest = {
+    x: start.x + vx * projection,
+    y: start.y + vy * projection,
+    z: start.z + vz * projection
   }
-  const curvature = Math.hypot(
-    middle.x - linearMiddle.x,
-    middle.y - linearMiddle.y,
-    middle.z - linearMiddle.z
+  const offAxisDistance = Math.hypot(
+    middle.x - closest.x,
+    middle.y - closest.y,
+    middle.z - closest.z
   )
-  assert.ok(curvature > 0.05)
+  assert.ok(offAxisDistance > 0.05)
 })
 
 test('absorption finishes before ejection begins', () => {
