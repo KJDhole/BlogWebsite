@@ -23,9 +23,9 @@ test('article layout supports normal blog reading features without changing the 
   assert.match(layout, /Back to home/)
 })
 
-test('home and article pages preserve one persisted theme key', async () => {
+test('site shell and base layout preserve one persisted theme key', async () => {
   const base = await read('../src/layouts/BaseLayout.astro')
-  const home = await read('../src/scripts/home.js')
+  const shell = await read('../src/scripts/siteShell.js')
   assert.match(base, /glenn-blog-theme/)
-  assert.match(home, /glenn-blog-theme/)
+  assert.match(shell, /glenn-blog-theme/)
 })

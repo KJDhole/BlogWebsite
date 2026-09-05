@@ -2,16 +2,20 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 
 function collectSourceText(directory) {
-  const root = new URL(`../${directory}`, import.meta.url)
+  const root = fileURLToPath(new URL(`../${directory}/`, import.meta.url))
   const walk = path => readdirSync(path).flatMap(name => {
     const full = resolve(path, name)
     return statSync(full).isDirectory() ? walk(full) : [full]
   })
-  return walk(root).filter(path => /\.(astro|js|mjs|css)$/.test(path)).map(path => readFileSync(path, 'utf8')).join('\n')
+  return walk(root)
+    .filter(path => /\.(astro|js|mjs|css)$/.test(path))
+    .map(path => readFileSync(path, 'utf8'))
+    .join('\n')
 }
 
 test('Signal Ledger shared shell exposes publication navigation, command search and theme persistence', () => {
