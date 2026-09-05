@@ -102,6 +102,12 @@ function initSearch() {
   dialog.querySelectorAll('[data-search-close]').forEach(button => button.addEventListener('click', close))
   dialog.addEventListener('click', event => { if (event.target === dialog) close() })
   dialog.addEventListener('cancel', event => { event.preventDefault(); close() })
+  dialog.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      close()
+    }
+  })
   input.addEventListener('input', () => paint(input.value))
   input.addEventListener('keydown', event => {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
