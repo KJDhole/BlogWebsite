@@ -4,45 +4,32 @@ import { readFile } from 'node:fs/promises'
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8')
 
-test('Astro homepage keeps the approved hero search and category controls around the 3D scene', async () => {
+test('homepage is a Signal Ledger index rather than a landing-page hero', async () => {
   const page = await read('../src/pages/index.astro')
-  assert.match(page, /class="hero/)
-  assert.match(page, /<SpaceScene/)
-  assert.match(page, /id="article-search"/)
-  assert.match(page, /data-category="All"/)
+  assert.match(page, /<SiteHeader/)
+  assert.match(page, /id="writing"/)
+  assert.match(page, /<LedgerEntry/)
+  assert.match(page, /<SignalFooter/)
   assert.match(page, /getCollection\('posts'/)
-  assert.match(page, /<ArticleRow/)
+  assert.doesNotMatch(page, /SpaceScene|orbit-wrap|nav-portal|flight-orb/)
+  assert.doesNotMatch(page, /id="article-search"|data-category="All"/)
+  assert.doesNotMatch(page, /Hi, I[’']m Glenn|STUDY IN PUBLIC · 2026/)
 })
 
-test('homepage client code coordinates the new 3d story without owning article data or old svg geometry', async () => {
-  const script = await read('../src/scripts/home.js')
-  assert.doesNotMatch(script, /const\s+articles\s*=\s*\[/)
-  assert.match(script, /querySelectorAll\(['"]\.article-row['"]\)/)
-  assert.match(script, /filterArticleMetadata/)
-  assert.match(script, /getScrollStoryState/)
-  assert.match(script, /createSpaceScene/)
-  assert.match(script, /createNavPortal/)
-  assert.match(script, /getLandingMotionState/)
-  assert.match(script, /landingProgressFromElapsed/)
-  assert.doesNotMatch(script, /orbitNodes\s*=|orbit-ring-a|setSvgPoint/)
+test('homepage discovery stays content-first and keeps core blog pathways', async () => {
+  const page = await read('../src/pages/index.astro')
+  assert.match(page, /Writing/)
+  assert.match(page, /Archive/)
+  assert.match(page, /Tags/)
+  assert.match(page, /estimateReadingTime/)
+  assert.doesNotMatch(page, /const\s+articles\s*=\s*\[/)
 })
 
-test('flight animation consumes cached navigation geometry instead of measuring layout every raf', async () => {
-  const script = await read('../src/scripts/home.js')
-  assert.match(script, /currentDropGeometry/)
-  assert.match(script, /currentEjectionPath/)
-  assert.match(script, /refreshFlightGeometry/)
-  assert.doesNotMatch(script, /function\s+getCurrentDropGeometry/)
-})
-
-test('responsive reduced-motion and deep-space containment rules survive the migration', async () => {
-  const styles = `${await read('../src/styles/global.css')}\n${await read('../src/styles/space.css')}`
+test('Signal Ledger responsive and reduced-motion rules replace deep-space containment', async () => {
+  const styles = await read('../src/styles/signal-ledger.css')
   assert.match(styles, /prefers-reduced-motion/)
   assert.match(styles, /max-width:\s*760px/)
-  assert.match(styles, /\.space-scene/)
-  assert.match(styles, /\.space-canvas/)
-  assert.match(styles, /\.nav-portal/)
-  assert.match(styles, /is-fallback/)
-  assert.match(styles, /overflow:\s*(clip|hidden)/)
-  assert.match(styles, /pointer-events:\s*none/)
+  assert.match(styles, /ledger-entry/)
+  assert.match(styles, /signal-rail/)
+  assert.doesNotMatch(styles, /space-scene|nav-portal|flight-orb/)
 })

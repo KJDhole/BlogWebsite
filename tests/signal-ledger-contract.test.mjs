@@ -1,8 +1,18 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
+
+function collectSourceText(directory) {
+  const root = new URL(`../${directory}`, import.meta.url)
+  const walk = path => readdirSync(path).flatMap(name => {
+    const full = resolve(path, name)
+    return statSync(full).isDirectory() ? walk(full) : [full]
+  })
+  return walk(root).filter(path => /\.(astro|js|mjs|css)$/.test(path)).map(path => readFileSync(path, 'utf8')).join('\n')
+}
 
 test('Signal Ledger shared shell exposes publication navigation, command search and theme persistence', () => {
   const headerSource = read('src/components/SiteHeader.astro')
@@ -36,10 +46,39 @@ test('Signal Ledger shared shell exposes publication navigation, command search 
 test('Signal Ledger keeps semantic discovery metadata and a visible keyboard focus contract', () => {
   const baseLayout = read('src/layouts/BaseLayout.astro')
   const signalCss = read('src/styles/signal-ledger.css')
-
   assert.match(baseLayout, /rel="canonical"/)
   assert.match(baseLayout, /application\/rss\+xml/)
   assert.match(baseLayout, /application\/ld\+json/)
   assert.match(baseLayout, /og:title/)
   assert.match(signalCss, /:focus-visible/)
+})
+
+test('homepage uses LedgerEntry and the retired Orbit runtime is absent from production', () => {
+  const homeSource = read('src/pages/index.astro')
+  const packageJson = read('package.json')
+  const productionSource = collectSourceText('src')
+
+  assert.match(homeSource, /id="writing"/)
+  assert.match(homeSource, /LedgerEntry/)
+  assert.doesNotMatch(homeSource, /SpaceScene|orbit-wrap|nav-portal|flight-orb/)
+  assert.doesNotMatch(packageJson, /"three"/)
+  assert.doesNotMatch(productionSource, /from ['"]three['"]|scrollStory|spaceScene|filterArticles/)
+
+  for (const path of [
+    'src/components/SpaceScene.astro',
+    'src/scripts/blackHolePortal.mjs',
+    'src/scripts/home.js',
+    'src/scripts/navPortal.mjs',
+    'src/scripts/orbitMotion.mjs',
+    'src/scripts/scrollStory.mjs',
+    'src/scripts/solarSystem3d.mjs',
+    'src/scripts/spaceScene.mjs',
+    'src/scripts/starField.mjs',
+    'src/scripts/filterArticles.mjs',
+    'src/styles/space.css',
+    'scripts/absorption-qa.mjs',
+    '.github/workflows/absorption-qa.yml'
+  ]) {
+    assert.equal(existsSync(new URL(`../${path}`, import.meta.url)), false, `${path} should be retired`)
+  }
 })
