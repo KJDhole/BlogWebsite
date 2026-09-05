@@ -108,16 +108,16 @@ async function testSearch(context, theme, viewport) {
   const page = await context.newPage()
   try {
     await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' })
-    const search = page.locator('#article-search')
+    await page.locator('[data-search-open]:visible').first().click()
+    const search = page.locator('[data-search-input]')
     await search.fill('Commerce Agent')
     await page.waitForTimeout(80)
-    const matched = await page.locator('.article-row').evaluateAll(rows => rows.filter(row => !row.hidden).length)
+    const matched = await page.locator('[data-search-result]').count()
     await search.fill('___definitely_missing___')
     await page.waitForTimeout(80)
-    const missing = await page.locator('.article-row').evaluateAll(rows => rows.filter(row => !row.hidden).length)
-    await search.fill('')
+    const missing = await page.locator('[data-search-result]').count()
     report.search.push({ theme, viewport: viewport.name, matched, missing })
-    if (matched !== 1 || missing !== 0) recordFailure('Search filtering contract failed', { theme, viewport: viewport.name, matched, missing })
+    if (matched !== 1 || missing !== 0) recordFailure('Command search contract failed', { theme, viewport: viewport.name, matched, missing })
   } finally {
     await page.close()
   }
