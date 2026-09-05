@@ -1,6 +1,6 @@
 import { filterArticleMetadata } from './filterArticles.mjs'
 import { getLandingMotionState, landingProgressFromElapsed } from './orbitMotion.mjs'
-import { getScrollStoryState, buildEjectionPath, sampleEjectionPath } from './scrollStory.mjs'
+import { getScrollStoryState, getStoryScrollDistance, buildEjectionPath, sampleEjectionPath } from './scrollStory.mjs'
 import { createSpaceScene } from './spaceScene.mjs'
 import { createNavPortal, getIndicatorGeometry, getDropGeometry } from './navPortal.mjs'
 
@@ -164,7 +164,12 @@ function paintFlight(frameTime = performance.now()) {
 }
 
 function getScrollProgress() {
-  const distance = Math.max(hero.offsetHeight * (mobileMedia.matches ? 0.92 : 0.96), 1)
+  const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+  const distance = getStoryScrollDistance({
+    heroHeight: hero.offsetHeight,
+    mobile: mobileMedia.matches,
+    maxScroll
+  })
   return window.scrollY / distance
 }
 
