@@ -33,6 +33,8 @@ jobs:
         run: npm run preview -- --host 127.0.0.1 --port 4321 > /tmp/signal-ledger-preview.log 2>&1 &
       - name: Run Signal Ledger browser QA
         run: node scripts/signal-ledger-qa.mjs
+      - name: Guard mobile article title geometry
+        run: node scripts/mobile-layout-qa.mjs
       - name: Upload Signal Ledger QA evidence
         if: always()
         uses: actions/upload-artifact@v4
