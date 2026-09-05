@@ -27,6 +27,14 @@ test('homepage client code coordinates the new 3d story without owning article d
   assert.doesNotMatch(script, /orbitNodes\s*=|orbit-ring-a|setSvgPoint/)
 })
 
+test('flight animation consumes cached navigation geometry instead of measuring layout every raf', async () => {
+  const script = await read('../src/scripts/home.js')
+  assert.match(script, /currentDropGeometry/)
+  assert.match(script, /currentEjectionPath/)
+  assert.match(script, /refreshFlightGeometry/)
+  assert.doesNotMatch(script, /function\s+getCurrentDropGeometry/)
+})
+
 test('responsive reduced-motion and deep-space containment rules survive the migration', async () => {
   const styles = `${await read('../src/styles/global.css')}\n${await read('../src/styles/space.css')}`
   assert.match(styles, /prefers-reduced-motion/)
