@@ -140,7 +140,7 @@ export function createCosmicField(scene, { mobile = false } = {}) {
   const planetMaterial = new THREE.MeshBasicMaterial({
     color: 0x101b35,
     transparent: true,
-    opacity: mobile ? 0.11 : 0.16,
+    opacity: mobile ? 0.055 : 0.075,
     depthWrite: false
   })
   const distantPlanet = new THREE.Mesh(planetGeometry, planetMaterial)
@@ -184,7 +184,7 @@ export function createCosmicField(scene, { mobile = false } = {}) {
       arc.material.opacity = arc.baseOpacity * (0.72 + energy * 0.78)
     })
 
-    planetMaterial.opacity = (mobile ? 0.085 : 0.13) * (0.72 + energy * 0.42)
+    planetMaterial.opacity = (mobile ? 0.042 : 0.06) * (0.72 + energy * 0.42)
   }
 
   function setTheme(theme) {
