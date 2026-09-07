@@ -1,8 +1,7 @@
 import { filterArticleMetadata } from './filterArticles.mjs'
-import { getLandingMotionState, landingProgressFromElapsed } from './orbitMotion.mjs'
-import { getScrollStoryState, getStoryScrollDistance, buildEjectionPath, sampleEjectionPath } from './scrollStory.mjs'
+import { getCosmicPath, getCosmicPathD, sampleCosmicPath } from './cosmicPath.mjs'
+import { getScrollStoryState, getStoryScrollDistance } from './scrollStory.mjs'
 import { createSpaceScene } from './spaceScene.mjs'
-import { createNavPortal, getIndicatorGeometry, getDropGeometry } from './navPortal.mjs'
 
 const state = { query: '', category: 'All' }
 const articleList = document.querySelector('#article-list')
@@ -18,10 +17,10 @@ const controls = document.querySelector('.controls')
 const orbitCaption = document.querySelector('.orbit-caption')
 const spaceSceneNode = document.querySelector('[data-space-scene]')
 const spaceCanvas = document.querySelector('[data-space-canvas]')
-const navPortalNode = document.querySelector('.nav-portal')
-const flightOrb = document.querySelector('.flight-orb')
-const flightEchoOne = document.querySelector('.flight-echo-one')
-const flightEchoTwo = document.querySelector('.flight-echo-two')
+const cosmicPathNode = document.querySelector('[data-cosmic-path]')
+const cosmicPathGlowNode = document.querySelector('[data-cosmic-path-glow]')
+const cosmicTrailNode = document.querySelector('[data-cosmic-trail]')
+const cosmicTravelerNode = document.querySelector('[data-cosmic-traveler]')
 const allButton = filterButtons.find(button => button.dataset.category === 'All')
 const mobileMedia = window.matchMedia('(max-width: 760px)')
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -30,147 +29,62 @@ let currentStory = getScrollStoryState(0, {
   mobile: mobileMedia.matches,
   reducedMotion: reducedMotion.matches
 })
+let currentCosmicPath = null
 let spaceScene = null
 let sceneMobile = mobileMedia.matches
 let sceneReduced = reducedMotion.matches
-let filterStoryInterrupted = false
 let scrollStoryLayoutSettled = false
-let landingStartedAt = null
 let storyScrollFrame = 0
-let currentDropGeometry = null
-let currentEjectionPath = null
 
-const navPortal = createNavPortal(navPortalNode, {
-  indicator: filterIndicator,
-  allButton
-})
-
-function lerp(start, end, amount) {
-  return start + (end - start) * amount
+function clamp01(value) {
+  return Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
 }
 
-function placeFlightDot(node, point, opacity, width = null, height = null) {
-  if (!node || !point) return
-  node.style.left = `${point.x}px`
-  node.style.top = `${point.y}px`
-  node.style.opacity = String(Math.max(0, opacity))
-  if (width !== null) node.style.width = `${width}px`
-  if (height !== null) node.style.height = `${height}px`
-}
-
-function hideFlight() {
-  if (flightOrb) flightOrb.style.opacity = '0'
-  if (flightEchoOne) flightEchoOne.style.opacity = '0'
-  if (flightEchoTwo) flightEchoTwo.style.opacity = '0'
-}
-
-function refreshFlightGeometry() {
-  const indicatorGeometry = navPortal.measure()
-  if (!indicatorGeometry) {
-    currentDropGeometry = null
-    currentEjectionPath = null
-    return
-  }
-
-  currentDropGeometry = getDropGeometry(indicatorGeometry, { mobile: mobileMedia.matches })
-  currentEjectionPath = buildEjectionPath(currentDropGeometry.portal, currentDropGeometry.dropStart, {
+function refreshCosmicGeometry() {
+  currentCosmicPath = getCosmicPath({
+    width: 1000,
+    height: 1000,
     mobile: mobileMedia.matches
   })
+  const d = getCosmicPathD(currentCosmicPath)
+  cosmicPathNode?.setAttribute('d', d)
+  cosmicPathGlowNode?.setAttribute('d', d)
+  cosmicTrailNode?.setAttribute('d', d)
 }
 
-function paintEjectionEchoes(path, progress) {
-  if (progress <= 0 || progress >= 1) {
-    flightEchoOne.style.opacity = '0'
-    flightEchoTwo.style.opacity = '0'
-    return
-  }
-  const first = sampleEjectionPath(path, Math.max(0, progress - 0.07))
-  const second = sampleEjectionPath(path, Math.max(0, progress - 0.14))
-  placeFlightDot(flightEchoOne, first, 0.18)
-  placeFlightDot(flightEchoTwo, second, 0.08)
-}
+function paintCosmicForeground() {
+  if (!currentCosmicPath || !cosmicTravelerNode) return
 
-function paintLandingEchoes(geometry, landing) {
-  if (landing.progress >= 0.78) {
-    flightEchoOne.style.opacity = '0'
-    flightEchoTwo.style.opacity = '0'
-    return
-  }
-  const dropDistance = geometry.target.y - geometry.dropStart.y
-  const first = {
-    x: geometry.target.x,
-    y: geometry.dropStart.y + dropDistance * Math.max(0, landing.fall - 0.13)
-  }
-  const second = {
-    x: geometry.target.x,
-    y: geometry.dropStart.y + dropDistance * Math.max(0, landing.fall - 0.24)
-  }
-  placeFlightDot(flightEchoOne, first, 0.18 * Math.min(1, landing.fall * 1.8))
-  placeFlightDot(flightEchoTwo, second, 0.08 * Math.min(1, landing.fall * 1.8))
-}
+  const point = sampleCosmicPath(currentCosmicPath, currentStory.pathProgress)
+  const scale = currentStory.traveler.scale ?? 1
+  cosmicTravelerNode.setAttribute('transform', `translate(${point.x} ${point.y}) scale(${scale})`)
+  cosmicTravelerNode.style.opacity = currentStory.traveler.visible
+    ? String(currentStory.traveler.opacity)
+    : '0'
 
-function paintFlight(frameTime = performance.now()) {
-  if (!filterIndicator || !flightOrb || !allButton) return
+  const charge = clamp01(currentStory.charge)
+  const trail = clamp01(currentStory.trail)
+  const trailLength = Math.max(0.001, Math.min(0.31, trail * 0.27))
 
-  if (reducedMotion.matches || filterStoryInterrupted) {
-    landingStartedAt = null
-    navPortal.setState({ opacity: 0, scale: 0, pulse: 0 })
-    hideFlight()
-    filterIndicator.style.opacity = '1'
-    return
+  if (cosmicPathNode) cosmicPathNode.style.opacity = String(0.10 + charge * 0.12)
+  if (cosmicPathGlowNode) cosmicPathGlowNode.style.opacity = String(0.02 + charge * 0.18)
+  if (cosmicTrailNode) {
+    cosmicTrailNode.style.opacity = String(trail)
+    cosmicTrailNode.style.strokeDasharray = `${trailLength} ${1 - trailLength}`
+    cosmicTrailNode.style.strokeDashoffset = String(1 - currentStory.pathProgress + trailLength * 0.45)
   }
 
-  const geometry = currentDropGeometry
-  if (!geometry) {
-    hideFlight()
-    return
+  if (spaceSceneNode) {
+    spaceSceneNode.style.setProperty('--cosmic-charge', String(charge))
+    spaceSceneNode.style.setProperty('--cosmic-energy', String(currentStory.field.energy ?? 0))
+    spaceSceneNode.style.setProperty('--cosmic-trail', String(trail))
+    spaceSceneNode.dataset.pathProgress = String(currentStory.pathProgress)
+    spaceSceneNode.dataset.cosmicPhase = currentStory.phase
   }
-
-  if (!currentStory.landingReady) {
-    landingStartedAt = null
-    filterIndicator.style.opacity = '0'
-
-    if (currentStory.ejection.progress <= 0 || !currentEjectionPath) {
-      hideFlight()
-      return
-    }
-
-    const point = sampleEjectionPath(currentEjectionPath, currentStory.ejection.progress)
-    placeFlightDot(flightOrb, point, 1, 14, 14)
-    paintEjectionEchoes(currentEjectionPath, currentStory.ejection.progress)
-    return
-  }
-
-  if (landingStartedAt === null) landingStartedAt = frameTime
-  const landingProgress = landingProgressFromElapsed(frameTime - landingStartedAt, {
-    mobile: mobileMedia.matches
-  })
-  const landing = getLandingMotionState(landingProgress, { mobile: mobileMedia.matches })
-
-  let point
-  if (landing.progress <= 0.78) {
-    point = {
-      x: geometry.target.x,
-      y: lerp(geometry.dropStart.y, geometry.target.y, landing.fall)
-    }
-  } else {
-    point = {
-      x: geometry.target.x,
-      y: geometry.target.y + landing.yOffset
-    }
-  }
-
-  const roundWidth = 14 * landing.scaleX
-  const roundHeight = 14 * landing.scaleY
-  const width = lerp(roundWidth, geometry.targetWidth, landing.morph)
-  const height = lerp(roundHeight, geometry.targetHeight, landing.morph)
-  const orbOpacity = 1 - Math.max(0, landing.morph - 0.72) / 0.28
-  placeFlightDot(flightOrb, point, orbOpacity, width, height)
-  paintLandingEchoes(geometry, landing)
-  filterIndicator.style.opacity = String(landing.morph)
 }
 
 function getScrollProgress() {
+  if (!hero) return 0
   const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
   const distance = getStoryScrollDistance({
     heroHeight: hero.offsetHeight,
@@ -184,44 +98,36 @@ function settleScrollStoryLayout() {
   if (scrollStoryLayoutSettled) return
   scrollStoryLayoutSettled = true
 
-  hero.style.transition = 'none'
-  hero.classList.add('is-visible')
-  hero.style.opacity = '1'
-  hero.style.transform = 'none'
+  if (hero) {
+    hero.style.transition = 'none'
+    hero.classList.add('is-visible')
+    hero.style.opacity = '1'
+    hero.style.transform = 'none'
+  }
 
-  controls.style.transition = 'none'
-  controls.classList.add('is-visible')
-  controls.style.opacity = '1'
-  controls.style.transform = 'none'
-
-  filterIndicator.style.transition = 'none'
-  moveIndicator(allButton)
+  if (controls) {
+    controls.style.transition = 'none'
+    controls.classList.add('is-visible')
+    controls.style.opacity = '1'
+    controls.style.transform = 'none'
+  }
 }
 
 function updateScrollStory() {
-  if (!hero) return
   currentStory = getScrollStoryState(getScrollProgress(), {
     mobile: mobileMedia.matches,
     reducedMotion: reducedMotion.matches
   })
 
-  if (currentStory.progress > 0.18) settleScrollStoryLayout()
-  if (!currentStory.landingReady) landingStartedAt = null
-
-  refreshFlightGeometry()
+  if (currentStory.progress > 0.12) settleScrollStoryLayout()
   spaceScene?.setStoryState(currentStory)
-  if (filterStoryInterrupted || reducedMotion.matches) {
-    navPortal.setState({ opacity: 0, scale: 0, pulse: 0 })
-  } else {
-    navPortal.setState(currentStory.navPortal)
-  }
+  paintCosmicForeground()
 
   if (orbitCaption) {
     orbitCaption.style.opacity = reducedMotion.matches
       ? '1'
-      : String(Math.max(0, 1 - currentStory.progress * 3.2))
+      : String(Math.max(0.18, 1 - currentStory.progress * 1.55))
   }
-  paintFlight()
 }
 
 function scheduleScrollStory() {
@@ -257,13 +163,13 @@ function initializeSpaceScene() {
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme
   localStorage.setItem('glenn-blog-theme', theme)
-  themeToggle.setAttribute('aria-label', theme === 'dark' ? '切换到浅色主题' : '切换到深色主题')
+  themeToggle?.setAttribute('aria-label', theme === 'dark' ? '切换到浅色主题' : '切换到深色主题')
   spaceScene?.setTheme(theme)
 }
 
 window.addEventListener('scroll', scheduleScrollStory, { passive: true })
 
-const articleRows = [...articleList.querySelectorAll('.article-row')]
+const articleRows = articleList ? [...articleList.querySelectorAll('.article-row')] : []
 const articleMetadata = articleRows.map(row => ({
   row,
   title: row.dataset.title ?? '',
@@ -287,32 +193,24 @@ function renderArticles() {
     }
   })
 
-  const label = filtered.length === articleRows.length && !state.query && state.category === 'All'
-    ? `${articleRows.length} recent entries`
-    : `${filtered.length} result${filtered.length === 1 ? '' : 's'}`
-  resultCount.textContent = label
-  emptyState.hidden = filtered.length !== 0
+  if (resultCount) {
+    resultCount.textContent = filtered.length === articleRows.length && !state.query && state.category === 'All'
+      ? `${articleRows.length} recent entries`
+      : `${filtered.length} result${filtered.length === 1 ? '' : 's'}`
+  }
+  if (emptyState) emptyState.hidden = filtered.length !== 0
 }
 
 function moveIndicator(button) {
   if (!button || !filterIndicator?.parentElement) return
-  const geometry = getIndicatorGeometry(
-    filterIndicator.parentElement.getBoundingClientRect(),
-    button.getBoundingClientRect()
-  )
-  filterIndicator.style.width = `${geometry.width}px`
-  filterIndicator.style.transform = `translateX(${geometry.offsetX}px)`
+  const parentRect = filterIndicator.parentElement.getBoundingClientRect()
+  const buttonRect = button.getBoundingClientRect()
+  filterIndicator.style.width = `${buttonRect.width}px`
+  filterIndicator.style.transform = `translateX(${buttonRect.left - parentRect.left}px)`
+  filterIndicator.style.opacity = '1'
 }
 
-function setCategory(category, button, { fromUser = false } = {}) {
-  if (fromUser) {
-    filterStoryInterrupted = true
-    landingStartedAt = null
-    navPortal.setState({ opacity: 0, scale: 0, pulse: 0 })
-    hideFlight()
-    filterIndicator.style.transition = ''
-  }
-
+function setCategory(category, button) {
   state.category = category
   filterButtons.forEach(btn => {
     const active = btn === button
@@ -320,25 +218,25 @@ function setCategory(category, button, { fromUser = false } = {}) {
     btn.setAttribute('aria-selected', String(active))
   })
   moveIndicator(button)
-  if (filterStoryInterrupted || reducedMotion.matches) filterIndicator.style.opacity = '1'
   renderArticles()
 }
 
 filterButtons.forEach(button => {
-  button.addEventListener('click', () => setCategory(button.dataset.category, button, { fromUser: true }))
+  button.addEventListener('click', () => setCategory(button.dataset.category, button))
 })
 
-searchInput.addEventListener('input', event => {
+searchInput?.addEventListener('input', event => {
   state.query = event.target.value
   renderArticles()
 })
 
 document.addEventListener('keydown', event => {
-  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && searchInput) {
     event.preventDefault()
     searchInput.focus()
   }
-  if (event.key === 'Escape' && document.activeElement === searchInput) {
+
+  if (event.key === 'Escape' && document.activeElement === searchInput && searchInput) {
     searchInput.value = ''
     state.query = ''
     renderArticles()
@@ -346,14 +244,14 @@ document.addEventListener('keydown', event => {
   }
 })
 
-clearFilters.addEventListener('click', () => {
-  searchInput.value = ''
+clearFilters?.addEventListener('click', () => {
+  if (searchInput) searchInput.value = ''
   state.query = ''
-  setCategory('All', allButton, { fromUser: true })
+  setCategory('All', allButton)
 })
 
 applyTheme(getInitialTheme())
-themeToggle.addEventListener('click', () => {
+themeToggle?.addEventListener('click', () => {
   applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark')
 })
 
@@ -373,6 +271,7 @@ function handleViewportChange() {
   if (qualityChanged) initializeSpaceScene()
   else spaceScene?.resize()
 
+  refreshCosmicGeometry()
   const active = document.querySelector('.filter-button.is-active')
   if (active) moveIndicator(active)
   updateScrollStory()
@@ -382,17 +281,10 @@ window.addEventListener('resize', handleViewportChange)
 mobileMedia.addEventListener?.('change', handleViewportChange)
 reducedMotion.addEventListener?.('change', handleViewportChange)
 
-function animateFlight(frameTime) {
-  if (currentStory.ejection.progress > 0 || currentStory.landingReady || reducedMotion.matches || filterStoryInterrupted) {
-    paintFlight(frameTime)
-  }
-  requestAnimationFrame(animateFlight)
-}
-
 renderArticles()
 requestAnimationFrame(() => {
   moveIndicator(document.querySelector('.filter-button.is-active'))
+  refreshCosmicGeometry()
   initializeSpaceScene()
   updateScrollStory()
-  requestAnimationFrame(animateFlight)
 })
