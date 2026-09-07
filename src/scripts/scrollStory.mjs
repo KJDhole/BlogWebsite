@@ -1,22 +1,14 @@
 export const STORY_PHASES = Object.freeze([
-  'stable-orbit',
-  'portal-emerge',
-  'absorb',
-  'compact',
-  'nav-portal',
-  'eject',
-  'landing'
+  'drift',
+  'charge',
+  'flyby',
+  'settle'
 ])
 
 export const STORY_LIMITS = Object.freeze({
-  stableEnd: 0.18,
-  portalEnd: 0.32,
-  absorbEnd: 0.46,
-  compactEnd: 0.58,
-  navPortalEnd: 0.66,
-  ejectEnd: 0.76,
-  desktopMinScale: 0.58,
-  mobileMinScale: 0.52
+  driftEnd: 0.24,
+  chargeEnd: 0.44,
+  flybyEnd: 0.72
 })
 
 function clamp01(value) {
@@ -33,13 +25,12 @@ function smoothstep(value) {
   return t * t * (3 - 2 * t)
 }
 
-function easeOutCubic(value) {
-  const t = clamp01(value)
-  return 1 - Math.pow(1 - t, 3)
-}
-
 function lerp(start, end, amount) {
   return start + (end - start) * amount
+}
+
+function rounded(value) {
+  return Number(value.toFixed(4))
 }
 
 export function getStoryScrollDistance({ heroHeight, mobile = false, maxScroll } = {}) {
@@ -50,100 +41,106 @@ export function getStoryScrollDistance({ heroHeight, mobile = false, maxScroll }
 }
 
 function phaseFor(progress) {
-  if (progress < STORY_LIMITS.stableEnd) return 'stable-orbit'
-  if (progress < STORY_LIMITS.portalEnd) return 'portal-emerge'
-  if (progress < STORY_LIMITS.absorbEnd) return 'absorb'
-  if (progress < STORY_LIMITS.compactEnd) return 'compact'
-  if (progress < STORY_LIMITS.navPortalEnd) return 'nav-portal'
-  if (progress < STORY_LIMITS.ejectEnd) return 'eject'
-  return 'landing'
+  if (progress < STORY_LIMITS.driftEnd) return 'drift'
+  if (progress < STORY_LIMITS.chargeEnd) return 'charge'
+  if (progress < STORY_LIMITS.flybyEnd) return 'flyby'
+  return 'settle'
 }
 
 export function getScrollStoryState(rawProgress, { mobile = false, reducedMotion = false } = {}) {
   const progress = clamp01(rawProgress)
-  const minimumScale = mobile ? STORY_LIMITS.mobileMinScale : STORY_LIMITS.desktopMinScale
 
   if (reducedMotion) {
     return {
       progress,
       phase: 'reduced',
-      system: { scale: 1, rotationX: 0, rotationY: 0, lift: 0 },
-      heroPortal: { opacity: 0, scale: 0, distortion: 0, pulse: 0 },
-      accent: { mode: 'orbit', absorption: 0 },
-      navPortal: { opacity: 0, scale: 0, pulse: 0 },
-      ejection: { progress: 0 },
-      landingReady: false,
+      charge: 0,
+      pathProgress: 0,
+      trail: 0,
+      field: {
+        energy: 0.18,
+        parallax: 0,
+        drift: 0
+      },
+      traveler: {
+        visible: false,
+        opacity: 0,
+        scale: 1
+      },
       reducedMotion: true
     }
   }
 
-  const portalIn = smoothstep(rangeProgress(progress, STORY_LIMITS.stableEnd, 0.25))
-  const portalOut = smoothstep(rangeProgress(progress, 0.40, 0.54))
-  const heroPortalOpacity = portalIn * (1 - portalOut)
-  const absorption = smoothstep(rangeProgress(progress, STORY_LIMITS.portalEnd, STORY_LIMITS.absorbEnd))
-  const compact = smoothstep(rangeProgress(progress, STORY_LIMITS.stableEnd, STORY_LIMITS.compactEnd))
-  const navPortalIn = smoothstep(rangeProgress(progress, STORY_LIMITS.compactEnd, 0.625))
-  const navPortalOut = smoothstep(rangeProgress(progress, 0.705, STORY_LIMITS.ejectEnd))
-  const navPortalOpacity = navPortalIn * (1 - navPortalOut)
-  const ejectionProgress = smoothstep(rangeProgress(progress, STORY_LIMITS.navPortalEnd, STORY_LIMITS.ejectEnd))
+  const driftT = smoothstep(rangeProgress(progress, 0, STORY_LIMITS.driftEnd))
+  const chargeT = smoothstep(rangeProgress(progress, STORY_LIMITS.driftEnd, STORY_LIMITS.chargeEnd))
+  const flybyT = smoothstep(rangeProgress(progress, STORY_LIMITS.chargeEnd, STORY_LIMITS.flybyEnd))
+  const settleT = smoothstep(rangeProgress(progress, STORY_LIMITS.flybyEnd, 1))
 
-  const scale = Math.max(
-    minimumScale,
-    lerp(1, minimumScale, easeOutCubic(rangeProgress(progress, STORY_LIMITS.stableEnd, 0.64)))
-  )
+  let pathProgress
+  if (progress < STORY_LIMITS.driftEnd) {
+    pathProgress = lerp(0.035, 0.12, driftT)
+  } else if (progress < STORY_LIMITS.chargeEnd) {
+    pathProgress = lerp(0.12, 0.2, chargeT)
+  } else if (progress < STORY_LIMITS.flybyEnd) {
+    pathProgress = lerp(0.2, 1, flybyT)
+  } else {
+    pathProgress = 1
+  }
 
-  const rotationX = lerp(0.10, mobile ? 0.22 : 0.28, compact)
-  const rotationY = lerp(-0.06, mobile ? -0.36 : -0.52, compact)
-  const lift = lerp(0, mobile ? -26 : -42, smoothstep(rangeProgress(progress, 0.30, 0.68)))
+  const charge = progress < STORY_LIMITS.driftEnd
+    ? lerp(0.08, 0.16, driftT)
+    : progress < STORY_LIMITS.chargeEnd
+      ? lerp(0.16, 1, chargeT)
+      : progress < STORY_LIMITS.flybyEnd
+        ? lerp(1, 0.36, flybyT)
+        : lerp(0.36, 0.04, settleT)
 
-  let accentMode = 'orbit'
-  if (progress >= STORY_LIMITS.absorbEnd) accentMode = 'hidden'
-  else if (progress >= STORY_LIMITS.portalEnd) accentMode = 'absorbing'
+  const trail = progress < STORY_LIMITS.chargeEnd
+    ? 0
+    : progress < STORY_LIMITS.flybyEnd
+      ? Math.sin(Math.PI * flybyT) * 0.92
+      : (1 - settleT) * 0.18
+
+  const energy = progress < STORY_LIMITS.driftEnd
+    ? lerp(0.22, 0.28, driftT)
+    : progress < STORY_LIMITS.chargeEnd
+      ? lerp(0.28, 0.9, chargeT)
+      : progress < STORY_LIMITS.flybyEnd
+        ? lerp(0.9, 0.72, flybyT)
+        : lerp(0.72, 0.2, settleT)
+
+  const desktopParallax = progress < STORY_LIMITS.flybyEnd
+    ? lerp(0.12, 0.72, smoothstep(rangeProgress(progress, 0.12, STORY_LIMITS.flybyEnd)))
+    : lerp(0.72, 0.18, settleT)
+  const desktopDrift = progress < STORY_LIMITS.flybyEnd
+    ? lerp(0.38, 1, smoothstep(rangeProgress(progress, 0, STORY_LIMITS.flybyEnd)))
+    : lerp(1, 0.28, settleT)
+
+  const opacity = progress < STORY_LIMITS.flybyEnd
+    ? 1
+    : 1 - settleT * 0.88
+  const scale = progress < STORY_LIMITS.chargeEnd
+    ? 0.92 + charge * 0.11
+    : progress < STORY_LIMITS.flybyEnd
+      ? 1.03 + Math.sin(Math.PI * flybyT) * 0.2
+      : lerp(1.03, 0.82, settleT)
 
   return {
-    progress,
+    progress: rounded(progress),
     phase: phaseFor(progress),
-    system: { scale, rotationX, rotationY, lift },
-    heroPortal: {
-      opacity: heroPortalOpacity,
-      scale: 0.2 + portalIn * 0.8,
-      distortion: heroPortalOpacity * (0.35 + absorption * 0.65),
-      pulse: Math.sin(absorption * Math.PI) * heroPortalOpacity
+    charge: rounded(charge),
+    pathProgress: rounded(pathProgress),
+    trail: rounded(trail),
+    field: {
+      energy: rounded(energy),
+      parallax: rounded(desktopParallax * (mobile ? 0.48 : 1)),
+      drift: rounded(desktopDrift * (mobile ? 0.58 : 1))
     },
-    accent: { mode: accentMode, absorption },
-    navPortal: {
-      opacity: navPortalOpacity,
-      scale: 0.25 + navPortalIn * 0.75,
-      pulse: Math.sin(ejectionProgress * Math.PI) * navPortalOpacity
+    traveler: {
+      visible: opacity > 0.04,
+      opacity: rounded(opacity),
+      scale: rounded(scale)
     },
-    ejection: { progress: ejectionProgress },
-    landingReady: progress >= STORY_LIMITS.ejectEnd,
     reducedMotion: false
   }
-}
-
-export function buildEjectionPath(start, end, { mobile = false } = {}) {
-  const side = mobile ? 18 : 28
-  const lift = mobile ? 28 : 42
-  return {
-    start: { ...start },
-    control1: { x: start.x + side, y: start.y - lift },
-    control2: { x: end.x - side * 0.55, y: end.y - lift * 0.35 },
-    end: { ...end }
-  }
-}
-
-function cubicBezierPoint(start, control1, control2, end, rawProgress) {
-  const t = clamp01(rawProgress)
-  if (t === 0) return { ...start }
-  if (t === 1) return { ...end }
-  const mt = 1 - t
-  return {
-    x: mt ** 3 * start.x + 3 * mt ** 2 * t * control1.x + 3 * mt * t ** 2 * control2.x + t ** 3 * end.x,
-    y: mt ** 3 * start.y + 3 * mt ** 2 * t * control1.y + 3 * mt * t ** 2 * control2.y + t ** 3 * end.y
-  }
-}
-
-export function sampleEjectionPath(path, progress) {
-  return cubicBezierPoint(path.start, path.control1, path.control2, path.end, progress)
 }
