@@ -13,19 +13,17 @@
   --cosmic-charge: 0;
   --cosmic-energy: .22;
   --cosmic-trail: 0;
-  width: min(49vw, 575px);
-  aspect-ratio: 1;
+  width: min(51vw, 610px);
+  aspect-ratio: 1.08 / 1;
   position: relative;
   pointer-events: none;
   isolation: isolate;
   overflow: hidden;
   background:
-    radial-gradient(ellipse at 72% 20%, rgba(87, 112, 170, .18), transparent 35%),
-    radial-gradient(ellipse at 23% 74%, rgba(76, 64, 126, .13), transparent 44%),
-    radial-gradient(ellipse at 82% 70%, rgba(190, 101, 71, .045), transparent 30%),
-    linear-gradient(148deg, rgba(22, 31, 55, .12) 2%, rgba(7, 13, 31, .88) 39%, rgba(4, 9, 23, .92) 66%, rgba(12, 18, 37, .18) 100%);
-  -webkit-mask-image: radial-gradient(ellipse 88% 79% at 55% 49%, #000 0 52%, rgba(0, 0, 0, .96) 69%, rgba(0, 0, 0, .62) 82%, transparent 100%);
-  mask-image: radial-gradient(ellipse 88% 79% at 55% 49%, #000 0 52%, rgba(0, 0, 0, .96) 69%, rgba(0, 0, 0, .62) 82%, transparent 100%);
+    radial-gradient(ellipse 74% 48% at 70% 25%, rgba(82, 111, 177, .20), transparent 72%),
+    radial-gradient(ellipse 64% 58% at 24% 76%, rgba(79, 61, 131, .15), transparent 74%),
+    radial-gradient(ellipse 58% 44% at 82% 72%, rgba(193, 99, 69, .05), transparent 76%),
+    radial-gradient(ellipse 78% 72% at 54% 50%, rgba(6, 12, 29, .88) 0, rgba(7, 14, 34, .66) 43%, rgba(11, 20, 43, .26) 69%, transparent 100%);
 }
 
 .space-scene::before,
@@ -37,30 +35,30 @@
 }
 
 .space-scene::before {
-  inset: 3% 2% 7%;
+  inset: 3% 1% 6%;
   background:
-    radial-gradient(ellipse at 34% 58%, rgba(92, 115, 174, calc(.065 + var(--cosmic-energy) * .055)), transparent 37%),
-    radial-gradient(ellipse at 69% 32%, rgba(126, 98, 172, calc(.045 + var(--cosmic-energy) * .038)), transparent 31%),
-    radial-gradient(ellipse at 76% 67%, rgba(255, 117, 69, calc(.012 + var(--cosmic-charge) * .022)), transparent 23%);
-  filter: blur(22px);
-  transform: rotate(-5deg) scale(1.04, .92);
+    radial-gradient(ellipse 52% 35% at 34% 58%, rgba(92, 115, 174, calc(.06 + var(--cosmic-energy) * .052)), transparent 72%),
+    radial-gradient(ellipse 44% 31% at 69% 32%, rgba(126, 98, 172, calc(.04 + var(--cosmic-energy) * .036)), transparent 74%),
+    radial-gradient(ellipse 32% 25% at 77% 68%, rgba(255, 117, 69, calc(.01 + var(--cosmic-charge) * .02)), transparent 76%);
+  filter: blur(24px);
+  transform: rotate(-5deg) scale(1.05, .94);
 }
 
 .space-scene::after {
-  inset: 10% 8%;
+  inset: 7% 4%;
   background:
-    linear-gradient(112deg, transparent 20%, rgba(189, 207, 242, .025) 48%, transparent 72%),
-    radial-gradient(ellipse at 50% 50%, transparent 54%, rgba(121, 145, 198, .035) 72%, transparent 82%);
-  filter: blur(7px);
-  opacity: calc(.46 + var(--cosmic-energy) * .3);
+    linear-gradient(112deg, transparent 18%, rgba(189, 207, 242, .022) 49%, transparent 74%),
+    radial-gradient(ellipse 72% 64% at 50% 50%, transparent 54%, rgba(121, 145, 198, .028) 75%, transparent 100%);
+  filter: blur(8px);
+  opacity: calc(.42 + var(--cosmic-energy) * .3);
 }
 
 html[data-theme='dark'] .space-scene {
   background:
-    radial-gradient(ellipse at 72% 20%, rgba(93, 124, 197, .22), transparent 35%),
-    radial-gradient(ellipse at 23% 74%, rgba(91, 68, 145, .16), transparent 44%),
-    radial-gradient(ellipse at 82% 70%, rgba(215, 110, 76, .055), transparent 30%),
-    linear-gradient(148deg, rgba(7, 12, 28, .26) 2%, rgba(2, 5, 16, .985) 38%, rgba(2, 5, 15, .97) 69%, rgba(9, 15, 32, .22) 100%);
+    radial-gradient(ellipse 76% 50% at 70% 24%, rgba(88, 120, 194, .24), transparent 72%),
+    radial-gradient(ellipse 66% 60% at 24% 77%, rgba(89, 64, 148, .18), transparent 74%),
+    radial-gradient(ellipse 58% 46% at 82% 72%, rgba(214, 107, 75, .06), transparent 76%),
+    radial-gradient(ellipse 80% 74% at 54% 50%, rgba(2, 5, 16, .96) 0, rgba(3, 8, 22, .78) 44%, rgba(7, 14, 34, .34) 70%, transparent 100%);
 }
 
 .space-canvas,
@@ -186,7 +184,7 @@ html[data-theme='dark'] .cosmic-path-glow {
   }
 
   .space-scene {
-    width: min(84vw, 445px);
+    width: min(86vw, 465px);
   }
 }
 
@@ -198,11 +196,11 @@ html[data-theme='dark'] .cosmic-path-glow {
   }
 
   .space-scene {
-    width: min(88vw, 395px);
+    width: min(90vw, 405px);
     background:
-      radial-gradient(ellipse at 70% 22%, rgba(91, 119, 180, .16), transparent 34%),
-      radial-gradient(ellipse at 25% 72%, rgba(78, 65, 126, .11), transparent 42%),
-      linear-gradient(148deg, rgba(17, 27, 49, .10) 2%, rgba(7, 13, 31, .86) 42%, rgba(5, 10, 25, .86) 70%, rgba(13, 19, 38, .14) 100%);
+      radial-gradient(ellipse 74% 48% at 69% 24%, rgba(88, 116, 180, .17), transparent 72%),
+      radial-gradient(ellipse 64% 58% at 25% 75%, rgba(77, 62, 128, .12), transparent 74%),
+      radial-gradient(ellipse 78% 72% at 54% 50%, rgba(6, 12, 29, .84) 0, rgba(8, 15, 35, .61) 44%, rgba(12, 21, 44, .22) 70%, transparent 100%);
   }
 
   .cosmic-path-glow {
@@ -214,15 +212,11 @@ html[data-theme='dark'] .cosmic-path-glow {
     stroke-width: 2.4;
     filter: drop-shadow(0 0 5px rgba(255, 117, 69, .26));
   }
-
-  .cosmic-traveler-halo {
-    r: 20px;
-  }
 }
 
 @media (max-width: 640px) {
   .orbit-wrap { min-height: min(398px, 94vw); }
-  .space-scene { width: min(91vw, 365px); }
+  .space-scene { width: min(92vw, 372px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
