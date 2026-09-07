@@ -19,22 +19,26 @@
 }
 
 .orbit-wrap::before {
-  inset: -18% -24% -14% -12%;
+  inset: 0;
   background:
-    radial-gradient(ellipse 98% 72% at 76% 43%, rgba(5, 10, 27, .92) 0 18%, rgba(7, 14, 34, .68) 43%, rgba(12, 22, 47, .31) 64%, transparent 86%),
+    radial-gradient(ellipse 108% 78% at 79% 46%, rgba(5, 10, 27, .92) 0 17%, rgba(7, 14, 34, .68) 42%, rgba(12, 22, 47, .30) 64%, transparent 89%),
     radial-gradient(ellipse 64% 42% at 73% 20%, rgba(74, 104, 174, .24), transparent 72%),
     radial-gradient(ellipse 58% 48% at 36% 77%, rgba(80, 60, 132, .16), transparent 74%),
     radial-gradient(ellipse 36% 28% at 87% 70%, rgba(199, 101, 73, .052), transparent 76%);
+  -webkit-mask-image: radial-gradient(ellipse 116% 96% at 61% 50%, #000 0 57%, rgba(0,0,0,.95) 72%, rgba(0,0,0,.42) 87%, transparent 100%);
+  mask-image: radial-gradient(ellipse 116% 96% at 61% 50%, #000 0 57%, rgba(0,0,0,.95) 72%, rgba(0,0,0,.42) 87%, transparent 100%);
   filter: blur(15px);
   transform: rotate(-2.5deg) scale(1.03, .98);
   opacity: .98;
 }
 
 .orbit-wrap::after {
-  inset: 3% -17% 2% -3%;
+  inset: 6% 1% 5%;
   background:
     linear-gradient(112deg, transparent 13%, rgba(188, 207, 244, .022) 48%, transparent 72%),
     radial-gradient(ellipse 68% 54% at 71% 46%, transparent 46%, rgba(119, 145, 201, .026) 67%, transparent 91%);
+  -webkit-mask-image: radial-gradient(ellipse 112% 94% at 58% 50%, #000 0 61%, rgba(0,0,0,.8) 79%, transparent 100%);
+  mask-image: radial-gradient(ellipse 112% 94% at 58% 50%, #000 0 61%, rgba(0,0,0,.8) 79%, transparent 100%);
   filter: blur(9px);
   opacity: calc(.34 + var(--cosmic-energy, .22) * .26);
 }
@@ -83,7 +87,7 @@
 
 html[data-theme='dark'] .orbit-wrap::before {
   background:
-    radial-gradient(ellipse 100% 74% at 76% 43%, rgba(1, 4, 14, .98) 0 20%, rgba(3, 8, 23, .82) 44%, rgba(7, 15, 36, .40) 65%, transparent 87%),
+    radial-gradient(ellipse 110% 80% at 79% 46%, rgba(1, 4, 14, .98) 0 19%, rgba(3, 8, 23, .82) 43%, rgba(7, 15, 36, .39) 65%, transparent 90%),
     radial-gradient(ellipse 66% 44% at 73% 20%, rgba(82, 113, 190, .29), transparent 72%),
     radial-gradient(ellipse 60% 49% at 36% 77%, rgba(91, 64, 151, .20), transparent 74%),
     radial-gradient(ellipse 38% 29% at 87% 70%, rgba(218, 109, 77, .064), transparent 76%);
@@ -102,8 +106,8 @@ html[data-theme='dark'] .orbit-wrap::before {
 .space-canvas {
   z-index: 2;
   display: block;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 9%, #000 96%, transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0%, #000 9%, #000 96%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 112% 94% at 58% 50%, #000 0 58%, rgba(0,0,0,.96) 73%, rgba(0,0,0,.48) 87%, transparent 100%);
+  mask-image: radial-gradient(ellipse 112% 94% at 58% 50%, #000 0 58%, rgba(0,0,0,.96) 73%, rgba(0,0,0,.48) 87%, transparent 100%);
 }
 
 .cosmic-foreground {
@@ -213,10 +217,6 @@ html[data-theme='dark'] .cosmic-path-glow {
     padding: 6px 0 12px;
   }
 
-  .orbit-wrap::before {
-    inset: -12% -17% -10% -10%;
-  }
-
   .space-scene {
     width: min(92vw, 520px);
     transform: translateX(2%);
@@ -231,24 +231,26 @@ html[data-theme='dark'] .cosmic-path-glow {
   }
 
   .orbit-wrap::before {
-    inset: -7% -14% -9%;
+    inset: 0;
     background:
-      radial-gradient(ellipse 94% 72% at 69% 44%, rgba(5, 10, 27, .88) 0 17%, rgba(7, 14, 34, .63) 43%, rgba(12, 22, 47, .26) 65%, transparent 87%),
+      radial-gradient(ellipse 106% 78% at 73% 45%, rgba(5, 10, 27, .88) 0 16%, rgba(7, 14, 34, .62) 42%, rgba(12, 22, 47, .25) 64%, transparent 90%),
       radial-gradient(ellipse 62% 42% at 70% 21%, rgba(78, 107, 176, .20), transparent 73%),
       radial-gradient(ellipse 56% 47% at 31% 78%, rgba(78, 61, 130, .13), transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 108% 94% at 55% 50%, #000 0 55%, rgba(0,0,0,.94) 72%, rgba(0,0,0,.42) 87%, transparent 100%);
+    mask-image: radial-gradient(ellipse 108% 94% at 55% 50%, #000 0 55%, rgba(0,0,0,.94) 72%, rgba(0,0,0,.42) 87%, transparent 100%);
     filter: blur(12px);
     transform: none;
   }
 
   .space-scene {
-    width: min(98vw, 440px);
+    width: min(96vw, 420px);
     aspect-ratio: 1.08 / 1;
     transform: none;
   }
 
   .space-canvas {
-    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 7%, #000 93%, transparent 100%);
-    mask-image: linear-gradient(90deg, transparent 0%, #000 7%, #000 93%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 108% 92% at 52% 50%, #000 0 57%, rgba(0,0,0,.95) 73%, rgba(0,0,0,.42) 87%, transparent 100%);
+    mask-image: radial-gradient(ellipse 108% 92% at 52% 50%, #000 0 57%, rgba(0,0,0,.95) 73%, rgba(0,0,0,.42) 87%, transparent 100%);
   }
 
   .cosmic-path-glow {
@@ -264,7 +266,7 @@ html[data-theme='dark'] .cosmic-path-glow {
 
 @media (max-width: 640px) {
   .orbit-wrap { min-height: min(398px, 94vw); }
-  .space-scene { width: min(100vw, 402px); }
+  .space-scene { width: min(96vw, 390px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
