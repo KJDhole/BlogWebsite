@@ -114,15 +114,15 @@ export function createStarField(scene, { mobile = false } = {}) {
 
   function setTheme(theme) {
     const dark = theme === 'dark'
-    far.baseOpacity = dark ? 0.50 : 0.36
-    mid.baseOpacity = dark ? 0.67 : 0.50
-    near.baseOpacity = dark ? 0.80 : 0.60
+    far.baseOpacity = dark ? 0.50 : 0.46
+    mid.baseOpacity = dark ? 0.67 : 0.62
+    near.baseOpacity = dark ? 0.80 : 0.72
     far.material.opacity = far.baseOpacity
     mid.material.opacity = mid.baseOpacity
     near.material.opacity = near.baseOpacity
-    far.material.color.set(dark ? 0xb9c7e2 : 0x7385a2)
-    mid.material.color.set(dark ? 0xe0e9ff : 0x9aacc9)
-    near.material.color.set(dark ? 0xf8faff : 0xc8d5eb)
+    far.material.color.set(dark ? 0xb9c7e2 : 0x586b8d)
+    mid.material.color.set(dark ? 0xe0e9ff : 0x7186ab)
+    near.material.color.set(dark ? 0xf8faff : 0x9aabca)
   }
 
   function destroy() {
