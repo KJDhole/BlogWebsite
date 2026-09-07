@@ -1,17 +1,43 @@
 <div class="space-scene" data-space-scene aria-hidden="true">
   <canvas class="space-canvas" data-space-canvas tabindex="-1"></canvas>
+
+  <svg class="cosmic-foreground" data-cosmic-foreground viewBox="0 0 1000 1000" focusable="false">
+    <defs>
+      <filter id="cosmic-traveler-glow" x="-250%" y="-250%" width="500%" height="500%">
+        <feGaussianBlur stdDeviation="12" result="blur"></feGaussianBlur>
+        <feMerge>
+          <feMergeNode in="blur"></feMergeNode>
+          <feMergeNode in="SourceGraphic"></feMergeNode>
+        </feMerge>
+      </filter>
+    </defs>
+
+    <path class="cosmic-path cosmic-path-glow" data-cosmic-path-glow pathLength="1"></path>
+    <path class="cosmic-path" data-cosmic-path pathLength="1"></path>
+    <path class="cosmic-trail" data-cosmic-trail pathLength="1"></path>
+
+    <g class="cosmic-traveler" data-cosmic-traveler>
+      <circle class="cosmic-traveler-halo" r="24"></circle>
+      <circle class="cosmic-traveler-core" r="7"></circle>
+    </g>
+  </svg>
+
   <div class="space-fallback" data-space-fallback>
-    <svg class="orbit-fallback-svg" viewBox="0 0 420 420" focusable="false">
-      <g transform="translate(210 210)">
-        <circle class="orbit-fallback-ring" r="70"></circle>
-        <circle class="orbit-fallback-ring" r="120"></circle>
-        <circle class="orbit-fallback-ring" r="172"></circle>
-        <circle class="orbit-fallback-core-halo" r="19"></circle>
-        <circle class="orbit-fallback-core" r="9"></circle>
-        <circle class="orbit-fallback-planet" cx="70" r="4"></circle>
-        <circle class="orbit-fallback-planet" cx="-120" r="4.5"></circle>
-        <circle class="orbit-fallback-accent" cx="172" r="7"></circle>
+    <svg class="cosmic-fallback-svg" viewBox="0 0 1000 1000" focusable="false">
+      <g class="cosmic-fallback-stars">
+        <circle cx="116" cy="235" r="2.2"></circle>
+        <circle cx="202" cy="724" r="1.5"></circle>
+        <circle cx="312" cy="166" r="1.8"></circle>
+        <circle cx="428" cy="592" r="2.1"></circle>
+        <circle cx="548" cy="281" r="1.4"></circle>
+        <circle cx="648" cy="777" r="2.3"></circle>
+        <circle cx="759" cy="194" r="1.7"></circle>
+        <circle cx="846" cy="538" r="1.9"></circle>
+        <circle cx="914" cy="322" r="1.3"></circle>
       </g>
+      <path class="cosmic-fallback-arc" d="M 66 680 C 262 490 515 386 848 418"></path>
+      <path class="cosmic-fallback-arc cosmic-fallback-arc-soft" d="M 282 241 C 514 154 737 219 936 392"></path>
+      <circle class="cosmic-fallback-distant" cx="126" cy="824" r="62"></circle>
     </svg>
   </div>
 </div>
