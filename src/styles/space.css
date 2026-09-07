@@ -1,3 +1,36 @@
+.cosmic-hero {
+  position: relative;
+  isolation: isolate;
+}
+
+.cosmic-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 35% 72% at 77% 49%, rgba(4, 10, 28, .91) 0 24%, rgba(7, 15, 36, .61) 50%, rgba(12, 23, 49, .22) 72%, transparent 100%),
+    radial-gradient(ellipse 28% 43% at 61% 68%, rgba(58, 63, 116, .20), transparent 100%),
+    radial-gradient(ellipse 25% 38% at 89% 23%, rgba(69, 100, 171, .22), transparent 100%),
+    radial-gradient(ellipse 17% 25% at 88% 70%, rgba(203, 105, 74, .045), transparent 100%);
+  filter: blur(12px);
+}
+
+.cosmic-hero > .hero-copy,
+.cosmic-hero > .orbit-wrap {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-theme='dark'] .cosmic-hero::before {
+  background:
+    radial-gradient(ellipse 37% 74% at 77% 49%, rgba(1, 4, 14, .98) 0 25%, rgba(3, 9, 25, .83) 51%, rgba(8, 17, 40, .35) 73%, transparent 100%),
+    radial-gradient(ellipse 30% 45% at 61% 68%, rgba(68, 66, 129, .23), transparent 100%),
+    radial-gradient(ellipse 26% 40% at 89% 23%, rgba(79, 111, 190, .28), transparent 100%),
+    radial-gradient(ellipse 18% 26% at 88% 70%, rgba(220, 112, 78, .055), transparent 100%);
+}
+
 .orbit-wrap {
   display: grid;
   justify-items: center;
@@ -9,7 +42,7 @@
   isolation: isolate;
 }
 
-/* The void belongs to the hero, not to a card-shaped scene container. */
+/* Local nebula detail only; the dark-space mass lives on the hero itself. */
 .orbit-wrap::before,
 .orbit-wrap::after {
   content: '';
@@ -19,28 +52,22 @@
 }
 
 .orbit-wrap::before {
-  inset: 0;
+  inset: 4% 2% 5%;
   background:
-    radial-gradient(ellipse 108% 78% at 79% 46%, rgba(5, 10, 27, .92) 0 17%, rgba(7, 14, 34, .68) 42%, rgba(12, 22, 47, .30) 64%, transparent 89%),
-    radial-gradient(ellipse 64% 42% at 73% 20%, rgba(74, 104, 174, .24), transparent 72%),
-    radial-gradient(ellipse 58% 48% at 36% 77%, rgba(80, 60, 132, .16), transparent 74%),
-    radial-gradient(ellipse 36% 28% at 87% 70%, rgba(199, 101, 73, .052), transparent 76%);
-  -webkit-mask-image: radial-gradient(ellipse 116% 96% at 61% 50%, #000 0 57%, rgba(0,0,0,.95) 72%, rgba(0,0,0,.42) 87%, transparent 100%);
-  mask-image: radial-gradient(ellipse 116% 96% at 61% 50%, #000 0 57%, rgba(0,0,0,.95) 72%, rgba(0,0,0,.42) 87%, transparent 100%);
-  filter: blur(15px);
-  transform: rotate(-2.5deg) scale(1.03, .98);
-  opacity: .98;
+    radial-gradient(ellipse 66% 42% at 72% 22%, rgba(79, 108, 178, .19), transparent 75%),
+    radial-gradient(ellipse 58% 48% at 33% 76%, rgba(80, 61, 133, .13), transparent 76%),
+    radial-gradient(ellipse 37% 29% at 86% 69%, rgba(199, 101, 73, .038), transparent 78%);
+  filter: blur(25px);
+  opacity: calc(.74 + var(--cosmic-energy, .22) * .20);
 }
 
 .orbit-wrap::after {
-  inset: 6% 1% 5%;
+  inset: 7% 4%;
   background:
-    linear-gradient(112deg, transparent 13%, rgba(188, 207, 244, .022) 48%, transparent 72%),
-    radial-gradient(ellipse 68% 54% at 71% 46%, transparent 46%, rgba(119, 145, 201, .026) 67%, transparent 91%);
-  -webkit-mask-image: radial-gradient(ellipse 112% 94% at 58% 50%, #000 0 61%, rgba(0,0,0,.8) 79%, transparent 100%);
-  mask-image: radial-gradient(ellipse 112% 94% at 58% 50%, #000 0 61%, rgba(0,0,0,.8) 79%, transparent 100%);
+    linear-gradient(112deg, transparent 16%, rgba(188, 207, 244, .018) 48%, transparent 75%),
+    radial-gradient(ellipse 72% 62% at 55% 50%, transparent 54%, rgba(119, 145, 201, .022) 76%, transparent 100%);
   filter: blur(9px);
-  opacity: calc(.34 + var(--cosmic-energy, .22) * .26);
+  opacity: calc(.30 + var(--cosmic-energy, .22) * .24);
 }
 
 .space-scene {
@@ -83,14 +110,6 @@
     radial-gradient(ellipse 78% 66% at 56% 49%, transparent 56%, rgba(119, 143, 197, .022) 76%, transparent 100%);
   filter: blur(10px);
   opacity: calc(.34 + var(--cosmic-energy) * .26);
-}
-
-html[data-theme='dark'] .orbit-wrap::before {
-  background:
-    radial-gradient(ellipse 110% 80% at 79% 46%, rgba(1, 4, 14, .98) 0 19%, rgba(3, 8, 23, .82) 43%, rgba(7, 15, 36, .39) 65%, transparent 90%),
-    radial-gradient(ellipse 66% 44% at 73% 20%, rgba(82, 113, 190, .29), transparent 72%),
-    radial-gradient(ellipse 60% 49% at 36% 77%, rgba(91, 64, 151, .20), transparent 74%),
-    radial-gradient(ellipse 38% 29% at 87% 70%, rgba(218, 109, 77, .064), transparent 76%);
 }
 
 .space-canvas,
@@ -212,6 +231,22 @@ html[data-theme='dark'] .cosmic-path-glow {
 }
 
 @media (max-width: 880px) {
+  .cosmic-hero::before {
+    inset: 38% 0 3%;
+    background:
+      radial-gradient(ellipse 72% 55% at 52% 52%, rgba(4, 10, 28, .89) 0 24%, rgba(8, 16, 38, .58) 51%, rgba(13, 24, 51, .20) 73%, transparent 100%),
+      radial-gradient(ellipse 46% 34% at 74% 22%, rgba(72, 103, 177, .20), transparent 100%),
+      radial-gradient(ellipse 42% 33% at 28% 77%, rgba(77, 59, 128, .13), transparent 100%);
+    filter: blur(11px);
+  }
+
+  html[data-theme='dark'] .cosmic-hero::before {
+    background:
+      radial-gradient(ellipse 74% 56% at 52% 52%, rgba(1, 4, 14, .98) 0 25%, rgba(3, 9, 25, .80) 52%, rgba(8, 17, 40, .30) 74%, transparent 100%),
+      radial-gradient(ellipse 48% 35% at 74% 22%, rgba(79, 112, 191, .25), transparent 100%),
+      radial-gradient(ellipse 44% 34% at 28% 77%, rgba(88, 62, 147, .17), transparent 100%);
+  }
+
   .orbit-wrap {
     min-height: 440px;
     padding: 6px 0 12px;
@@ -224,6 +259,10 @@ html[data-theme='dark'] .cosmic-path-glow {
 }
 
 @media (max-width: 760px) {
+  .cosmic-hero::before {
+    inset: 43% 0 4%;
+  }
+
   .orbit-wrap {
     min-height: min(440px, 96vw);
     padding-top: 2px;
@@ -231,15 +270,11 @@ html[data-theme='dark'] .cosmic-path-glow {
   }
 
   .orbit-wrap::before {
-    inset: 0;
+    inset: 3% 1% 5%;
     background:
-      radial-gradient(ellipse 106% 78% at 73% 45%, rgba(5, 10, 27, .88) 0 16%, rgba(7, 14, 34, .62) 42%, rgba(12, 22, 47, .25) 64%, transparent 90%),
-      radial-gradient(ellipse 62% 42% at 70% 21%, rgba(78, 107, 176, .20), transparent 73%),
-      radial-gradient(ellipse 56% 47% at 31% 78%, rgba(78, 61, 130, .13), transparent 75%);
-    -webkit-mask-image: radial-gradient(ellipse 108% 94% at 55% 50%, #000 0 55%, rgba(0,0,0,.94) 72%, rgba(0,0,0,.42) 87%, transparent 100%);
-    mask-image: radial-gradient(ellipse 108% 94% at 55% 50%, #000 0 55%, rgba(0,0,0,.94) 72%, rgba(0,0,0,.42) 87%, transparent 100%);
-    filter: blur(12px);
-    transform: none;
+      radial-gradient(ellipse 65% 43% at 70% 22%, rgba(78, 107, 176, .16), transparent 76%),
+      radial-gradient(ellipse 57% 48% at 30% 78%, rgba(78, 61, 130, .10), transparent 77%);
+    filter: blur(22px);
   }
 
   .space-scene {
