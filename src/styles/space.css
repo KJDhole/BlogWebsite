@@ -10,11 +10,11 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 35% 72% at 77% 49%, rgba(4, 10, 28, .91) 0 24%, rgba(7, 15, 36, .61) 50%, rgba(12, 23, 49, .22) 72%, transparent 100%),
-    radial-gradient(ellipse 28% 43% at 61% 68%, rgba(58, 63, 116, .20), transparent 100%),
-    radial-gradient(ellipse 25% 38% at 89% 23%, rgba(69, 100, 171, .22), transparent 100%),
-    radial-gradient(ellipse 17% 25% at 88% 70%, rgba(203, 105, 74, .045), transparent 100%);
-  filter: blur(12px);
+    radial-gradient(ellipse 46% 62% at 78% 50%, rgba(66, 86, 132, .15) 0%, rgba(80, 101, 146, .09) 42%, rgba(92, 108, 145, .035) 66%, transparent 86%),
+    radial-gradient(ellipse 32% 42% at 62% 69%, rgba(93, 76, 135, .07), transparent 84%),
+    radial-gradient(ellipse 29% 40% at 89% 24%, rgba(72, 103, 171, .10), transparent 82%),
+    radial-gradient(ellipse 18% 27% at 88% 70%, rgba(203, 105, 74, .025), transparent 84%);
+  filter: blur(21px);
 }
 
 .cosmic-hero > .hero-copy,
@@ -25,10 +25,10 @@
 
 html[data-theme='dark'] .cosmic-hero::before {
   background:
-    radial-gradient(ellipse 37% 74% at 77% 49%, rgba(1, 4, 14, .98) 0 25%, rgba(3, 9, 25, .83) 51%, rgba(8, 17, 40, .35) 73%, transparent 100%),
-    radial-gradient(ellipse 30% 45% at 61% 68%, rgba(68, 66, 129, .23), transparent 100%),
-    radial-gradient(ellipse 26% 40% at 89% 23%, rgba(79, 111, 190, .28), transparent 100%),
-    radial-gradient(ellipse 18% 26% at 88% 70%, rgba(220, 112, 78, .055), transparent 100%);
+    radial-gradient(ellipse 49% 68% at 78% 50%, rgba(14, 29, 63, .42) 0%, rgba(15, 31, 68, .25) 45%, rgba(17, 34, 71, .08) 70%, transparent 90%),
+    radial-gradient(ellipse 34% 44% at 62% 69%, rgba(78, 69, 139, .13), transparent 86%),
+    radial-gradient(ellipse 30% 42% at 89% 24%, rgba(81, 114, 193, .17), transparent 84%),
+    radial-gradient(ellipse 19% 28% at 88% 70%, rgba(220, 112, 78, .035), transparent 86%);
 }
 
 .orbit-wrap {
@@ -234,17 +234,17 @@ html[data-theme='dark'] .cosmic-path-glow {
   .cosmic-hero::before {
     inset: 38% 0 3%;
     background:
-      radial-gradient(ellipse 72% 55% at 52% 52%, rgba(4, 10, 28, .89) 0 24%, rgba(8, 16, 38, .58) 51%, rgba(13, 24, 51, .20) 73%, transparent 100%),
-      radial-gradient(ellipse 46% 34% at 74% 22%, rgba(72, 103, 177, .20), transparent 100%),
-      radial-gradient(ellipse 42% 33% at 28% 77%, rgba(77, 59, 128, .13), transparent 100%);
-    filter: blur(11px);
+      radial-gradient(ellipse 76% 58% at 52% 52%, rgba(66, 86, 132, .14) 0%, rgba(80, 101, 146, .08) 44%, rgba(92, 108, 145, .03) 68%, transparent 88%),
+      radial-gradient(ellipse 48% 36% at 74% 22%, rgba(72, 103, 171, .09), transparent 84%),
+      radial-gradient(ellipse 44% 35% at 28% 77%, rgba(93, 76, 135, .06), transparent 85%);
+    filter: blur(19px);
   }
 
   html[data-theme='dark'] .cosmic-hero::before {
     background:
-      radial-gradient(ellipse 74% 56% at 52% 52%, rgba(1, 4, 14, .98) 0 25%, rgba(3, 9, 25, .80) 52%, rgba(8, 17, 40, .30) 74%, transparent 100%),
-      radial-gradient(ellipse 48% 35% at 74% 22%, rgba(79, 112, 191, .25), transparent 100%),
-      radial-gradient(ellipse 44% 34% at 28% 77%, rgba(88, 62, 147, .17), transparent 100%);
+      radial-gradient(ellipse 78% 60% at 52% 52%, rgba(14, 29, 63, .38) 0%, rgba(15, 31, 68, .22) 46%, rgba(17, 34, 71, .07) 70%, transparent 90%),
+      radial-gradient(ellipse 50% 38% at 74% 22%, rgba(81, 114, 193, .14), transparent 86%),
+      radial-gradient(ellipse 46% 36% at 28% 77%, rgba(78, 69, 139, .10), transparent 87%);
   }
 
   .orbit-wrap {
