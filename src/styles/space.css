@@ -243,7 +243,7 @@ html[data-theme='dark'] .cosmic-path-glow {
   }
 
   .space-scene {
-    width: min(96vw, 420px);
+    width: min(100%, 390px);
     aspect-ratio: 1.08 / 1;
     transform: none;
   }
@@ -266,7 +266,7 @@ html[data-theme='dark'] .cosmic-path-glow {
 
 @media (max-width: 640px) {
   .orbit-wrap { min-height: min(398px, 94vw); }
-  .space-scene { width: min(96vw, 390px); }
+  .space-scene { width: min(100%, 390px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
