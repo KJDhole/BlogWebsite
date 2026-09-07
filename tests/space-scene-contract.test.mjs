@@ -4,42 +4,37 @@ import { readFile } from 'node:fs/promises'
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8')
 
-test('space scene shell provides WebGL canvas and SVG fallback without React', async () => {
+test('space scene exposes a layered cosmic foreground instead of a solar-system fallback model', async () => {
   const component = await read('../src/components/SpaceScene.astro')
   assert.match(component, /data-space-scene/)
   assert.match(component, /data-space-canvas/)
   assert.match(component, /data-space-fallback/)
-  assert.match(component, /orbit-fallback-accent/)
+  assert.match(component, /data-cosmic-path/)
+  assert.match(component, /data-cosmic-trail/)
+  assert.match(component, /data-cosmic-traveler/)
+  assert.doesNotMatch(component, /orbit-fallback-core|orbit-fallback-planet|orbit-fallback-ring/)
   assert.doesNotMatch(component, /react|ReactThreeFiber|@react-three/i)
 })
 
-test('homepage preserves all controls while mounting space scene and nav portal', async () => {
+test('homepage preserves publishing controls while mounting the cosmic scene', async () => {
   const page = await read('../src/pages/index.astro')
   assert.match(page, /<SpaceScene/)
-  assert.match(page, /class="nav-portal"/)
   assert.match(page, /id="article-search"/)
   assert.match(page, /data-category="All"/)
   assert.match(page, /<ArticleRow/)
+  assert.doesNotMatch(page, /class="nav-portal"|class="flight-orb"|flight-echo/)
 })
 
-test('3d scene responsibilities stay split into focused modules', async () => {
+test('active Three.js scene uses atmospheric cosmic field rather than solar-system or black-hole model modules', async () => {
+  const scene = await read('../src/scripts/spaceScene.mjs')
   const stars = await read('../src/scripts/starField.mjs')
-  const solar = await read('../src/scripts/solarSystem3d.mjs')
-  const portal = await read('../src/scripts/blackHolePortal.mjs')
   assert.match(stars, /createStarField/)
-  assert.match(solar, /createSolarSystem/)
-  assert.match(solar, /accentPlanet/)
-  assert.match(portal, /createBlackHolePortal/)
-  assert.doesNotMatch(portal, /createSolarSystem/)
+  assert.match(scene, /createCosmicField/)
+  assert.doesNotMatch(scene, /createSolarSystem|solarSystem3d/)
+  assert.doesNotMatch(scene, /createBlackHolePortal|blackHolePortal/)
 })
 
-test('hero black hole core fades with semantic portal opacity instead of popping off', async () => {
-  const portal = await read('../src/scripts/blackHolePortal.mjs')
-  assert.match(portal, /coreMaterial\.opacity\s*=\s*opacity/)
-  assert.match(portal, /coreMaterial\s*=\s*new THREE\.MeshBasicMaterial\(\{[^}]*transparent:\s*true[^}]*opacity:\s*0/s)
-})
-
-test('space scene exposes a small lifecycle API and quality protections', async () => {
+test('space scene keeps the lifecycle and performance protections', async () => {
   const scene = await read('../src/scripts/spaceScene.mjs')
   assert.match(scene, /createSpaceScene/)
   assert.match(scene, /setStoryState/)
@@ -48,5 +43,6 @@ test('space scene exposes a small lifecycle API and quality protections', async 
   assert.match(scene, /destroy/)
   assert.match(scene, /setPixelRatio/)
   assert.match(scene, /webglcontextlost/)
+  assert.match(scene, /visibilitychange/)
   assert.match(scene, /onUnavailable/)
 })

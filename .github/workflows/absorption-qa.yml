@@ -1,4 +1,4 @@
-name: Absorption QA
+name: Cosmic Motion QA
 
 on:
   pull_request:
@@ -28,10 +28,11 @@ jobs:
         run: |
           npm run preview -- --host 127.0.0.1 --port 4321 > /tmp/blog-preview.log 2>&1 &
           curl --retry 30 --retry-all-errors --retry-delay 1 http://127.0.0.1:4321/ -o /dev/null
-      - name: Capture absorption boundary frames
+      - name: Capture cosmic motion frames
         run: node scripts/absorption-qa.mjs
-      - name: Upload absorption QA
+      - name: Upload cosmic motion QA
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: absorption-qa
-          path: absorption-qa/
+          name: cosmic-motion-qa
+          path: cosmic-motion-qa/

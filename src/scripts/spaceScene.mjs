@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import { createStarField } from './starField.mjs'
-import { createSolarSystem } from './solarSystem3d.mjs'
-import { createBlackHolePortal } from './blackHolePortal.mjs'
+import { createCosmicField } from './cosmicField.mjs'
 
 function unavailableApi() {
   return {
@@ -10,19 +9,6 @@ function unavailableApi() {
     setTheme() {},
     resize() {},
     destroy() {}
-  }
-}
-
-function clampStoryState(state, mobile) {
-  if (!state?.system) return state
-  const minimumScale = mobile ? 0.52 : 0.58
-  return {
-    ...state,
-    system: {
-      ...state.system,
-      scale: Math.max(minimumScale, state.system.scale ?? 1),
-      lift: Math.max(mobile ? -30 : -46, Math.min(10, state.system.lift ?? 0))
-    }
   }
 }
 
@@ -50,21 +36,21 @@ export function createSpaceScene(canvas, {
     return unavailableApi()
   }
 
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.25 : 1.75))
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.2 : 1.65))
   renderer.setClearColor(0x000000, 0)
 
   const scene = new THREE.Scene()
-  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 60)
-  camera.position.set(0.15, 1.75, 7.1)
+  const camera = new THREE.PerspectiveCamera(43, 1, 0.1, 70)
+  camera.position.set(0.08, 0.2, 8.25)
   camera.lookAt(0, 0, 0)
 
-  const portalPosition = new THREE.Vector3(2.15, 0.18, 0.55)
   const stars = createStarField(scene, { mobile })
-  const solarSystem = createSolarSystem(scene, { mobile, portalPosition })
-  const heroPortal = createBlackHolePortal({ position: portalPosition })
-  scene.add(heroPortal.group)
+  const cosmicField = createCosmicField(scene, { mobile })
 
-  let currentStory = null
+  let currentStory = {
+    field: { energy: 0.22, parallax: 0, drift: reducedMotion ? 0 : 0.35 },
+    reducedMotion
+  }
   let currentTheme = theme
   let frameHandle = 0
   let destroyed = false
@@ -87,26 +73,12 @@ export function createSpaceScene(canvas, {
   function setTheme(nextTheme) {
     currentTheme = nextTheme === 'dark' ? 'dark' : 'light'
     stars.setTheme(currentTheme)
-    solarSystem.setTheme(currentTheme)
-    heroPortal.setTheme(currentTheme)
+    cosmicField.setTheme(currentTheme)
   }
 
   function setStoryState(nextState) {
-    currentStory = clampStoryState(nextState, mobile)
-    if (!currentStory) return
-
-    if (reducedMotion || currentStory.reducedMotion) {
-      solarSystem.setStoryState({
-        ...currentStory,
-        system: { scale: 1, rotationX: 0.1, rotationY: 0, lift: 0 },
-        accent: { mode: 'orbit', absorption: 0 }
-      })
-      heroPortal.setState({ opacity: 0, scale: 0, distortion: 0, pulse: 0 })
-      return
-    }
-
-    solarSystem.setStoryState(currentStory)
-    heroPortal.setState(currentStory.heroPortal)
+    if (!nextState) return
+    currentStory = nextState
   }
 
   function renderFrame(now) {
@@ -119,11 +91,10 @@ export function createSpaceScene(canvas, {
 
     const deltaSeconds = Math.min(Math.max((now - lastFrame) / 1000, 0), 0.08)
     lastFrame = now
-    elapsedSeconds += deltaSeconds
-    const motionDelta = reducedMotion ? deltaSeconds * 0.06 : deltaSeconds
+    elapsedSeconds += reducedMotion ? deltaSeconds * 0.03 : deltaSeconds
 
     stars.update(elapsedSeconds, currentStory)
-    solarSystem.update(motionDelta)
+    cosmicField.update(elapsedSeconds, currentStory)
     renderer.render(scene, camera)
   }
 
@@ -165,9 +136,7 @@ export function createSpaceScene(canvas, {
     if (resizeObserver) resizeObserver.disconnect()
     else window.removeEventListener('resize', resize)
     stars.destroy()
-    solarSystem.destroy()
-    scene.remove(heroPortal.group)
-    heroPortal.destroy()
+    cosmicField.destroy()
     renderer.dispose()
     scene.clear()
   }

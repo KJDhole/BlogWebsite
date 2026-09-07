@@ -62,7 +62,7 @@ test('editorial stylesheet includes Chinese-first reading, wide media, restraine
   assert.match(styles, /max-width:\s*760px/)
 })
 
-test('homepage still preserves the single existing motion language and core utilities', async () => {
+test('homepage preserves one coherent motion language and core publishing utilities', async () => {
   const page = await read('../src/pages/index.astro')
   const home = await read('../src/scripts/home.js')
   assert.match(page, /<SpaceScene/)
@@ -72,7 +72,8 @@ test('homepage still preserves the single existing motion language and core util
   assert.match(page, /Tags/)
   assert.match(page, /RSS/)
   assert.match(home, /getScrollStoryState/)
-  assert.match(home, /getLandingMotionState/)
+  assert.match(home, /sampleCosmicPath/)
+  assert.doesNotMatch(home, /getLandingMotionState|createNavPortal|buildEjectionPath/)
 })
 
 test('delivery stylesheet is consolidated and contains no critic-round override layers', async () => {

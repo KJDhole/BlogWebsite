@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8')
 
-test('Astro homepage keeps the approved hero search and category controls around the 3D scene', async () => {
+test('Astro homepage keeps the approved research folio controls around the cosmic scene', async () => {
   const page = await read('../src/pages/index.astro')
   assert.match(page, /class="hero/)
   assert.match(page, /<SpaceScene/)
@@ -14,25 +14,24 @@ test('Astro homepage keeps the approved hero search and category controls around
   assert.match(page, /<ArticleRow/)
 })
 
-test('homepage client code coordinates the new 3d story without owning article data or old svg geometry', async () => {
+test('homepage client coordinates reversible cosmic motion without owning article data or navigation-flight choreography', async () => {
   const script = await read('../src/scripts/home.js')
   assert.doesNotMatch(script, /const\s+articles\s*=\s*\[/)
   assert.match(script, /querySelectorAll\(['"]\.article-row['"]\)/)
   assert.match(script, /filterArticleMetadata/)
   assert.match(script, /getScrollStoryState/)
   assert.match(script, /createSpaceScene/)
-  assert.match(script, /createNavPortal/)
-  assert.match(script, /getLandingMotionState/)
-  assert.match(script, /landingProgressFromElapsed/)
-  assert.doesNotMatch(script, /orbitNodes\s*=|orbit-ring-a|setSvgPoint/)
+  assert.match(script, /sampleCosmicPath/)
+  assert.match(script, /data-cosmic-traveler/)
+  assert.doesNotMatch(script, /createNavPortal|getLandingMotionState|landingProgressFromElapsed|buildEjectionPath|sampleEjectionPath/)
+  assert.doesNotMatch(script, /currentDropGeometry|currentEjectionPath|landingStartedAt/)
 })
 
-test('flight animation consumes cached navigation geometry instead of measuring layout every raf', async () => {
+test('cosmic traveler geometry is cached outside the animation frame loop', async () => {
   const script = await read('../src/scripts/home.js')
-  assert.match(script, /currentDropGeometry/)
-  assert.match(script, /currentEjectionPath/)
-  assert.match(script, /refreshFlightGeometry/)
-  assert.doesNotMatch(script, /function\s+getCurrentDropGeometry/)
+  assert.match(script, /currentCosmicPath/)
+  assert.match(script, /refreshCosmicGeometry/)
+  assert.doesNotMatch(script, /getBoundingClientRect\(\)[\s\S]*requestAnimationFrame\(animate/i)
 })
 
 test('responsive reduced-motion and deep-space containment rules survive the migration', async () => {
@@ -41,8 +40,10 @@ test('responsive reduced-motion and deep-space containment rules survive the mig
   assert.match(styles, /max-width:\s*760px/)
   assert.match(styles, /\.space-scene/)
   assert.match(styles, /\.space-canvas/)
-  assert.match(styles, /\.nav-portal/)
+  assert.match(styles, /\.cosmic-traveler/)
+  assert.match(styles, /\.cosmic-path/)
   assert.match(styles, /is-fallback/)
   assert.match(styles, /overflow:\s*(clip|hidden)/)
   assert.match(styles, /pointer-events:\s*none/)
+  assert.doesNotMatch(styles, /\.nav-portal\s*\{/)
 })

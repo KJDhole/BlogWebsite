@@ -1,59 +1,120 @@
+.cosmic-hero {
+  position: relative;
+  isolation: isolate;
+}
+
+.cosmic-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 46% 62% at 78% 50%, rgba(66, 86, 132, .15) 0%, rgba(80, 101, 146, .09) 42%, rgba(92, 108, 145, .035) 66%, transparent 86%),
+    radial-gradient(ellipse 32% 42% at 62% 69%, rgba(93, 76, 135, .07), transparent 84%),
+    radial-gradient(ellipse 29% 40% at 89% 24%, rgba(72, 103, 171, .10), transparent 82%),
+    radial-gradient(ellipse 18% 27% at 88% 70%, rgba(203, 105, 74, .025), transparent 84%);
+  filter: blur(21px);
+}
+
+.cosmic-hero > .hero-copy,
+.cosmic-hero > .orbit-wrap {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-theme='dark'] .cosmic-hero::before {
+  background:
+    radial-gradient(ellipse 49% 68% at 78% 50%, rgba(14, 29, 63, .42) 0%, rgba(15, 31, 68, .25) 45%, rgba(17, 34, 71, .08) 70%, transparent 90%),
+    radial-gradient(ellipse 34% 44% at 62% 69%, rgba(78, 69, 139, .13), transparent 86%),
+    radial-gradient(ellipse 30% 42% at 89% 24%, rgba(81, 114, 193, .17), transparent 84%),
+    radial-gradient(ellipse 19% 28% at 88% 70%, rgba(220, 112, 78, .035), transparent 86%);
+}
+
 .orbit-wrap {
   display: grid;
   justify-items: center;
   align-content: center;
-  min-height: 500px;
+  min-height: 510px;
   padding: 0 0 24px;
   position: relative;
   overflow: clip;
   isolation: isolate;
 }
 
+/* Local nebula detail only; the dark-space mass lives on the hero itself. */
+.orbit-wrap::before,
+.orbit-wrap::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.orbit-wrap::before {
+  inset: 4% 2% 5%;
+  background:
+    radial-gradient(ellipse 66% 42% at 72% 22%, rgba(79, 108, 178, .19), transparent 75%),
+    radial-gradient(ellipse 58% 48% at 33% 76%, rgba(80, 61, 133, .13), transparent 76%),
+    radial-gradient(ellipse 37% 29% at 86% 69%, rgba(199, 101, 73, .038), transparent 78%);
+  filter: blur(25px);
+  opacity: calc(.74 + var(--cosmic-energy, .22) * .20);
+}
+
+.orbit-wrap::after {
+  inset: 7% 4%;
+  background:
+    linear-gradient(112deg, transparent 16%, rgba(188, 207, 244, .018) 48%, transparent 75%),
+    radial-gradient(ellipse 72% 62% at 55% 50%, transparent 54%, rgba(119, 145, 201, .022) 76%, transparent 100%);
+  filter: blur(9px);
+  opacity: calc(.30 + var(--cosmic-energy, .22) * .24);
+}
+
 .space-scene {
-  width: min(46vw, 540px);
-  aspect-ratio: 1;
+  --cosmic-charge: 0;
+  --cosmic-energy: .22;
+  --cosmic-trail: 0;
+  width: min(62vw, 720px);
+  aspect-ratio: 1.18 / 1;
   position: relative;
+  z-index: 1;
   pointer-events: none;
   isolation: isolate;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 52% 48%, rgba(11, 19, 42, .98) 0 34%, rgba(8, 15, 34, .88) 48%, rgba(9, 15, 31, .46) 65%, transparent 82%),
-    radial-gradient(ellipse at 64% 36%, rgba(60, 82, 132, .16), transparent 42%);
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0 62%, rgba(0,0,0,.9) 70%, transparent 90%);
-  mask-image: radial-gradient(circle at 50% 50%, #000 0 62%, rgba(0,0,0,.9) 70%, transparent 90%);
+  overflow: visible;
+  background: transparent;
+  transform: translateX(4%);
 }
 
 .space-scene::before,
 .space-scene::after {
   content: '';
   position: absolute;
-  inset: 7%;
-  border-radius: 50%;
   pointer-events: none;
   z-index: 0;
 }
 
 .space-scene::before {
+  inset: -7% -8% -4% -4%;
   background:
-    radial-gradient(ellipse at 33% 62%, rgba(75, 102, 164, .10), transparent 38%),
-    radial-gradient(ellipse at 69% 31%, rgba(255, 117, 69, .045), transparent 34%);
-  filter: blur(18px);
+    radial-gradient(ellipse 54% 34% at 34% 59%, rgba(91, 116, 177, calc(.055 + var(--cosmic-energy) * .052)), transparent 74%),
+    radial-gradient(ellipse 46% 31% at 70% 31%, rgba(126, 98, 173, calc(.036 + var(--cosmic-energy) * .038)), transparent 76%),
+    radial-gradient(ellipse 31% 24% at 79% 68%, rgba(255, 117, 69, calc(.008 + var(--cosmic-charge) * .022)), transparent 78%);
+  filter: blur(30px);
+  transform: rotate(-6deg) scale(1.08, .95);
 }
 
 .space-scene::after {
-  inset: 19%;
-  border: 1px solid rgba(170, 192, 235, .035);
-  box-shadow: 0 0 90px rgba(43, 62, 106, .08) inset;
-}
-
-html[data-theme='dark'] .space-scene {
+  inset: 4% -3%;
   background:
-    radial-gradient(circle at 52% 48%, rgba(2, 5, 15, .995) 0 35%, rgba(4, 8, 20, .96) 50%, rgba(5, 9, 21, .56) 67%, transparent 84%),
-    radial-gradient(ellipse at 65% 34%, rgba(79, 102, 166, .18), transparent 43%);
+    linear-gradient(115deg, transparent 18%, rgba(190, 209, 245, .018) 48%, transparent 75%),
+    radial-gradient(ellipse 78% 66% at 56% 49%, transparent 56%, rgba(119, 143, 197, .022) 76%, transparent 100%);
+  filter: blur(10px);
+  opacity: calc(.34 + var(--cosmic-energy) * .26);
 }
 
 .space-canvas,
-.space-fallback {
+.space-fallback,
+.cosmic-foreground {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -64,6 +125,13 @@ html[data-theme='dark'] .space-scene {
 .space-canvas {
   z-index: 2;
   display: block;
+  -webkit-mask-image: radial-gradient(ellipse 112% 94% at 58% 50%, #000 0 58%, rgba(0,0,0,.96) 73%, rgba(0,0,0,.48) 87%, transparent 100%);
+  mask-image: radial-gradient(ellipse 112% 94% at 58% 50%, #000 0 58%, rgba(0,0,0,.96) 73%, rgba(0,0,0,.48) 87%, transparent 100%);
+}
+
+.cosmic-foreground {
+  z-index: 4;
+  overflow: visible;
 }
 
 .space-fallback {
@@ -75,99 +143,186 @@ html[data-theme='dark'] .space-scene {
 .space-scene.is-fallback .space-canvas { display: none; }
 .space-scene.is-fallback .space-fallback { display: grid; }
 
-.orbit-fallback-svg {
-  width: 92%;
-  height: 92%;
-  overflow: visible;
-}
-
-.orbit-fallback-ring {
+.cosmic-path,
+.cosmic-trail,
+.cosmic-fallback-arc {
   fill: none;
-  stroke: rgba(190, 205, 232, .32);
-  stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
 
-.orbit-fallback-core-halo { fill: rgba(211, 222, 240, .08); }
-.orbit-fallback-core { fill: rgba(235, 240, 247, .9); }
-.orbit-fallback-planet { fill: #8e99aa; }
-.orbit-fallback-accent { fill: var(--accent); }
+.cosmic-path {
+  stroke: rgba(174, 195, 234, .58);
+  stroke-width: 1.15;
+  stroke-linecap: round;
+  opacity: .1;
+}
+
+.cosmic-path-glow {
+  stroke: rgba(154, 181, 238, .52);
+  stroke-width: 4;
+  opacity: .02;
+  filter: blur(4px);
+}
+
+.cosmic-trail {
+  stroke: rgba(255, 132, 84, .92);
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: 0;
+  filter: drop-shadow(0 0 7px rgba(255, 117, 69, .34));
+}
+
+.cosmic-traveler {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+.cosmic-traveler-halo {
+  fill: rgba(255, 120, 73, calc(.08 + var(--cosmic-charge) * .13));
+  filter: url(#cosmic-traveler-glow);
+}
+
+.cosmic-traveler-core {
+  fill: #ff7545;
+  stroke: rgba(255, 239, 223, .72);
+  stroke-width: 1.25;
+  vector-effect: non-scaling-stroke;
+}
+
+html[data-theme='dark'] .cosmic-path {
+  stroke: rgba(196, 213, 247, .7);
+}
+
+html[data-theme='dark'] .cosmic-path-glow {
+  stroke: rgba(126, 162, 236, .72);
+}
+
+.cosmic-fallback-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.cosmic-fallback-stars circle {
+  fill: rgba(210, 223, 246, .68);
+}
+
+.cosmic-fallback-arc {
+  stroke: rgba(174, 195, 232, .24);
+  stroke-width: 1;
+}
+
+.cosmic-fallback-arc-soft {
+  opacity: .42;
+}
+
+.cosmic-fallback-distant {
+  fill: rgba(16, 27, 53, .18);
+  stroke: rgba(157, 179, 221, .07);
+  stroke-width: 1;
+}
 
 .orbit-caption {
-  margin: -4px 0 0;
+  margin: -5px 0 0;
   position: relative;
-  z-index: 3;
-}
-
-.nav-portal {
-  --portal-scale: .2;
-  --portal-pulse: 0;
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  pointer-events: none;
-  opacity: 0;
-  z-index: 58;
-  transform: translate3d(-50%, -50%, 0) scale(var(--portal-scale));
-  transform-origin: center;
-  will-change: left, top, transform, opacity;
-  background:
-    radial-gradient(circle at 50% 50%, #000 0 34%, #02040a 36% 45%, rgba(35, 45, 72, .94) 47% 50%, rgba(255, 117, 69, .82) 52% 55%, rgba(131, 159, 231, .28) 59%, transparent 70%);
-  box-shadow:
-    0 0 calc(12px + 8px * var(--portal-pulse)) rgba(255, 117, 69, .13),
-    0 0 calc(23px + 10px * var(--portal-pulse)) rgba(94, 124, 204, .10);
-}
-
-.nav-portal::before,
-.nav-portal::after {
-  content: '';
-  position: absolute;
-  inset: 3px;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.nav-portal::before {
-  border: 1px solid rgba(255, 151, 108, .48);
-  transform: rotate(28deg) scaleY(.58);
-}
-
-.nav-portal::after {
-  inset: 0;
-  border: 1px solid rgba(150, 175, 235, .22);
-  transform: rotate(-19deg) scaleY(.72);
+  z-index: 5;
 }
 
 @media (max-width: 880px) {
+  .cosmic-hero::before {
+    inset: 38% 0 3%;
+    background:
+      radial-gradient(ellipse 76% 58% at 52% 52%, rgba(66, 86, 132, .14) 0%, rgba(80, 101, 146, .08) 44%, rgba(92, 108, 145, .03) 68%, transparent 88%),
+      radial-gradient(ellipse 48% 36% at 74% 22%, rgba(72, 103, 171, .09), transparent 84%),
+      radial-gradient(ellipse 44% 35% at 28% 77%, rgba(93, 76, 135, .06), transparent 85%);
+    filter: blur(19px);
+  }
+
+  html[data-theme='dark'] .cosmic-hero::before {
+    background:
+      radial-gradient(ellipse 78% 60% at 52% 52%, rgba(14, 29, 63, .38) 0%, rgba(15, 31, 68, .22) 46%, rgba(17, 34, 71, .07) 70%, transparent 90%),
+      radial-gradient(ellipse 50% 38% at 74% 22%, rgba(81, 114, 193, .14), transparent 86%),
+      radial-gradient(ellipse 46% 36% at 28% 77%, rgba(78, 69, 139, .10), transparent 87%);
+  }
+
   .orbit-wrap {
-    min-height: 430px;
+    min-height: 440px;
     padding: 6px 0 12px;
   }
-  .space-scene { width: min(82vw, 430px); }
+
+  .space-scene {
+    width: min(92vw, 520px);
+    transform: translateX(2%);
+  }
 }
 
 @media (max-width: 760px) {
+  .cosmic-hero::before {
+    inset: 43% 0 4%;
+  }
+
   .orbit-wrap {
-    min-height: min(430px, 94vw);
-    padding-top: 4px;
+    min-height: min(440px, 96vw);
+    padding-top: 2px;
     overflow: clip;
   }
-  .space-scene { width: min(86vw, 390px); }
-  .nav-portal { width: 29px; height: 29px; }
+
+  .orbit-wrap::before {
+    inset: 3% 1% 5%;
+    background:
+      radial-gradient(ellipse 65% 43% at 70% 22%, rgba(78, 107, 176, .16), transparent 76%),
+      radial-gradient(ellipse 57% 48% at 30% 78%, rgba(78, 61, 130, .10), transparent 77%);
+    filter: blur(22px);
+  }
+
+  .space-scene {
+    width: min(calc(100vw - 36px), 390px);
+    aspect-ratio: 1.08 / 1;
+    transform: none;
+  }
+
+  .space-canvas {
+    -webkit-mask-image: radial-gradient(ellipse 108% 92% at 52% 50%, #000 0 57%, rgba(0,0,0,.95) 73%, rgba(0,0,0,.42) 87%, transparent 100%);
+    mask-image: radial-gradient(ellipse 108% 92% at 52% 50%, #000 0 57%, rgba(0,0,0,.95) 73%, rgba(0,0,0,.42) 87%, transparent 100%);
+  }
+
+  .cosmic-path-glow {
+    stroke-width: 3;
+    filter: blur(3px);
+  }
+
+  .cosmic-trail {
+    stroke-width: 2.4;
+    filter: drop-shadow(0 0 5px rgba(255, 117, 69, .26));
+  }
 }
 
 @media (max-width: 640px) {
-  .orbit-wrap { min-height: min(390px, 92vw); }
-  .space-scene { width: min(90vw, 360px); }
+  .orbit-wrap { min-height: min(398px, 94vw); }
+  .space-scene { width: min(calc(100vw - 28px), 390px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nav-portal,
-  .flight-orb,
-  .flight-echo { display: none !important; }
+  .space-scene,
+  .cosmic-foreground,
+  .cosmic-traveler,
+  .cosmic-trail {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .cosmic-traveler,
+  .cosmic-trail,
+  .cosmic-path-glow {
+    display: none !important;
+  }
+
+  .cosmic-path {
+    opacity: .11 !important;
+  }
+
   .filter-indicator { opacity: 1 !important; }
   .space-scene { transform: none !important; }
 }

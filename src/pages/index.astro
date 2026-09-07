@@ -10,11 +10,6 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
 ---
 <BaseLayout title={SITE.title} description={SITE.description}>
-  <span class="nav-portal" aria-hidden="true"></span>
-  <span class="flight-echo flight-echo-two" aria-hidden="true"></span>
-  <span class="flight-echo flight-echo-one" aria-hidden="true"></span>
-  <span class="flight-orb" aria-hidden="true"></span>
-
   <div class="page-shell">
     <header class="site-topbar folio-topbar">
       <a class="brand" href="#top" aria-label="返回首页">GLENN<span class="brand-dot" aria-hidden="true"></span></a>
@@ -31,7 +26,7 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
     </header>
 
     <main id="top">
-      <section class="hero reveal-block" aria-labelledby="hero-title">
+      <section class="hero cosmic-hero reveal-block" aria-labelledby="hero-title">
         <div class="hero-copy folio-intro">
           <p class="eyebrow">GLENN / RESEARCH FOLIO / 2026</p>
           <h1 id="hero-title">Build things.<br />Study the systems behind them.</h1>
