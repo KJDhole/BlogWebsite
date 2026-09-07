@@ -1,8 +1,8 @@
 import * as THREE from 'three'
 
 const COUNTS = Object.freeze({
-  desktop: { far: 980, mid: 420, near: 110 },
-  mobile: { far: 360, mid: 145, near: 34 }
+  desktop: { far: 1120, mid: 440, near: 96 },
+  mobile: { far: 330, mid: 122, near: 28 }
 })
 
 function clamp01(value) {
@@ -17,19 +17,16 @@ function createRng(seed) {
   }
 }
 
-function createLayer({ count, radiusMin, radiusMax, size, opacity, seed, color }) {
+function createLayer({ count, spreadX, spreadY, zMin, zMax, size, opacity, seed, color }) {
   const rng = createRng(seed)
   const positions = new Float32Array(count * 3)
 
   for (let index = 0; index < count; index += 1) {
-    const radius = radiusMin + (radiusMax - radiusMin) * rng()
-    const theta = rng() * Math.PI * 2
-    const z = (rng() * 2 - 1) * radius * 0.64
-    const radial = Math.sqrt(Math.max(0, radius * radius - z * z))
     const offset = index * 3
-    positions[offset] = Math.cos(theta) * radial
-    positions[offset + 1] = Math.sin(theta) * radial * 0.78
-    positions[offset + 2] = z
+    const edgeBias = 0.66 + rng() * 0.34
+    positions[offset] = (rng() * 2 - 1) * spreadX * edgeBias
+    positions[offset + 1] = (rng() * 2 - 1) * spreadY * (0.72 + rng() * 0.28)
+    positions[offset + 2] = zMin + (zMax - zMin) * rng()
   }
 
   const geometry = new THREE.BufferGeometry()
@@ -51,30 +48,39 @@ export function createStarField(scene, { mobile = false } = {}) {
   const group = new THREE.Group()
   group.name = 'star-field'
 
+  // These layers are distributed inside the camera frustum rather than on a
+  // giant spherical shell. That keeps the visual density high without adding
+  // thousands of points that never reach the viewport.
   const far = createLayer({
     count: counts.far,
-    radiusMin: 8,
-    radiusMax: 20,
-    size: mobile ? 0.025 : 0.029,
-    opacity: 0.38,
+    spreadX: 5.1,
+    spreadY: 3.75,
+    zMin: -7.5,
+    zMax: -2.1,
+    size: mobile ? 0.031 : 0.034,
+    opacity: 0.40,
     seed: 1977,
     color: 0xaebbd4
   })
   const mid = createLayer({
     count: counts.mid,
-    radiusMin: 5.8,
-    radiusMax: 14,
-    size: mobile ? 0.037 : 0.043,
-    opacity: 0.54,
+    spreadX: 3.75,
+    spreadY: 2.9,
+    zMin: -2.0,
+    zMax: 1.7,
+    size: mobile ? 0.041 : 0.047,
+    opacity: 0.56,
     seed: 4099,
     color: 0xd7e3fa
   })
   const near = createLayer({
     count: counts.near,
-    radiusMin: 4.2,
-    radiusMax: 9.5,
-    size: mobile ? 0.052 : 0.062,
-    opacity: 0.67,
+    spreadX: 2.45,
+    spreadY: 1.95,
+    zMin: 1.8,
+    zMax: 4.25,
+    size: mobile ? 0.055 : 0.064,
+    opacity: 0.69,
     seed: 8923,
     color: 0xf4f7ff
   })
@@ -88,14 +94,17 @@ export function createStarField(scene, { mobile = false } = {}) {
     const parallax = storyState?.reducedMotion ? 0 : clamp01(field.parallax ?? 0.12)
     const drift = storyState?.reducedMotion ? 0 : clamp01(field.drift ?? 0.35)
 
-    far.points.rotation.y = elapsedSeconds * 0.0018 * drift
-    far.points.rotation.x = -0.025 + parallax * 0.01
+    far.points.rotation.z = elapsedSeconds * 0.0008 * drift
+    far.points.position.x = -parallax * 0.025
+    far.points.position.y = parallax * 0.012
 
-    mid.points.rotation.y = -elapsedSeconds * 0.0042 * drift
-    mid.points.rotation.x = 0.032 + parallax * 0.025
+    mid.points.rotation.z = -elapsedSeconds * 0.0015 * drift
+    mid.points.position.x = parallax * 0.055
+    mid.points.position.y = -parallax * 0.026
 
-    near.points.rotation.y = elapsedSeconds * 0.0075 * drift
-    near.points.rotation.z = -0.022 + parallax * 0.038
+    near.points.rotation.z = elapsedSeconds * 0.0025 * drift
+    near.points.position.x = -parallax * 0.095
+    near.points.position.y = parallax * 0.048
 
     const pulse = storyState?.reducedMotion ? 1 : 0.96 + Math.sin(elapsedSeconds * 0.31) * 0.04
     far.material.opacity = far.baseOpacity * (0.82 + energy * 0.30) * pulse
@@ -105,15 +114,15 @@ export function createStarField(scene, { mobile = false } = {}) {
 
   function setTheme(theme) {
     const dark = theme === 'dark'
-    far.baseOpacity = dark ? 0.46 : 0.30
-    mid.baseOpacity = dark ? 0.62 : 0.43
-    near.baseOpacity = dark ? 0.75 : 0.51
+    far.baseOpacity = dark ? 0.50 : 0.36
+    mid.baseOpacity = dark ? 0.67 : 0.50
+    near.baseOpacity = dark ? 0.80 : 0.60
     far.material.opacity = far.baseOpacity
     mid.material.opacity = mid.baseOpacity
     near.material.opacity = near.baseOpacity
-    far.material.color.set(dark ? 0xb9c7e2 : 0x75839d)
-    mid.material.color.set(dark ? 0xe0e9ff : 0x9eacc6)
-    near.material.color.set(dark ? 0xf8faff : 0xc4d0e5)
+    far.material.color.set(dark ? 0xb9c7e2 : 0x7385a2)
+    mid.material.color.set(dark ? 0xe0e9ff : 0x9aacc9)
+    near.material.color.set(dark ? 0xf8faff : 0xc8d5eb)
   }
 
   function destroy() {
