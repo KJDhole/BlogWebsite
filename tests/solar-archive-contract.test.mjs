@@ -11,6 +11,7 @@ test('BaseLayout mounts one global signature transition surface', async () => {
   assert.match(transition, /data-eclipse-core/)
   assert.match(transition, /data-corona/)
   assert.match(transition, /data-solar-wave/)
+  assert.match(transition, /world-transition\.css/)
   assert.match(transition, /Two modes of the same mind\./)
 })
 
@@ -27,15 +28,17 @@ test('theme controller uses actual toggle origin and progressive enhancement', a
 })
 
 test('Solar reveal is not implemented as a generic white wipe', async () => {
-  const css = await read('../src/styles/solar.css')
+  const solarCss = await read('../src/styles/solar.css')
+  const transitionCss = await read('../src/styles/world-transition.css')
+  const css = `${solarCss}\n${transitionCss}`
   assert.match(css, /\.theme-eclipse-core/)
   assert.match(css, /\.theme-corona/)
   assert.match(css, /\.theme-solar-wave/)
   assert.match(css, /--world-origin-x/)
   assert.match(css, /--world-origin-y/)
   assert.match(css, /--world-wave-radius/)
-  assert.match(css, /radial-gradient\(circle,\s*transparent\s+0\s+6[5-9]%/)
-  assert.doesNotMatch(css, /rgba\(244,\s*240,\s*230,\s*\.98\)\s*0\s*76%/)
+  assert.match(transitionCss, /radial-gradient\(circle,\s*transparent\s+0\s+6[5-9]%/)
+  assert.doesNotMatch(transitionCss, /rgba\(244,\s*240,\s*230,\s*\.98\)\s*0\s*76%/)
   assert.doesNotMatch(css, /background:\s*white\s*;/i)
 })
 
