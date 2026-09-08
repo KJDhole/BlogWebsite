@@ -102,6 +102,12 @@ async function captureExactFrame(page, viewport, { fromWorld, toWorld, direction
   const visualTheme = worldToTheme(visualWorld)
   const active = checkpoint < 1500
 
+  // Resolve the actual base world before freezing the transition furniture.
+  // Directly mutating data-world left the renderer and page surface in a mixed state,
+  // which made exact screenshots darker than the real transition/stable destination.
+  if (visualWorld !== fromWorld) await loadWorld(page, visualWorld)
+  const stableBackground = await page.evaluate(() => getComputedStyle(document.body).backgroundColor)
+
   await page.evaluate(({ frame, direction, origin, radius, visualWorld, visualTheme, active, fromWorld, toWorld }) => {
     const root = document.documentElement
     const layer = document.querySelector('[data-theme-transition]')
@@ -152,8 +158,10 @@ async function captureExactFrame(page, viewport, { fromWorld, toWorld, direction
     const layer = document.querySelector('[data-theme-transition]')
     return {
       world: root.dataset.world,
+      theme: root.dataset.theme,
       phase: layer?.dataset.phase ?? null,
       active: Boolean(layer?.classList.contains('is-active')),
+      backgroundColor: getComputedStyle(document.body).backgroundColor,
       innerWidth: innerWidth,
       scrollWidth: Math.max(root.scrollWidth, document.body?.scrollWidth ?? 0)
     }
@@ -162,8 +170,26 @@ async function captureExactFrame(page, viewport, { fromWorld, toWorld, direction
   if (state.scrollWidth > state.innerWidth + 1) {
     fail('Frozen transition frame caused horizontal overflow', { viewport: viewport.name, direction, checkpoint, state })
   }
+  if (state.world !== visualWorld || state.theme !== visualTheme) {
+    fail('Frozen transition frame resolved the wrong base world', {
+      viewport: viewport.name,
+      direction,
+      checkpoint,
+      expected: { world: visualWorld, theme: visualTheme },
+      state
+    })
+  }
   if (active && state.phase !== frame.phase) {
     fail('Frozen transition frame rendered the wrong phase', { viewport: viewport.name, direction, checkpoint, expected: frame.phase, state })
+  }
+  if (!active && state.backgroundColor !== stableBackground) {
+    fail('Settled transition frame no longer matches the stable destination surface', {
+      viewport: viewport.name,
+      direction,
+      checkpoint,
+      stableBackground,
+      state
+    })
   }
 
   await page.screenshot({
