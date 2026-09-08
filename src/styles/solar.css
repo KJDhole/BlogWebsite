@@ -1,0 +1,175 @@
+/* Solar Archive transition surface. The full day publication language is layered on in later tasks. */
+:root {
+  --world-origin-x: 50vw;
+  --world-origin-y: 44px;
+  --world-wave-radius: 100vmax;
+  --world-transition-progress: 0;
+  --world-phase-progress: 0;
+  --solar-paper: #f4f0e6;
+  --solar-paper-bright: #fbf7ed;
+  --solar-cobalt: #315fbc;
+  --solar-sky: #9bc4e7;
+  --solar-silver: #a9b6c8;
+  --solar-mark: #e85d35;
+}
+
+.theme-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  overflow: clip;
+  opacity: 0;
+  visibility: hidden;
+  isolation: isolate;
+}
+.theme-transition.is-active { opacity: 1; visibility: visible; }
+
+.theme-eclipse-core,
+.theme-corona,
+.theme-solar-wave {
+  position: absolute;
+  left: var(--world-origin-x);
+  top: var(--world-origin-y);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  will-change: transform, opacity;
+}
+
+.theme-eclipse-core {
+  width: 16px;
+  height: 16px;
+  z-index: 4;
+  background: radial-gradient(circle at 42% 38%, #11151d 0 45%, #03050a 76% 100%);
+  box-shadow: inset -2px -2px 4px rgba(255,255,255,.045);
+  opacity: 0;
+}
+
+.theme-corona {
+  width: 20px;
+  height: 20px;
+  z-index: 3;
+  opacity: 0;
+  background:
+    conic-gradient(from 19deg,
+      transparent 0 5%, rgba(255,245,211,.92) 6% 6.8%, transparent 8% 24%,
+      rgba(236,225,188,.65) 25% 25.7%, transparent 27% 53%,
+      rgba(255,250,228,.78) 54% 54.8%, transparent 56% 77%,
+      rgba(224,211,169,.58) 78% 78.6%, transparent 80% 100%);
+  filter: drop-shadow(0 0 5px rgba(255,239,191,.38));
+}
+.theme-corona::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border: 1px solid rgba(255,246,216,.94);
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(255,238,186,.36), 0 0 15px rgba(255,238,186,.13);
+}
+
+.theme-solar-wave {
+  width: calc(var(--world-wave-radius) * 2);
+  height: calc(var(--world-wave-radius) * 2);
+  z-index: 2;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(.001);
+  background:
+    radial-gradient(circle,
+      rgba(244,240,230,.98) 0 76%,
+      rgba(224,235,241,.98) 80%,
+      rgba(107,153,210,.48) 83%,
+      rgba(255,244,210,.70) 85%,
+      rgba(244,240,230,.10) 88%,
+      transparent 91%);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.24),
+    0 0 42px rgba(93,137,196,.16),
+    inset 0 0 80px rgba(255,248,226,.16);
+}
+
+.theme-transition-caption {
+  position: fixed;
+  left: 50%;
+  bottom: 30px;
+  z-index: 5;
+  transform: translateX(-50%) translateY(7px);
+  color: color-mix(in srgb, var(--solar-cobalt) 72%, #23272d);
+  font: 500 9px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  opacity: 0;
+}
+
+.theme-transition[data-phase='eclipse'] .theme-eclipse-core {
+  opacity: calc(.35 + var(--world-phase-progress) * .65);
+  transform: translate(-50%, -50%) scale(calc(.55 + var(--world-phase-progress) * .45));
+}
+.theme-transition[data-phase='eclipse'] .theme-corona { opacity: calc(var(--world-phase-progress) * .9); }
+
+.theme-transition[data-phase='totality'] .theme-eclipse-core { opacity: 1; }
+.theme-transition[data-phase='totality'] .theme-corona {
+  opacity: .96;
+  transform: translate(-50%, -50%) scale(calc(1 + var(--world-phase-progress) * .22));
+}
+.theme-transition[data-phase='totality']::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(4,7,13,calc(.05 + var(--world-phase-progress) * .12));
+}
+
+.theme-transition[data-phase='solar-wave'] .theme-eclipse-core { opacity: calc(1 - var(--world-phase-progress)); }
+.theme-transition[data-phase='solar-wave'] .theme-corona {
+  opacity: calc(.92 - var(--world-phase-progress) * .7);
+  transform: translate(-50%, -50%) scale(calc(1.22 + var(--world-phase-progress) * .7));
+}
+.theme-transition[data-phase='solar-wave'] .theme-solar-wave {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(calc(.01 + var(--world-phase-progress) * .99));
+}
+
+.theme-transition[data-phase='solar-reveal'] .theme-solar-wave {
+  opacity: calc(1 - var(--world-phase-progress) * .72);
+  transform: translate(-50%, -50%) scale(1.015);
+  filter: saturate(calc(1.15 - var(--world-phase-progress) * .15));
+}
+
+.theme-transition[data-phase='archive-settle'] .theme-solar-wave {
+  opacity: calc(.28 - var(--world-phase-progress) * .28);
+  transform: translate(-50%, -50%) scale(1.02);
+}
+.theme-transition[data-phase='archive-settle'] .theme-transition-caption {
+  opacity: calc(.52 - var(--world-phase-progress) * .52);
+  transform: translateX(-50%) translateY(calc(7px - var(--world-phase-progress) * 7px));
+}
+
+.theme-transition[data-direction='to-observatory'][data-phase='solar-wave'] .theme-solar-wave,
+.theme-transition[data-direction='to-observatory'][data-phase='solar-reveal'] .theme-solar-wave {
+  background:
+    radial-gradient(circle,
+      rgba(5,8,17,.99) 0 76%,
+      rgba(13,23,47,.98) 80%,
+      rgba(104,132,190,.38) 83%,
+      rgba(234,225,190,.56) 85%,
+      rgba(8,12,25,.12) 88%,
+      transparent 91%);
+}
+.theme-transition[data-direction='to-observatory'] .theme-transition-caption { color: rgba(220,229,245,.68); }
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+@media (max-width: 760px) {
+  .theme-eclipse-core { width: 14px; height: 14px; }
+  .theme-corona { width: 18px; height: 18px; }
+  .theme-transition-caption { bottom: 22px; font-size: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-transition { display: none !important; }
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none !important; }
+}

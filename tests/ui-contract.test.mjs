@@ -21,6 +21,8 @@ test('theme ownership is shared through one world state instead of page-local to
   const homeScript = await read('../src/scripts/home.js')
 
   assert.match(baseLayout, /dataset\.world/)
+  assert.match(baseLayout, /ThemeTransition/)
+  assert.match(baseLayout, /solar\.css/)
   assert.match(page, /data-world-toggle/)
   assert.match(siteHeader, /data-world-toggle/)
   assert.doesNotMatch(siteHeader, /localStorage\.setItem\('glenn-blog-theme'/)
@@ -50,7 +52,7 @@ test('cosmic traveler geometry is cached outside the animation frame loop', asyn
 })
 
 test('responsive reduced-motion and deep-space containment rules survive the migration', async () => {
-  const styles = `${await read('../src/styles/global.css')}\n${await read('../src/styles/space.css')}`
+  const styles = `${await read('../src/styles/global.css')}\n${await read('../src/styles/space.css')}\n${await read('../src/styles/solar.css')}`
   assert.match(styles, /prefers-reduced-motion/)
   assert.match(styles, /max-width:\s*760px/)
   assert.match(styles, /\.space-scene/)
