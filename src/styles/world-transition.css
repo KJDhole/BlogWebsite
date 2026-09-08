@@ -24,7 +24,11 @@
     inset 0 0 54px rgba(255,248,226,.05);
 }
 
-.theme-transition[data-direction='to-observatory'] .theme-solar-wave {
+/* Match the phase-specific legacy selector specificity so the reverse wave
+   cannot fall back to an opaque near-black disc during solar-reveal. */
+.theme-transition[data-direction='to-observatory'][data-phase='solar-wave'] .theme-solar-wave,
+.theme-transition[data-direction='to-observatory'][data-phase='solar-reveal'] .theme-solar-wave,
+.theme-transition[data-direction='to-observatory'][data-phase='archive-settle'] .theme-solar-wave {
   background:
     radial-gradient(circle,
       transparent 0 68%,
