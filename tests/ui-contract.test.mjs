@@ -14,6 +14,21 @@ test('Astro homepage keeps the approved research folio controls around the cosmi
   assert.match(page, /<ArticleRow/)
 })
 
+test('theme ownership is shared through one world state instead of page-local toggles', async () => {
+  const baseLayout = await read('../src/layouts/BaseLayout.astro')
+  const page = await read('../src/pages/index.astro')
+  const siteHeader = await read('../src/components/SiteHeader.astro')
+  const homeScript = await read('../src/scripts/home.js')
+
+  assert.match(baseLayout, /dataset\.world/)
+  assert.match(page, /data-world-toggle/)
+  assert.match(siteHeader, /data-world-toggle/)
+  assert.doesNotMatch(siteHeader, /localStorage\.setItem\('glenn-blog-theme'/)
+  assert.doesNotMatch(homeScript, /function\s+applyTheme|function\s+getInitialTheme/)
+  assert.match(homeScript, /glenn:worldchange/)
+  assert.match(homeScript, /glenn:worldtransition/)
+})
+
 test('homepage client coordinates reversible cosmic motion without owning article data or navigation-flight choreography', async () => {
   const script = await read('../src/scripts/home.js')
   assert.doesNotMatch(script, /const\s+articles\s*=\s*\[/)

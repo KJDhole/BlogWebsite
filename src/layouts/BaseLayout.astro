@@ -39,7 +39,7 @@ const umamiWebsiteId = import.meta.env.PUBLIC_UMAMI_WEBSITE_ID
 const umamiScriptUrl = import.meta.env.PUBLIC_UMAMI_SCRIPT_URL || 'https://cloud.umami.is/script.js'
 ---
 <!doctype html>
-<html lang={SITE.language} data-theme="light">
+<html lang={SITE.language} data-theme="light" data-world="solar">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -74,7 +74,9 @@ const umamiScriptUrl = import.meta.env.PUBLIC_UMAMI_SCRIPT_URL || 'https://cloud
         try {
           const saved = localStorage.getItem('glenn-blog-theme')
           const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-          document.documentElement.dataset.theme = saved === 'light' || saved === 'dark' ? saved : preferred
+          const theme = saved === 'light' || saved === 'dark' ? saved : preferred
+          document.documentElement.dataset.theme = theme
+          document.documentElement.dataset.world = theme === 'dark' ? 'observatory' : 'solar'
         } catch {}
       })()
     </script>

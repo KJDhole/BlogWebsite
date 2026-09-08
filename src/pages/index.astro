@@ -19,7 +19,14 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
         <a href="/tags/">Tags</a>
         <a href="/rss.xml">RSS</a>
       </nav>
-      <button id="theme-toggle" class="icon-button theme-toggle" type="button" aria-label="切换深浅主题" title="切换主题">
+      <button
+        id="theme-toggle"
+        class="icon-button theme-toggle"
+        type="button"
+        data-world-toggle
+        aria-label="切换到 Observatory"
+        title="切换世界"
+      >
         <span class="theme-icon theme-icon-sun" aria-hidden="true">☼</span>
         <span class="theme-icon theme-icon-moon" aria-hidden="true">◐</span>
       </button>

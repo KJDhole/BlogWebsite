@@ -11,7 +11,6 @@ const filterIndicator = document.querySelector('.filter-indicator')
 const resultCount = document.querySelector('#result-count')
 const emptyState = document.querySelector('#empty-state')
 const clearFilters = document.querySelector('#clear-filters')
-const themeToggle = document.querySelector('#theme-toggle')
 const hero = document.querySelector('.hero')
 const controls = document.querySelector('.controls')
 const orbitCaption = document.querySelector('.orbit-caption')
@@ -138,12 +137,6 @@ function scheduleScrollStory() {
   })
 }
 
-function getInitialTheme() {
-  const stored = localStorage.getItem('glenn-blog-theme')
-  if (stored === 'light' || stored === 'dark') return stored
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
-
 function initializeSpaceScene() {
   spaceScene?.destroy()
   sceneMobile = mobileMedia.matches
@@ -152,7 +145,7 @@ function initializeSpaceScene() {
   spaceScene = createSpaceScene(spaceCanvas, {
     mobile: sceneMobile,
     reducedMotion: sceneReduced,
-    theme: document.documentElement.dataset.theme || getInitialTheme(),
+    theme: document.documentElement.dataset.theme || 'light',
     onUnavailable() {
       spaceSceneNode?.classList.add('is-fallback')
     }
@@ -160,12 +153,15 @@ function initializeSpaceScene() {
   spaceScene.setStoryState(currentStory)
 }
 
-function applyTheme(theme) {
-  document.documentElement.dataset.theme = theme
-  localStorage.setItem('glenn-blog-theme', theme)
-  themeToggle?.setAttribute('aria-label', theme === 'dark' ? '切换到浅色主题' : '切换到深色主题')
-  spaceScene?.setTheme(theme)
-}
+window.addEventListener('glenn:worldchange', event => {
+  const { world, theme } = event.detail ?? {}
+  spaceScene?.setWorld?.(world)
+  spaceScene?.setTheme?.(theme)
+})
+
+window.addEventListener('glenn:worldtransition', event => {
+  spaceScene?.setWorldTransition?.(event.detail)
+})
 
 window.addEventListener('scroll', scheduleScrollStory, { passive: true })
 
@@ -248,11 +244,6 @@ clearFilters?.addEventListener('click', () => {
   if (searchInput) searchInput.value = ''
   state.query = ''
   setCategory('All', allButton)
-})
-
-applyTheme(getInitialTheme())
-themeToggle?.addEventListener('click', () => {
-  applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark')
 })
 
 const observer = new IntersectionObserver(entries => {
