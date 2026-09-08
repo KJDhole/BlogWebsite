@@ -58,6 +58,8 @@ const fragmentShader = `
   uniform float uOpacity;
   uniform float uWorldMix;
   uniform float uTransitionPulse;
+  uniform float uReducedMotion;
+  uniform float uDetailOctaves;
 
   float hash(vec2 p) {
     p = fract(p * vec2(123.34, 456.21));
@@ -80,6 +82,7 @@ const fragmentShader = `
     float value = 0.0;
     float amplitude = 0.55;
     for (int i = 0; i < 4; i++) {
+      if (float(i) >= uDetailOctaves) break;
       value += amplitude * noise(p);
       p = p * 2.03 + vec2(17.1, 9.7);
       amplitude *= 0.48;
@@ -93,13 +96,14 @@ const fragmentShader = `
     float surface = 1.0 - smoothstep(0.895, 0.925, radius);
     float coronaBand = smoothstep(1.08, 0.91, radius) * (1.0 - smoothstep(0.89, 0.925, radius));
     float outerGlow = smoothstep(1.28, 0.94, radius) * (1.0 - smoothstep(0.91, 1.04, radius));
+    float motion = 1.0 - uReducedMotion;
 
     vec2 flow = p * 6.5;
-    flow.x += sin(p.y * 8.0 + uTime * 0.035) * 0.22;
-    flow.y += cos(p.x * 7.0 - uTime * 0.028) * 0.18;
-    float granules = fbm(flow * 2.15 + uTime * 0.018);
-    float cells = fbm(flow * 5.2 - uTime * 0.012);
-    float filament = sin((p.x * 11.0 + p.y * 7.0) + granules * 5.0 + uTime * 0.045) * 0.5 + 0.5;
+    flow.x += sin(p.y * 8.0 + uTime * 0.035) * 0.22 * motion;
+    flow.y += cos(p.x * 7.0 - uTime * 0.028) * 0.18 * motion;
+    float granules = fbm(flow * 2.15 + uTime * 0.018 * motion);
+    float cells = fbm(flow * 5.2 - uTime * 0.012 * motion);
+    float filament = sin((p.x * 11.0 + p.y * 7.0) + granules * 5.0 + uTime * 0.045 * motion) * 0.5 + 0.5;
 
     float limb = pow(max(0.0, 1.0 - radius * radius), 0.26);
     vec3 deepSolar = vec3(0.64, 0.24, 0.075);
@@ -110,8 +114,10 @@ const fragmentShader = `
     surfaceColor *= 0.68 + limb * 0.32;
 
     vec3 coronaColor = mix(vec3(0.97, 0.78, 0.48), vec3(0.72, 0.84, 0.98), 0.32 + filament * 0.14);
-    float flare = pow(max(0.0, sin(atan(p.y, p.x) * 5.0 + uTime * 0.065)), 18.0) * coronaBand;
-    float coronaStrength = coronaBand * (0.25 + filament * 0.15) + outerGlow * 0.11 + flare * (0.15 + uTransitionPulse * 0.14);
+    float flarePhase = atan(p.y, p.x) * 5.0 + uTime * 0.065 * motion;
+    float flare = pow(max(0.0, sin(flarePhase)), 18.0) * coronaBand;
+    float flareMotionScale = mix(0.38, 1.0, motion);
+    float coronaStrength = coronaBand * (0.25 + filament * 0.15) + outerGlow * 0.11 + flare * flareMotionScale * (0.15 + uTransitionPulse * 0.14);
 
     vec3 color = surfaceColor * surface + coronaColor * coronaStrength;
     float alpha = max(surface, coronaStrength) * uOpacity * uWorldMix;
@@ -128,7 +134,9 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
     uTime: { value: 0 },
     uOpacity: { value: mobile ? 0.78 : 0.84 },
     uWorldMix: { value: 0 },
-    uTransitionPulse: { value: 0 }
+    uTransitionPulse: { value: 0 },
+    uReducedMotion: { value: reducedMotion ? 1 : 0 },
+    uDetailOctaves: { value: mobile ? 3 : 4 }
   }
 
   const solarGeometry = new THREE.PlaneGeometry(mobile ? 5.2 : 6.2, mobile ? 5.2 : 6.2, 1, 1)
@@ -166,13 +174,13 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
     control: [2.12, 2.05, 0.02],
     end: [3.02, 0.94, -0.18],
     color: 0xc66e4b,
-    opacity: mobile ? 0.02 : 0.042
+    opacity: 0.042
   })
 
-  group.add(solarLimb, spectral.lines, arcA.line, arcB.line, arcC.line)
+  const arcs = mobile ? [arcA, arcB] : [arcA, arcB, arcC]
+  group.add(solarLimb, spectral.lines, ...arcs.map(arc => arc.line))
   scene.add(group)
 
-  const arcs = [arcA, arcB, arcC]
   let worldMix = 0
   let transitionPulse = 0
   let darkTheme = false
@@ -199,21 +207,31 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
   }
 
   function setTransitionState(state = {}) {
+    if (reducedMotion) {
+      transitionPulse = 0
+      uniforms.uTransitionPulse.value = 0
+      return
+    }
     const activeReveal = state.phase === 'solar-reveal' || state.phase === 'archive-settle'
     transitionPulse = activeReveal ? 1 - clamp01(state.phaseProgress ?? 0) * 0.6 : 0
     uniforms.uTransitionPulse.value = transitionPulse
   }
 
   function update(elapsedSeconds, storyState) {
-    const calmTime = reducedMotion || storyState?.reducedMotion ? elapsedSeconds * 0.035 : elapsedSeconds * 0.42
-    uniforms.uTime.value = calmTime
+    const calm = reducedMotion || storyState?.reducedMotion
+    uniforms.uReducedMotion.value = calm ? 1 : 0
+    uniforms.uTime.value = calm ? 0 : elapsedSeconds * 0.42
     const energy = clamp01(storyState?.field?.energy ?? 0.22)
     uniforms.uOpacity.value = (mobile ? 0.76 : 0.83) * (0.97 + energy * 0.035)
 
-    if (!reducedMotion && !storyState?.reducedMotion) {
-      group.position.y = Math.sin(elapsedSeconds * 0.04) * (mobile ? 0.004 : 0.008) * worldMix
-      spectral.lines.position.x = (mobile ? 1.92 : 2.18) + Math.sin(elapsedSeconds * 0.018) * 0.009 * worldMix
+    if (calm) {
+      group.position.y = 0
+      spectral.lines.position.x = mobile ? 1.92 : 2.18
+      return
     }
+
+    group.position.y = Math.sin(elapsedSeconds * 0.04) * (mobile ? 0.004 : 0.008) * worldMix
+    spectral.lines.position.x = (mobile ? 1.92 : 2.18) + Math.sin(elapsedSeconds * 0.018) * 0.009 * worldMix
   }
 
   function destroy() {
@@ -222,10 +240,10 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
     solarMaterial.dispose()
     spectral.geometry.dispose()
     spectral.material.dispose()
-    arcs.forEach(arc => {
+    for (const arc of [arcA, arcB, arcC]) {
       arc.geometry.dispose()
       arc.material.dispose()
-    })
+    }
   }
 
   applyMix()
