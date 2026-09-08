@@ -34,6 +34,8 @@ test('Solar reveal is not implemented as a generic white wipe', async () => {
   assert.match(css, /--world-origin-x/)
   assert.match(css, /--world-origin-y/)
   assert.match(css, /--world-wave-radius/)
+  assert.match(css, /radial-gradient\(circle,\s*transparent\s+0\s+6[5-9]%/)
+  assert.doesNotMatch(css, /rgba\(244,\s*240,\s*230,\s*\.98\)\s*0\s*76%/)
   assert.doesNotMatch(css, /background:\s*white\s*;/i)
 })
 
