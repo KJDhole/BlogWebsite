@@ -626,6 +626,37 @@ html[data-world='solar'] .footer-meta {
   }
 }
 
+@media (max-width: 640px) {
+  html[data-world='solar'] .article-row {
+    grid-template-columns: 1fr auto;
+    gap: 7px 16px;
+  }
+  html[data-world='solar'] .article-date {
+    grid-column: 1;
+    grid-row: 1;
+    padding-top: 0;
+  }
+  html[data-world='solar'] .article-main {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  html[data-world='solar'] .article-index-meta {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    align-items: start;
+    justify-content: flex-end;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  html[data-world='solar'] .article-category::before {
+    content: 'FIELD / ';
+  }
+  html[data-world='solar'] .read-time::before {
+    content: 'OBS / ';
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .theme-transition { display: none !important; }
   ::view-transition-old(root),
