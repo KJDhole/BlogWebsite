@@ -98,8 +98,8 @@ export function getScrollStoryState(rawProgress, { mobile = false, reducedMotion
   const trail = progress < STORY_LIMITS.chargeEnd
     ? 0
     : progress < STORY_LIMITS.flybyEnd
-      ? Math.sin(Math.PI * flybyT) * 0.92
-      : (1 - settleT) * 0.18
+      ? Math.sin(Math.PI * flybyT) * 0.28
+      : (1 - settleT) * 0.035
 
   const energy = progress < STORY_LIMITS.driftEnd
     ? lerp(0.22, 0.28, driftT)
@@ -116,15 +116,6 @@ export function getScrollStoryState(rawProgress, { mobile = false, reducedMotion
     ? lerp(0.38, 1, smoothstep(rangeProgress(progress, 0, STORY_LIMITS.flybyEnd)))
     : lerp(1, 0.28, settleT)
 
-  const opacity = progress < STORY_LIMITS.flybyEnd
-    ? 1
-    : 1 - settleT * 0.88
-  const scale = progress < STORY_LIMITS.chargeEnd
-    ? 0.92 + charge * 0.11
-    : progress < STORY_LIMITS.flybyEnd
-      ? 1.03 + Math.sin(Math.PI * flybyT) * 0.2
-      : lerp(1.03, 0.82, settleT)
-
   return {
     progress: rounded(progress),
     phase: phaseFor(progress),
@@ -137,9 +128,9 @@ export function getScrollStoryState(rawProgress, { mobile = false, reducedMotion
       drift: rounded(desktopDrift * (mobile ? 0.58 : 1))
     },
     traveler: {
-      visible: opacity > 0.04,
-      opacity: rounded(opacity),
-      scale: rounded(scale)
+      visible: false,
+      opacity: 0,
+      scale: 1
     },
     reducedMotion: false
   }
