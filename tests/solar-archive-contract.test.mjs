@@ -86,3 +86,22 @@ test('Solar Archive styles supporting publication surfaces without duplicating a
   assert.match(solarCss, /html\[data-world=['"]solar['"]\] \.site-footer/)
   assert.equal((articleLayout.match(/<article class="article-body">/g) ?? []).length, 1)
 })
+
+test('dual-world motion keeps explicit mobile, reduced-motion, and renderer guardrails', async () => {
+  const controller = await read('../src/scripts/themeController.js')
+  const solar = await read('../src/scripts/solarField.mjs')
+  const scene = await read('../src/scripts/spaceScene.mjs')
+  const solarCss = await read('../src/styles/solar.css')
+
+  assert.match(controller, /prefers-reduced-motion/)
+  assert.match(solar, /uReducedMotion/)
+  assert.match(solar, /uDetailOctaves/)
+  assert.match(solar, /mobile\s*\?\s*3(?:\.0)?\s*:\s*4(?:\.0)?/)
+  assert.match(solarCss, /@media\s*\(max-width:\s*760px\)/)
+  assert.match(solarCss, /@media\s*\(prefers-reduced-motion:\s*reduce\)/)
+  assert.match(scene, /mobile\s*\?\s*1\.2\s*:\s*1\.65/)
+  assert.match(scene, /visibilitychange/)
+  assert.match(scene, /webglcontextlost/)
+  assert.match(scene, /ResizeObserver/)
+  assert.match(scene, /renderer\.dispose\(\)/)
+})
