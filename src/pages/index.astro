@@ -35,7 +35,18 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
     <main id="top">
       <section class="hero cosmic-hero reveal-block" aria-labelledby="hero-title">
         <div class="hero-copy folio-intro">
-          <p class="eyebrow">GLENN / RESEARCH FOLIO / 2026</p>
+          <p
+            class="eyebrow world-eyebrow"
+            data-observatory-label="GLENN / RESEARCH FOLIO / 2026"
+            data-solar-label="GLENN / SOLAR ARCHIVE / 2026"
+          >GLENN / RESEARCH FOLIO / 2026</p>
+
+          <div class="solar-observation-meta" aria-hidden="true">
+            <span>OBS / SOL-26</span>
+            <span>λ 617.3 NM</span>
+            <span>+18.4° / 72.1°</span>
+          </div>
+
           <h1 id="hero-title">Build things.<br />Study the systems behind them.</h1>
           <p class="hero-intro"><span class="folio-principles">Build · Analyze · Think</span></p>
           <p class="folio-note">关于 AI Agent、产品、工程与判断。记录我真正做过、拆过、验证过的东西。</p>
@@ -58,6 +69,11 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
             <h2>Notes, systems,<br />and working ideas.</h2>
           </div>
           <p class="index-description">按时间整理的公开笔记。搜索标题、主题或标签，或按领域筛选。</p>
+          <div class="solar-marginalia" aria-hidden="true">
+            <span>HELIOGRAPH / 617.3 NM</span>
+            <span>SERIES / NOTES + SYSTEMS</span>
+            <span>CAT / 2026.09</span>
+          </div>
         </header>
 
         <div class="index-tools controls reveal-block">

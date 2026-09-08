@@ -102,16 +102,16 @@ const fragmentShader = `
     float filament = sin((p.x * 11.0 + p.y * 7.0) + granules * 5.0 + uTime * 0.045) * 0.5 + 0.5;
 
     float limb = pow(max(0.0, 1.0 - radius * radius), 0.26);
-    vec3 deepGold = vec3(0.86, 0.41, 0.13);
-    vec3 solarGold = vec3(1.0, 0.69, 0.25);
-    vec3 ivoryLight = vec3(1.0, 0.91, 0.66);
-    vec3 surfaceColor = mix(deepGold, solarGold, clamp(granules * 0.96 + cells * 0.22, 0.0, 1.0));
-    surfaceColor = mix(surfaceColor, ivoryLight, clamp(limb * 0.27 + filament * 0.07, 0.0, 0.34));
-    surfaceColor *= 0.72 + limb * 0.38;
+    vec3 deepSolar = vec3(0.64, 0.24, 0.075);
+    vec3 solarOrange = vec3(0.94, 0.49, 0.13);
+    vec3 warmIvory = vec3(1.0, 0.82, 0.48);
+    vec3 surfaceColor = mix(deepSolar, solarOrange, clamp(granules * 0.90 + cells * 0.19, 0.0, 1.0));
+    surfaceColor = mix(surfaceColor, warmIvory, clamp(limb * 0.20 + filament * 0.045, 0.0, 0.25));
+    surfaceColor *= 0.68 + limb * 0.32;
 
-    vec3 coronaColor = mix(vec3(0.98, 0.84, 0.55), vec3(0.78, 0.88, 1.0), 0.26 + filament * 0.18);
+    vec3 coronaColor = mix(vec3(0.97, 0.78, 0.48), vec3(0.72, 0.84, 0.98), 0.32 + filament * 0.14);
     float flare = pow(max(0.0, sin(atan(p.y, p.x) * 5.0 + uTime * 0.065)), 18.0) * coronaBand;
-    float coronaStrength = coronaBand * (0.30 + filament * 0.19) + outerGlow * 0.15 + flare * (0.22 + uTransitionPulse * 0.18);
+    float coronaStrength = coronaBand * (0.25 + filament * 0.15) + outerGlow * 0.11 + flare * (0.15 + uTransitionPulse * 0.14);
 
     vec3 color = surfaceColor * surface + coronaColor * coronaStrength;
     float alpha = max(surface, coronaStrength) * uOpacity * uWorldMix;
@@ -126,7 +126,7 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
 
   const uniforms = {
     uTime: { value: 0 },
-    uOpacity: { value: mobile ? 0.86 : 0.94 },
+    uOpacity: { value: mobile ? 0.78 : 0.84 },
     uWorldMix: { value: 0 },
     uTransitionPulse: { value: 0 }
   }
@@ -142,7 +142,7 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
   })
   const solarLimb = new THREE.Mesh(solarGeometry, solarMaterial)
   solarLimb.name = 'cropped-solar-limb'
-  solarLimb.position.set(mobile ? 2.78 : 3.18, mobile ? 0.18 : 0.10, -0.45)
+  solarLimb.position.set(mobile ? 2.86 : 3.28, mobile ? 0.16 : 0.08, -0.45)
 
   const spectral = createSpectralGrid(mobile)
   spectral.lines.position.set(mobile ? 1.92 : 2.18, 0.03, 0)
@@ -152,21 +152,21 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
     control: [1.35, 1.73, 0.05],
     end: [2.12, 0.78, -0.12],
     color: 0x3d68a8,
-    opacity: mobile ? 0.08 : 0.14
+    opacity: mobile ? 0.07 : 0.12
   })
   const arcB = createMagneticArc({
     start: [0.76, -0.86, -0.06],
     control: [1.63, -1.68, 0.08],
     end: [2.48, -0.72, -0.06],
     color: 0x8ba9cf,
-    opacity: mobile ? 0.055 : 0.105
+    opacity: mobile ? 0.05 : 0.09
   })
   const arcC = createMagneticArc({
     start: [1.18, 1.10, -0.18],
     control: [2.12, 2.05, 0.02],
     end: [3.02, 0.94, -0.18],
-    color: 0xd67a52,
-    opacity: mobile ? 0.025 : 0.055
+    color: 0xc66e4b,
+    opacity: mobile ? 0.02 : 0.042
   })
 
   group.add(solarLimb, spectral.lines, arcA.line, arcB.line, arcC.line)
@@ -180,7 +180,7 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
   function applyMix() {
     const mix = clamp01(worldMix)
     uniforms.uWorldMix.value = mix
-    spectral.material.opacity = (mobile ? 0.055 : 0.085) * mix
+    spectral.material.opacity = (mobile ? 0.045 : 0.072) * mix
     arcs.forEach(arc => { arc.material.opacity = arc.baseOpacity * mix })
     group.visible = mix > 0.002
   }
@@ -195,7 +195,7 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
     spectral.material.color.set(darkTheme ? 0x6f88b5 : 0x3f66a3)
     arcA.material.color.set(darkTheme ? 0x6f8fc8 : 0x315f9f)
     arcB.material.color.set(darkTheme ? 0x8ba5cf : 0x7296c5)
-    arcC.material.color.set(darkTheme ? 0xb47b69 : 0xc86641)
+    arcC.material.color.set(darkTheme ? 0xb47b69 : 0xb85b3e)
   }
 
   function setTransitionState(state = {}) {
@@ -205,14 +205,14 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
   }
 
   function update(elapsedSeconds, storyState) {
-    const calmTime = reducedMotion || storyState?.reducedMotion ? elapsedSeconds * 0.035 : elapsedSeconds
+    const calmTime = reducedMotion || storyState?.reducedMotion ? elapsedSeconds * 0.035 : elapsedSeconds * 0.42
     uniforms.uTime.value = calmTime
     const energy = clamp01(storyState?.field?.energy ?? 0.22)
-    uniforms.uOpacity.value = (mobile ? 0.82 : 0.92) * (0.96 + energy * 0.06)
+    uniforms.uOpacity.value = (mobile ? 0.76 : 0.83) * (0.97 + energy * 0.035)
 
     if (!reducedMotion && !storyState?.reducedMotion) {
-      group.position.y = Math.sin(elapsedSeconds * 0.055) * (mobile ? 0.008 : 0.014) * worldMix
-      spectral.lines.position.x = (mobile ? 1.92 : 2.18) + Math.sin(elapsedSeconds * 0.021) * 0.018 * worldMix
+      group.position.y = Math.sin(elapsedSeconds * 0.04) * (mobile ? 0.004 : 0.008) * worldMix
+      spectral.lines.position.x = (mobile ? 1.92 : 2.18) + Math.sin(elapsedSeconds * 0.018) * 0.009 * worldMix
     }
   }
 
