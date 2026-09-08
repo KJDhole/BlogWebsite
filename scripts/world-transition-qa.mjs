@@ -75,8 +75,8 @@ async function waitForCheckpoint(page, targetMs, direction) {
   }, { target, direction })
 }
 
-async function runDirection(page, viewport, { fromTheme, fromWorld, toWorld, direction }) {
-  await page.goto(BASE_URL, { waitUntil: 'networkidle' })
+async function runDirection(page, viewport, { fromTheme, fromWorld, toWorld, direction, navigate = true }) {
+  if (navigate) await page.goto(BASE_URL, { waitUntil: 'networkidle' })
   const initial = await page.evaluate(() => ({
     theme: document.documentElement.dataset.theme,
     world: document.documentElement.dataset.world
@@ -159,12 +159,12 @@ try {
       })
 
       if (viewport.name === 'desktop') {
-        await installProbe(page)
         await runDirection(page, viewport, {
           fromTheme: 'light',
           fromWorld: 'solar',
           toWorld: 'observatory',
-          direction: 'to-observatory'
+          direction: 'to-observatory',
+          navigate: false
         })
       }
     } catch (error) {
