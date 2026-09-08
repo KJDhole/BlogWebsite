@@ -1,10 +1,10 @@
 import { chromium } from 'playwright'
 import { mkdir, writeFile } from 'node:fs/promises'
+import { getTransitionFrame, worldToTheme } from '../src/scripts/themeWorld.mjs'
 
 const BASE_URL = 'http://127.0.0.1:4321'
 const OUT_DIR = 'world-transition-qa'
 const CHECKPOINTS = [0, 180, 450, 700, 950, 1250, 1500]
-const DURATION_MS = 1500
 const viewports = [
   { name: 'desktop', width: 1440, height: 1000 },
   { name: 'mobile', width: 390, height: 844 }
@@ -12,7 +12,7 @@ const viewports = [
 
 await mkdir(OUT_DIR, { recursive: true })
 const browser = await chromium.launch({ headless: true })
-const report = { runs: [], failures: [] }
+const report = { liveRuns: [], frames: [], failures: [] }
 
 function fail(message, detail = {}) {
   report.failures.push({ message, ...detail })
@@ -22,116 +22,155 @@ function pad(ms) {
   return String(ms).padStart(4, '0')
 }
 
-async function installProbe(page) {
+async function loadWorld(page, world) {
+  const theme = worldToTheme(world)
+  await page.goto(BASE_URL, { waitUntil: 'networkidle' })
+  await page.evaluate(selectedTheme => localStorage.setItem('glenn-blog-theme', selectedTheme), theme)
+  await page.reload({ waitUntil: 'networkidle' })
+  const resolved = await page.evaluate(() => ({
+    theme: document.documentElement.dataset.theme,
+    world: document.documentElement.dataset.world
+  }))
+  if (resolved.theme !== theme || resolved.world !== world) {
+    fail('Persisted theme did not resolve to requested QA world', { requested: { theme, world }, resolved })
+  }
+}
+
+async function getToggleGeometry(page) {
+  const button = page.locator('[data-world-toggle]').first()
+  const box = await button.boundingBox()
+  if (!box) throw new Error('Missing visible world toggle')
+  const origin = { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+  const viewport = page.viewportSize()
+  const radius = Math.hypot(
+    Math.max(origin.x, viewport.width - origin.x),
+    Math.max(origin.y, viewport.height - origin.y)
+  )
+  return { button, origin, radius }
+}
+
+async function runLiveDirection(page, viewport, { fromWorld, toWorld, direction }) {
+  await loadWorld(page, fromWorld)
   await page.evaluate(() => {
     window.__worldQaFrames = []
     window.addEventListener('glenn:worldtransition', event => {
       window.__worldQaFrames.push({ ...event.detail, at: performance.now() })
-    })
+    }, { once: false })
   })
-}
 
-async function snapshotState(page) {
-  return page.evaluate(() => {
-    const root = document.documentElement
-    const layer = document.querySelector('[data-theme-transition]')
-    const styles = getComputedStyle(root)
-    return {
-      theme: root.dataset.theme || null,
-      world: root.dataset.world || null,
-      phase: layer?.dataset.phase || null,
-      direction: layer?.dataset.direction || null,
-      active: Boolean(layer?.classList.contains('is-active')),
-      originX: Number.parseFloat(styles.getPropertyValue('--world-origin-x')),
-      originY: Number.parseFloat(styles.getPropertyValue('--world-origin-y')),
-      innerWidth: window.innerWidth,
-      scrollWidth: Math.max(root.scrollWidth, document.body?.scrollWidth ?? 0),
-      frames: window.__worldQaFrames ?? []
-    }
-  })
-}
-
-async function waitForCheckpoint(page, targetMs, direction, toWorld) {
-  const target = targetMs / DURATION_MS
-  if (targetMs === 0) {
-    await page.waitForFunction(expectedDirection => {
-      const frames = window.__worldQaFrames ?? []
-      return frames.some(frame => frame.direction === expectedDirection)
-    }, direction)
-    return
-  }
-
-  if (targetMs >= DURATION_MS) {
-    await page.waitForFunction(() => {
-      const layer = document.querySelector('[data-theme-transition]')
-      return !layer?.classList.contains('is-active')
-    })
-    return
-  }
-
-  await page.waitForFunction(({ target, direction, targetMs, toWorld }) => {
-    const frames = window.__worldQaFrames ?? []
-    const reached = frames.some(frame => frame.direction === direction && frame.progress >= target)
-    if (!reached) return false
-    // startViewTransition invokes its DOM-update callback asynchronously. At the
-    // 450 ms boundary the wave phase may be visible one frame before data-world
-    // commits. Capture the swap checkpoint only after that callback has landed.
-    if (targetMs >= 450) return document.documentElement.dataset.world === toWorld
-    return true
-  }, { target, direction, targetMs, toWorld })
-}
-
-async function runDirection(page, viewport, { fromTheme, fromWorld, toWorld, direction, navigate = true }) {
-  if (navigate) await page.goto(BASE_URL, { waitUntil: 'networkidle' })
-  const initial = await page.evaluate(() => ({
-    theme: document.documentElement.dataset.theme,
-    world: document.documentElement.dataset.world
-  }))
-  if (initial.theme !== fromTheme || initial.world !== fromWorld) {
-    fail('Transition started from the wrong persisted world', { viewport: viewport.name, direction, initial, fromTheme, fromWorld })
-  }
-
-  await installProbe(page)
-  const button = page.locator('[data-world-toggle]').first()
-  const box = await button.boundingBox()
-  if (!box) throw new Error('Missing visible world toggle')
-  const expectedOrigin = { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+  const { button, origin } = await getToggleGeometry(page)
   await button.click()
 
-  await page.waitForFunction(() => {
-    const value = getComputedStyle(document.documentElement).getPropertyValue('--world-origin-x')
-    return Number.isFinite(Number.parseFloat(value))
+  await page.waitForFunction(expectedWorld => {
+    const layer = document.querySelector('[data-theme-transition]')
+    return document.documentElement.dataset.world === expectedWorld && !layer?.classList.contains('is-active')
+  }, toWorld)
+
+  const state = await page.evaluate(() => {
+    const root = document.documentElement
+    const styles = getComputedStyle(root)
+    const frames = window.__worldQaFrames ?? []
+    return {
+      world: root.dataset.world,
+      originX: Number.parseFloat(styles.getPropertyValue('--world-origin-x')),
+      originY: Number.parseFloat(styles.getPropertyValue('--world-origin-y')),
+      innerWidth: innerWidth,
+      scrollWidth: Math.max(root.scrollWidth, document.body?.scrollWidth ?? 0),
+      phases: [...new Set(frames.map(frame => frame.phase))]
+    }
   })
 
-  const geometry = await snapshotState(page)
-  if (Math.abs(geometry.originX - expectedOrigin.x) > 2 || Math.abs(geometry.originY - expectedOrigin.y) > 2) {
-    fail('Solar wave origin drifted away from the actual toggle center', {
-      viewport: viewport.name,
-      direction,
-      expectedOrigin,
-      actualOrigin: { x: geometry.originX, y: geometry.originY }
-    })
+  if (Math.abs(state.originX - origin.x) > 2 || Math.abs(state.originY - origin.y) > 2) {
+    fail('Live transition origin drifted from toggle center', { viewport: viewport.name, direction, origin, state })
+  }
+  if (state.scrollWidth > state.innerWidth + 1) {
+    fail('Live transition caused horizontal overflow', { viewport: viewport.name, direction, state })
+  }
+  for (const phase of ['eclipse', 'totality', 'solar-wave', 'solar-reveal', 'archive-settle']) {
+    if (!state.phases.includes(phase)) fail('Live transition skipped signature phase', { viewport: viewport.name, direction, phase, phases: state.phases })
   }
 
-  const frames = []
-  for (const checkpoint of CHECKPOINTS) {
-    await waitForCheckpoint(page, checkpoint, direction, toWorld)
-    const state = await snapshotState(page)
-    if (state.scrollWidth > state.innerWidth + 1) {
-      fail('Transition caused horizontal overflow', { viewport: viewport.name, direction, checkpoint, state })
+  report.liveRuns.push({ viewport: viewport.name, direction, origin, finalWorld: state.world, phases: state.phases })
+}
+
+async function captureExactFrame(page, viewport, { fromWorld, toWorld, direction }, checkpoint) {
+  await loadWorld(page, fromWorld)
+  const { origin, radius } = await getToggleGeometry(page)
+  const frame = getTransitionFrame(checkpoint, direction)
+  const swapped = checkpoint >= 450
+  const visualWorld = swapped ? toWorld : fromWorld
+  const visualTheme = worldToTheme(visualWorld)
+  const active = checkpoint < 1500
+
+  await page.evaluate(({ frame, direction, origin, radius, visualWorld, visualTheme, active, fromWorld, toWorld }) => {
+    const root = document.documentElement
+    const layer = document.querySelector('[data-theme-transition]')
+
+    root.dataset.world = visualWorld
+    root.dataset.theme = visualTheme
+    root.style.setProperty('--world-origin-x', `${origin.x}px`)
+    root.style.setProperty('--world-origin-y', `${origin.y}px`)
+    root.style.setProperty('--world-wave-radius', `${radius}px`)
+    root.style.setProperty('--world-transition-progress', String(frame.progress))
+    root.style.setProperty('--world-phase-progress', String(frame.phaseProgress))
+
+    if (layer) {
+      layer.classList.toggle('is-active', active)
+      if (active) {
+        layer.dataset.phase = frame.phase
+        layer.dataset.direction = direction
+      } else {
+        delete layer.dataset.phase
+        delete layer.dataset.direction
+      }
     }
-    await page.screenshot({
-      path: `${OUT_DIR}/${viewport.name}-${direction}-${pad(checkpoint)}.png`,
-      fullPage: false
-    })
-    frames.push({ checkpoint, world: state.world, phase: state.phase, active: state.active })
+
+    window.dispatchEvent(new CustomEvent('glenn:worldchange', {
+      detail: { theme: visualTheme, world: visualWorld }
+    }))
+    if (active) {
+      window.dispatchEvent(new CustomEvent('glenn:worldtransition', {
+        detail: {
+          fromWorld,
+          toWorld,
+          theme: visualTheme,
+          world: visualWorld,
+          direction,
+          progress: frame.progress,
+          phase: frame.phase,
+          phaseProgress: frame.phaseProgress,
+          originX: origin.x,
+          originY: origin.y
+        }
+      }))
+    }
+  }, { frame, direction, origin, radius, visualWorld, visualTheme, active, fromWorld, toWorld })
+
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+  const state = await page.evaluate(() => {
+    const root = document.documentElement
+    const layer = document.querySelector('[data-theme-transition]')
+    return {
+      world: root.dataset.world,
+      phase: layer?.dataset.phase ?? null,
+      active: Boolean(layer?.classList.contains('is-active')),
+      innerWidth: innerWidth,
+      scrollWidth: Math.max(root.scrollWidth, document.body?.scrollWidth ?? 0)
+    }
+  })
+
+  if (state.scrollWidth > state.innerWidth + 1) {
+    fail('Frozen transition frame caused horizontal overflow', { viewport: viewport.name, direction, checkpoint, state })
+  }
+  if (active && state.phase !== frame.phase) {
+    fail('Frozen transition frame rendered the wrong phase', { viewport: viewport.name, direction, checkpoint, expected: frame.phase, state })
   }
 
-  const final = await snapshotState(page)
-  if (final.world !== toWorld) fail('Transition settled on the wrong world', { viewport: viewport.name, direction, final, toWorld })
-  if (final.active || final.phase) fail('Transition furniture remained active after settle', { viewport: viewport.name, direction, final })
-
-  report.runs.push({ viewport: viewport.name, direction, expectedOrigin, frames, finalWorld: final.world })
+  await page.screenshot({
+    path: `${OUT_DIR}/${viewport.name}-${direction}-${pad(checkpoint)}.png`,
+    fullPage: false
+  })
+  report.frames.push({ viewport: viewport.name, direction, checkpoint, phase: active ? frame.phase : null, world: visualWorld })
 }
 
 try {
@@ -142,10 +181,6 @@ try {
       reducedMotion: 'no-preference',
       colorScheme: 'dark'
     })
-    await context.addInitScript(() => {
-      localStorage.setItem('glenn-blog-theme', 'dark')
-    })
-
     const page = await context.newPage()
     const consoleErrors = []
     page.on('console', message => {
@@ -154,21 +189,14 @@ try {
     page.on('pageerror', error => consoleErrors.push(error.message))
 
     try {
-      await runDirection(page, viewport, {
-        fromTheme: 'dark',
-        fromWorld: 'observatory',
-        toWorld: 'solar',
-        direction: 'to-solar'
-      })
+      const toSolar = { fromWorld: 'observatory', toWorld: 'solar', direction: 'to-solar' }
+      await runLiveDirection(page, viewport, toSolar)
+      for (const checkpoint of CHECKPOINTS) await captureExactFrame(page, viewport, toSolar, checkpoint)
 
       if (viewport.name === 'desktop') {
-        await runDirection(page, viewport, {
-          fromTheme: 'light',
-          fromWorld: 'solar',
-          toWorld: 'observatory',
-          direction: 'to-observatory',
-          navigate: false
-        })
+        const toObservatory = { fromWorld: 'solar', toWorld: 'observatory', direction: 'to-observatory' }
+        await runLiveDirection(page, viewport, toObservatory)
+        for (const checkpoint of CHECKPOINTS) await captureExactFrame(page, viewport, toObservatory, checkpoint)
       }
     } catch (error) {
       fail('Unhandled transition QA error', {
@@ -191,5 +219,5 @@ if (report.failures.length) {
   for (const failure of report.failures) console.error('-', failure.message, JSON.stringify(failure))
   process.exitCode = 1
 } else {
-  console.log(`World Transition QA passed: ${report.runs.length} transition run(s), checkpoints ${CHECKPOINTS.join(', ')}.`)
+  console.log(`World Transition QA passed: ${report.liveRuns.length} live transition run(s), ${report.frames.length} exact visual frame(s).`)
 }
