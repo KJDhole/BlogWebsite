@@ -51,3 +51,20 @@ test('Solar Archive hero field is a procedural cropped limb rather than a 3D sph
   assert.match(solar, /cropped-solar-limb/)
   assert.doesNotMatch(solar, /SphereGeometry|VideoTexture/)
 })
+
+test('Solar Archive homepage is a second visual personality over the same content tree', async () => {
+  const page = await read('../src/pages/index.astro')
+  const solarCss = await read('../src/styles/solar.css')
+
+  assert.match(page, /data-observatory-label="GLENN \/ RESEARCH FOLIO \/ 2026"/)
+  assert.match(page, /data-solar-label="GLENN \/ SOLAR ARCHIVE \/ 2026"/)
+  assert.match(page, /solar-observation-meta/)
+  assert.match(page, /solar-marginalia/)
+  assert.equal((page.match(/getCollection\('posts'/g) ?? []).length, 1)
+  assert.equal((page.match(/posts\.map/g) ?? []).length, 1)
+  assert.match(solarCss, /html\[data-world=['"]solar['"]\] \.hero/)
+  assert.match(solarCss, /html\[data-world=['"]solar['"]\] \.article-row/)
+  assert.match(solarCss, /ISSUE/)
+  assert.match(solarCss, /FIELD NOTE/)
+  assert.match(solarCss, /OBSERVATION/)
+})
