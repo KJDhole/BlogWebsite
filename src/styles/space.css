@@ -165,11 +165,11 @@ html[data-theme='dark'] .cosmic-hero::before {
 }
 
 .cosmic-trail {
-  stroke: rgba(255, 132, 84, .92);
-  stroke-width: 3;
+  stroke: rgba(198, 216, 244, .62);
+  stroke-width: 1.35;
   stroke-linecap: round;
   opacity: 0;
-  filter: drop-shadow(0 0 7px rgba(255, 117, 69, .34));
+  filter: drop-shadow(0 0 4px rgba(145, 177, 226, .18));
 }
 
 .cosmic-traveler {
@@ -180,14 +180,14 @@ html[data-theme='dark'] .cosmic-hero::before {
 }
 
 .cosmic-traveler-halo {
-  fill: rgba(255, 120, 73, calc(.08 + var(--cosmic-charge) * .13));
+  fill: rgba(206, 220, 244, calc(.025 + var(--cosmic-charge) * .045));
   filter: url(#cosmic-traveler-glow);
 }
 
 .cosmic-traveler-core {
-  fill: #ff7545;
-  stroke: rgba(255, 239, 223, .72);
-  stroke-width: 1.25;
+  fill: rgba(229, 237, 249, .92);
+  stroke: rgba(255, 255, 255, .42);
+  stroke-width: .8;
   vector-effect: non-scaling-stroke;
 }
 
@@ -197,6 +197,10 @@ html[data-theme='dark'] .cosmic-path {
 
 html[data-theme='dark'] .cosmic-path-glow {
   stroke: rgba(126, 162, 236, .72);
+}
+
+html[data-theme='dark'] .cosmic-trail {
+  stroke: rgba(214, 227, 250, .66);
 }
 
 .cosmic-fallback-svg {
@@ -294,8 +298,8 @@ html[data-theme='dark'] .cosmic-path-glow {
   }
 
   .cosmic-trail {
-    stroke-width: 2.4;
-    filter: drop-shadow(0 0 5px rgba(255, 117, 69, .26));
+    stroke-width: 1.15;
+    filter: drop-shadow(0 0 3px rgba(145, 177, 226, .14));
   }
 }
 
