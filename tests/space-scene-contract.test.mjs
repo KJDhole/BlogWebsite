@@ -30,11 +30,18 @@ test('homepage preserves publishing controls while mounting the cosmic scene', a
   assert.doesNotMatch(page, /class="nav-portal"|class="flight-orb"|flight-echo/)
 })
 
-test('active Three.js scene uses atmospheric cosmic field rather than solar-system or black-hole model modules', async () => {
+test('active Three.js scene uses persistent Observatory and Solar Archive fields without a second renderer', async () => {
   const scene = await read('../src/scripts/spaceScene.mjs')
   const stars = await read('../src/scripts/starField.mjs')
+  const solar = await read('../src/scripts/solarField.mjs')
   assert.match(stars, /createStarField/)
   assert.match(scene, /createCosmicField/)
+  assert.match(scene, /createSolarField/)
+  assert.match(solar, /setWorldMix/)
+  assert.match(solar, /setTransitionState/)
+  assert.match(scene, /setWorld/)
+  assert.match(scene, /setWorldTransition/)
+  assert.doesNotMatch(scene, /new THREE\.WebGLRenderer[\s\S]*new THREE\.WebGLRenderer/)
   assert.doesNotMatch(scene, /createSolarSystem|solarSystem3d/)
   assert.doesNotMatch(scene, /createBlackHolePortal|blackHolePortal/)
 })
