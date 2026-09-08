@@ -39,8 +39,20 @@ test('charge brightens before flyby and settle quiets the scene', () => {
   const settle = getScrollStoryState(0.9)
   assert.ok(charge.charge > drift.charge)
   assert.ok(flyby.pathProgress > charge.pathProgress)
-  assert.ok(settle.traveler.opacity < flyby.traveler.opacity)
+  assert.ok(settle.traveler.opacity <= flyby.traveler.opacity)
   assert.ok(settle.field.energy < flyby.field.energy)
+})
+
+test('traveler is not a persistent visual actor and flyby stays a restrained path pulse', () => {
+  const samples = [0.12, 0.34, 0.58, 0.9].map(progress => getScrollStoryState(progress))
+  for (const state of samples) {
+    assert.equal(state.traveler.visible, false)
+    assert.equal(state.traveler.opacity, 0)
+  }
+
+  const flyby = getScrollStoryState(0.58)
+  assert.ok(flyby.trail > 0)
+  assert.ok(flyby.trail <= 0.32)
 })
 
 test('mobile uses the same story with restrained field motion', () => {
