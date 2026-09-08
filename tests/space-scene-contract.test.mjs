@@ -4,6 +4,11 @@ import { readFile } from 'node:fs/promises'
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8')
 
+function cssBlock(css, selector) {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return css.match(new RegExp(`${escaped}\\s*\\{[\\s\\S]*?\\}`))?.[0] ?? ''
+}
+
 test('space scene exposes a layered cosmic foreground instead of a solar-system fallback model', async () => {
   const component = await read('../src/components/SpaceScene.astro')
   assert.match(component, /data-space-scene/)
@@ -32,6 +37,18 @@ test('active Three.js scene uses atmospheric cosmic field rather than solar-syst
   assert.match(scene, /createCosmicField/)
   assert.doesNotMatch(scene, /createSolarSystem|solarSystem3d/)
   assert.doesNotMatch(scene, /createBlackHolePortal|blackHolePortal/)
+})
+
+test('flyby styling is a cool restrained path pulse rather than an orange meteor', async () => {
+  const css = await read('../src/styles/space.css')
+  const trail = cssBlock(css, '.cosmic-trail')
+  const travelerCore = cssBlock(css, '.cosmic-traveler-core')
+  const travelerHalo = cssBlock(css, '.cosmic-traveler-halo')
+
+  assert.match(trail, /rgba\(198,\s*216,\s*244/)
+  assert.doesNotMatch(trail, /255,\s*(?:117|120|132)|#ff/i)
+  assert.doesNotMatch(travelerCore, /#ff7545|255,\s*(?:117|120|132)/i)
+  assert.doesNotMatch(travelerHalo, /255,\s*(?:117|120|132)/i)
 })
 
 test('space scene keeps the lifecycle and performance protections', async () => {
