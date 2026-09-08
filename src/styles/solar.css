@@ -194,15 +194,9 @@ html[data-world='solar'] body {
 html[data-world='solar'] .folio-topbar {
   border-bottom-color: var(--solar-rule-strong);
 }
-html[data-world='solar'] .brand-dot {
-  background: var(--solar-mark);
-}
-html[data-world='solar'] .folio-nav a:hover {
-  border-color: var(--solar-cobalt);
-}
-html[data-world='solar'] .theme-toggle {
-  color: var(--solar-cobalt-deep);
-}
+html[data-world='solar'] .brand-dot { background: var(--solar-mark); }
+html[data-world='solar'] .folio-nav a:hover { border-color: var(--solar-cobalt); }
+html[data-world='solar'] .theme-toggle { color: var(--solar-cobalt-deep); }
 
 html[data-world='solar'] .hero {
   min-height: 610px;
@@ -226,10 +220,7 @@ html[data-world='solar'] .folio-intro {
   padding-bottom: 74px;
   z-index: 3;
 }
-html[data-world='solar'] .world-eyebrow {
-  font-size: 0;
-  color: var(--solar-cobalt-deep);
-}
+html[data-world='solar'] .world-eyebrow { font-size: 0; color: var(--solar-cobalt-deep); }
 html[data-world='solar'] .world-eyebrow::before {
   content: attr(data-solar-label);
   font: 650 9px/1.4 var(--mono);
@@ -241,23 +232,15 @@ html[data-world='solar'] .hero h1 {
   font-size: clamp(52px, 5vw, 75px);
   letter-spacing: -.055em;
 }
-html[data-world='solar'] .folio-principles {
-  color: var(--solar-cobalt-deep);
-}
-html[data-world='solar'] .folio-note {
-  color: #59616b;
-}
+html[data-world='solar'] .folio-principles { color: var(--solar-cobalt-deep); }
+html[data-world='solar'] .folio-note { color: #59616b; }
 html[data-world='solar'] .social-link {
   color: var(--solar-cobalt-deep);
   border-bottom-color: rgba(49,95,188,.22);
 }
-html[data-world='solar'] .social-link:hover {
-  border-color: var(--solar-mark);
-}
+html[data-world='solar'] .social-link:hover { border-color: var(--solar-mark); }
 
-.solar-observation-meta {
-  display: none;
-}
+.solar-observation-meta { display: none; }
 html[data-world='solar'] .solar-observation-meta {
   display: flex;
   flex-wrap: wrap;
@@ -323,15 +306,11 @@ html[data-world='solar'] .space-canvas {
   -webkit-mask-image: linear-gradient(90deg, rgba(0,0,0,.35) 0, #000 12%, #000 92%, rgba(0,0,0,.22) 100%);
   mask-image: linear-gradient(90deg, rgba(0,0,0,.35) 0, #000 12%, #000 92%, rgba(0,0,0,.22) 100%);
 }
-html[data-world='solar'] .cosmic-foreground {
-  opacity: .18;
-}
+html[data-world='solar'] .cosmic-foreground { opacity: .18; }
 html[data-world='solar'] .cosmic-path,
 html[data-world='solar'] .cosmic-path-glow,
 html[data-world='solar'] .cosmic-trail,
-html[data-world='solar'] .cosmic-traveler {
-  opacity: 0 !important;
-}
+html[data-world='solar'] .cosmic-traveler { opacity: 0 !important; }
 html[data-world='solar'] .orbit-caption {
   justify-self: end;
   margin-right: 9%;
@@ -353,16 +332,12 @@ html[data-world='solar'] .index-heading {
   padding-top: 84px;
   border-bottom-color: var(--solar-rule-strong);
 }
-html[data-world='solar'] .index-heading .eyebrow {
-  color: var(--solar-cobalt-deep);
-}
+html[data-world='solar'] .index-heading .eyebrow { color: var(--solar-cobalt-deep); }
 html[data-world='solar'] .index-heading h2 {
   color: #1e2937;
   font-size: clamp(39px, 4.35vw, 58px);
 }
-html[data-world='solar'] .index-description {
-  color: #656b72;
-}
+html[data-world='solar'] .index-description { color: #656b72; }
 html[data-world='solar'] .solar-marginalia {
   display: grid;
   align-self: stretch;
@@ -375,9 +350,7 @@ html[data-world='solar'] .solar-marginalia {
   letter-spacing: .09em;
   text-transform: uppercase;
 }
-html[data-world='solar'] .solar-marginalia span:last-child {
-  color: var(--solar-mark);
-}
+html[data-world='solar'] .solar-marginalia span:last-child { color: var(--solar-mark); }
 
 html[data-world='solar'] .index-tools.controls {
   grid-template-columns: minmax(280px, 360px) 1fr;
@@ -387,24 +360,16 @@ html[data-world='solar'] .index-search {
   border-bottom-color: var(--solar-cobalt);
   color: var(--solar-cobalt-deep);
 }
-html[data-world='solar'] .index-search-label {
-  font-size: 0;
-}
+html[data-world='solar'] .index-search-label { font-size: 0; }
 html[data-world='solar'] .index-search-label::before {
   content: 'ARCHIVE CATALOGUE';
   font: 600 8px/1 var(--mono);
   letter-spacing: .12em;
   color: var(--solar-cobalt-deep);
 }
-html[data-world='solar'] .index-search input {
-  color: #243040;
-}
-html[data-world='solar'] .index-search input::placeholder {
-  color: #8a929a;
-}
-html[data-world='solar'] .filter-list {
-  gap: 22px;
-}
+html[data-world='solar'] .index-search input { color: #243040; }
+html[data-world='solar'] .index-search input::placeholder { color: #8a929a; }
+html[data-world='solar'] .filter-list { gap: 22px; }
 html[data-world='solar'] .filter-button {
   position: relative;
   color: #69727c;
@@ -412,9 +377,7 @@ html[data-world='solar'] .filter-button {
   font-size: 9px;
   letter-spacing: .04em;
 }
-html[data-world='solar'] .filter-button.is-active {
-  color: var(--solar-cobalt-deep);
-}
+html[data-world='solar'] .filter-button.is-active { color: var(--solar-cobalt-deep); }
 html[data-world='solar'] .filter-button.is-active::before {
   content: '';
   position: absolute;
@@ -425,9 +388,7 @@ html[data-world='solar'] .filter-button.is-active::before {
   transform: translateX(-50%);
   background: var(--solar-mark);
 }
-html[data-world='solar'] .filter-indicator {
-  display: none;
-}
+html[data-world='solar'] .filter-indicator { display: none; }
 
 /* Solar Archive register labels: ISSUE / FIELD NOTE / OBSERVATION */
 html[data-world='solar'] .index-register-head {
@@ -437,28 +398,13 @@ html[data-world='solar'] .index-register-head {
   color: var(--solar-cobalt-deep);
   border-bottom: 1px solid rgba(49,95,188,.08);
 }
-html[data-world='solar'] .index-register-head span {
-  font-size: 0;
-}
-html[data-world='solar'] .index-register-head span:nth-child(1)::before {
-  content: 'ISSUE';
-  font-size: 8px;
-}
-html[data-world='solar'] .index-register-head span:nth-child(2)::before {
-  content: 'FIELD NOTE';
-  font-size: 8px;
-}
-html[data-world='solar'] .index-register-head span:nth-child(3)::before {
-  content: 'OBSERVATION';
-  font-size: 8px;
-}
-html[data-world='solar'] .result-count {
-  color: #77808a;
-}
+html[data-world='solar'] .index-register-head span { font-size: 0; }
+html[data-world='solar'] .index-register-head span:nth-child(1)::before { content: 'ISSUE'; font-size: 8px; }
+html[data-world='solar'] .index-register-head span:nth-child(2)::before { content: 'FIELD NOTE'; font-size: 8px; }
+html[data-world='solar'] .index-register-head span:nth-child(3)::before { content: 'OBSERVATION'; font-size: 8px; }
+html[data-world='solar'] .result-count { color: #77808a; }
 html[data-world='solar'] .publication-register,
-html[data-world='solar'] .article-list {
-  border-top-color: var(--solar-rule-strong);
-}
+html[data-world='solar'] .article-list { border-top-color: var(--solar-rule-strong); }
 html[data-world='solar'] .article-row {
   grid-template-columns: 94px minmax(0, 1fr) 146px;
   gap: 32px;
@@ -474,9 +420,7 @@ html[data-world='solar'] .article-row::before {
   opacity: .76;
   transition: width .34s cubic-bezier(.16,1,.3,1);
 }
-html[data-world='solar'] .article-row:hover::before {
-  width: 100%;
-}
+html[data-world='solar'] .article-row:hover::before { width: 100%; }
 html[data-world='solar'] .article-date {
   color: var(--solar-cobalt-deep);
   letter-spacing: .07em;
@@ -519,9 +463,7 @@ html[data-world='solar'] .read-time::before {
   color: #7d8791;
 }
 
-html[data-world='solar'] .empty-state {
-  border-bottom-color: var(--solar-rule);
-}
+html[data-world='solar'] .empty-state { border-bottom-color: var(--solar-rule); }
 html[data-world='solar'] .site-footer {
   position: relative;
   border-top: 1px solid var(--solar-rule-strong);
@@ -535,8 +477,185 @@ html[data-world='solar'] .site-footer::before {
   font: 540 7px/1 var(--mono);
   letter-spacing: .1em;
 }
-html[data-world='solar'] .footer-meta {
-  color: #727b85;
+html[data-world='solar'] .footer-meta { color: #727b85; }
+
+/* Supporting routes keep one DOM tree but receive Solar publication chrome. */
+html[data-world='solar'] .article-topbar,
+html[data-world='solar'] .inner-topbar {
+  border-bottom: 1px solid var(--solar-rule-strong);
+}
+html[data-world='solar'] .article-topbar::before,
+html[data-world='solar'] .inner-topbar::before {
+  content: 'SOLAR ARCHIVE / 2026';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(36,77,154,.62);
+  font: 540 7px/1 var(--mono);
+  letter-spacing: .11em;
+  white-space: nowrap;
+}
+
+html[data-world='solar'] .article-header {
+  position: relative;
+  margin-top: 62px;
+  padding-top: 28px;
+  padding-bottom: 44px;
+  border-bottom: 1px solid var(--solar-rule-strong);
+}
+html[data-world='solar'] .article-header::before {
+  content: 'FIELD NOTE / SOLAR ARCHIVE';
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--solar-mark);
+  font: 600 7px/1 var(--mono);
+  letter-spacing: .12em;
+}
+html[data-world='solar'] .article-header .eyebrow {
+  color: var(--solar-cobalt-deep);
+  letter-spacing: .14em;
+}
+html[data-world='solar'] .article-header h1 {
+  color: #172334;
+  letter-spacing: -.045em;
+}
+html[data-world='solar'] .article-dek {
+  color: #59636d;
+}
+html[data-world='solar'] .article-page-meta {
+  color: var(--solar-cobalt-deep);
+  letter-spacing: .085em;
+}
+html[data-world='solar'] .article-page-meta::before {
+  content: 'OBS / ';
+  color: var(--solar-mark);
+}
+html[data-world='solar'] .article-page-tags {
+  color: #727c87;
+}
+html[data-world='solar'] .article-page-tags a {
+  color: var(--solar-cobalt-deep);
+  text-decoration-color: rgba(49,95,188,.18);
+}
+html[data-world='solar'] .reading-progress span {
+  background: linear-gradient(90deg, var(--solar-cobalt), var(--solar-sky) 76%, var(--solar-mark));
+}
+
+html[data-world='solar'] .article-body {
+  color: #202a37;
+}
+html[data-world='solar'] .article-body a {
+  text-decoration-color: rgba(49,95,188,.34);
+}
+html[data-world='solar'] .article-body h2,
+html[data-world='solar'] .article-body h3,
+html[data-world='solar'] .article-body h4 {
+  color: #172334;
+}
+html[data-world='solar'] .article-body h2::before {
+  background: linear-gradient(90deg, var(--solar-cobalt) 0 70%, var(--solar-mark) 70% 100%);
+}
+html[data-world='solar'] .article-body blockquote {
+  border-left-color: var(--solar-cobalt);
+  color: #4d5967;
+}
+html[data-world='solar'] .article-body hr {
+  border-color: var(--solar-rule);
+}
+html[data-world='solar'] .article-toc-desktop {
+  border-left-color: var(--solar-rule-strong);
+}
+html[data-world='solar'] .article-toc-desktop > p,
+html[data-world='solar'] .article-toc-mobile summary {
+  color: var(--solar-cobalt-deep);
+}
+html[data-world='solar'] .article-toc a {
+  color: #77828e;
+}
+html[data-world='solar'] .article-toc a[aria-current='true'],
+html[data-world='solar'] .article-toc a:hover {
+  color: var(--solar-cobalt-deep);
+}
+html[data-world='solar'] .article-source,
+html[data-world='solar'] .article-end-links {
+  border-color: var(--solar-rule);
+}
+html[data-world='solar'] .article-pagination a > span,
+html[data-world='solar'] .article-back {
+  color: var(--solar-cobalt-deep);
+}
+
+html[data-world='solar'] .register-header {
+  position: relative;
+  padding-top: 92px;
+  border-bottom-color: var(--solar-rule-strong);
+}
+html[data-world='solar'] .register-header::before {
+  content: 'CATALOGUE / SOLAR ARCHIVE / 2026';
+  position: absolute;
+  left: 0;
+  top: 58px;
+  color: var(--solar-mark);
+  font: 600 7px/1 var(--mono);
+  letter-spacing: .12em;
+}
+html[data-world='solar'] .register-header .eyebrow {
+  color: var(--solar-cobalt-deep);
+}
+html[data-world='solar'] .register-header h1 {
+  color: #172334;
+}
+html[data-world='solar'] .register-summary {
+  color: #68727d;
+}
+html[data-world='solar'] .inner-register-head {
+  color: var(--solar-cobalt-deep);
+  border-bottom-color: rgba(49,95,188,.08);
+}
+
+html[data-world='solar'] .taxonomy-index {
+  border-top-color: var(--solar-rule-strong);
+}
+html[data-world='solar'] .taxonomy-index a {
+  position: relative;
+  border-bottom-color: var(--solar-rule);
+}
+html[data-world='solar'] .taxonomy-index a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--solar-cobalt), var(--solar-sky) 78%, var(--solar-mark));
+  transition: width .3s cubic-bezier(.16,1,.3,1);
+}
+html[data-world='solar'] .taxonomy-index a:hover::after { width: 100%; }
+html[data-world='solar'] .taxonomy-number,
+html[data-world='solar'] .taxonomy-arrow {
+  color: var(--solar-cobalt-deep);
+}
+html[data-world='solar'] .taxonomy-name {
+  color: #1a2736;
+}
+html[data-world='solar'] .taxonomy-index small {
+  color: #77818b;
+}
+html[data-world='solar'] .inner-footer {
+  position: relative;
+  padding-top: 43px;
+  border-top: 1px solid var(--solar-rule-strong);
+  color: var(--solar-cobalt-deep);
+}
+html[data-world='solar'] .inner-footer::before {
+  content: 'SOLAR ARCHIVE / COLOPHON';
+  position: absolute;
+  left: 0;
+  top: 18px;
+  color: rgba(36,77,154,.68);
+  font: 550 7px/1 var(--mono);
+  letter-spacing: .11em;
 }
 
 @media (max-width: 960px) {
@@ -571,9 +690,7 @@ html[data-world='solar'] .footer-meta {
     min-height: auto;
     gap: 0;
   }
-  html[data-world='solar'] .folio-intro {
-    padding: 46px 0 24px;
-  }
+  html[data-world='solar'] .folio-intro { padding: 46px 0 24px; }
   html[data-world='solar'] .solar-observation-meta {
     gap: 7px 14px;
     margin-bottom: 22px;
@@ -587,9 +704,7 @@ html[data-world='solar'] .footer-meta {
     aspect-ratio: 1.04 / 1;
     transform: translateX(7%);
   }
-  html[data-world='solar'] .orbit-caption {
-    margin-right: 4%;
-  }
+  html[data-world='solar'] .orbit-caption { margin-right: 4%; }
   html[data-world='solar'] .index-heading {
     grid-template-columns: 1fr;
     gap: 24px;
@@ -603,12 +718,8 @@ html[data-world='solar'] .footer-meta {
     grid-template-columns: 1fr;
     gap: 17px;
   }
-  html[data-world='solar'] .filter-list {
-    gap: 20px;
-  }
-  html[data-world='solar'] .index-register-head {
-    display: none;
-  }
+  html[data-world='solar'] .filter-list { gap: 20px; }
+  html[data-world='solar'] .index-register-head { display: none; }
   html[data-world='solar'] .article-row {
     grid-template-columns: 76px minmax(0, 1fr);
     gap: 20px;
@@ -621,9 +732,18 @@ html[data-world='solar'] .footer-meta {
     grid-template-columns: auto auto;
     padding-top: 0;
   }
-  html[data-world='solar'] .site-footer::before {
-    top: 11px;
+  html[data-world='solar'] .article-header {
+    margin-top: 42px;
+    padding-top: 24px;
+    padding-bottom: 34px;
   }
+  html[data-world='solar'] .register-header {
+    padding-top: 72px;
+  }
+  html[data-world='solar'] .register-header::before { top: 43px; }
+  html[data-world='solar'] .article-topbar::before,
+  html[data-world='solar'] .inner-topbar::before { display: none; }
+  html[data-world='solar'] .site-footer::before { top: 11px; }
 }
 
 @media (max-width: 640px) {
@@ -649,17 +769,16 @@ html[data-world='solar'] .footer-meta {
     gap: 8px;
     white-space: nowrap;
   }
-  html[data-world='solar'] .article-category::before {
-    content: 'FIELD / ';
-  }
-  html[data-world='solar'] .read-time::before {
-    content: 'OBS / ';
-  }
+  html[data-world='solar'] .article-category::before { content: 'FIELD / '; }
+  html[data-world='solar'] .read-time::before { content: 'OBS / '; }
+  html[data-world='solar'] .article-header::before,
+  html[data-world='solar'] .register-header::before { letter-spacing: .09em; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .theme-transition { display: none !important; }
   ::view-transition-old(root),
   ::view-transition-new(root) { animation: none !important; }
-  html[data-world='solar'] .article-row::before { transition: none !important; }
+  html[data-world='solar'] .article-row::before,
+  html[data-world='solar'] .taxonomy-index a::after { transition: none !important; }
 }
