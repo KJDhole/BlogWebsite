@@ -68,3 +68,9 @@ test('Solar Archive homepage is a second visual personality over the same conten
   assert.match(solarCss, /FIELD NOTE/)
   assert.match(solarCss, /OBSERVATION/)
 })
+
+test('Solar mobile register keeps metadata and title on separate grid rows', async () => {
+  const solarCss = await read('../src/styles/solar.css')
+  assert.match(solarCss, /@media\s*\(max-width:\s*640px\)[\s\S]*html\[data-world=['"]solar['"]\] \.article-main\s*\{[\s\S]*grid-row:\s*2/)
+  assert.match(solarCss, /@media\s*\(max-width:\s*640px\)[\s\S]*html\[data-world=['"]solar['"]\] \.article-index-meta\s*\{[\s\S]*grid-row:\s*1/)
+})
