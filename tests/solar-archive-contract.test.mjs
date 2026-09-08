@@ -74,3 +74,15 @@ test('Solar mobile register keeps metadata and title on separate grid rows', asy
   assert.match(solarCss, /@media\s*\(max-width:\s*640px\)[\s\S]*html\[data-world=['"]solar['"]\] \.article-main\s*\{[\s\S]*grid-row:\s*2/)
   assert.match(solarCss, /@media\s*\(max-width:\s*640px\)[\s\S]*html\[data-world=['"]solar['"]\] \.article-index-meta\s*\{[\s\S]*grid-row:\s*1/)
 })
+
+test('Solar Archive styles supporting publication surfaces without duplicating article content', async () => {
+  const solarCss = await read('../src/styles/solar.css')
+  const articleLayout = await read('../src/layouts/ArticleLayout.astro')
+
+  assert.match(solarCss, /html\[data-world=['"]solar['"]\] \.article-header/)
+  assert.match(solarCss, /html\[data-world=['"]solar['"]\] \.article-body/)
+  assert.match(solarCss, /html\[data-world=['"]solar['"]\] \.register-header/)
+  assert.match(solarCss, /html\[data-world=['"]solar['"]\] \.taxonomy-index/)
+  assert.match(solarCss, /html\[data-world=['"]solar['"]\] \.site-footer/)
+  assert.equal((articleLayout.match(/<article class="article-body">/g) ?? []).length, 1)
+})
