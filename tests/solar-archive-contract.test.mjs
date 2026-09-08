@@ -43,3 +43,11 @@ test('reduced motion bypasses the signature wave while preserving the world swap
   assert.match(controller, /applyWorld/)
   assert.match(controller, /dispatchWorldChange/)
 })
+
+test('Solar Archive hero field is a procedural cropped limb rather than a 3D sphere model', async () => {
+  const solar = await read('../src/scripts/solarField.mjs')
+  assert.match(solar, /PlaneGeometry/)
+  assert.match(solar, /ShaderMaterial/)
+  assert.match(solar, /cropped-solar-limb/)
+  assert.doesNotMatch(solar, /SphereGeometry|VideoTexture/)
+})
