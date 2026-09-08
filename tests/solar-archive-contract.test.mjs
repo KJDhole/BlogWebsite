@@ -42,6 +42,18 @@ test('Solar reveal is not implemented as a generic white wipe', async () => {
   assert.doesNotMatch(css, /background:\s*white\s*;/i)
 })
 
+test('reverse Observatory wave keeps the destination visible through wave and reveal', async () => {
+  const transitionCss = await read('../src/styles/world-transition.css')
+  assert.match(
+    transitionCss,
+    /\.theme-transition\[data-direction=['"]to-observatory['"]\]\[data-phase=['"]solar-wave['"]\]\s+\.theme-solar-wave/
+  )
+  assert.match(
+    transitionCss,
+    /\.theme-transition\[data-direction=['"]to-observatory['"]\]\[data-phase=['"]solar-reveal['"]\]\s+\.theme-solar-wave/
+  )
+})
+
 test('reduced motion bypasses the signature wave while preserving the world swap', async () => {
   const controller = await read('../src/scripts/themeController.js')
   assert.match(controller, /reducedMotion\.matches/)
