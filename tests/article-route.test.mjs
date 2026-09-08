@@ -23,9 +23,14 @@ test('article layout supports normal blog reading features without changing the 
   assert.match(layout, /Back to home/)
 })
 
-test('home and article pages preserve one persisted theme key', async () => {
+test('home and article pages preserve one persisted theme key through shared layout ownership', async () => {
   const base = await read('../src/layouts/BaseLayout.astro')
   const home = await read('../src/scripts/home.js')
+  const header = await read('../src/components/SiteHeader.astro')
+
   assert.match(base, /glenn-blog-theme/)
-  assert.match(home, /glenn-blog-theme/)
+  assert.match(base, /dataset\.theme/)
+  assert.match(base, /dataset\.world/)
+  assert.doesNotMatch(home, /localStorage\.setItem\('glenn-blog-theme'/)
+  assert.doesNotMatch(header, /localStorage\.setItem\('glenn-blog-theme'/)
 })
