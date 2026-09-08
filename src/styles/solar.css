@@ -209,6 +209,7 @@ html[data-world='solar'] .hero {
   grid-template-columns: minmax(0, .82fr) minmax(470px, 1.18fr);
   gap: 34px;
   position: relative;
+  overflow: clip;
   border-bottom-color: var(--solar-rule-strong);
 }
 html[data-world='solar'] .cosmic-hero::before {
@@ -283,7 +284,7 @@ html[data-world='solar'] .solar-observation-meta span::before {
 
 html[data-world='solar'] .orbit-wrap {
   min-height: 560px;
-  overflow: visible;
+  overflow: clip;
   align-content: center;
 }
 html[data-world='solar'] .orbit-wrap::before {
@@ -579,7 +580,7 @@ html[data-world='solar'] .footer-meta {
   }
   html[data-world='solar'] .orbit-wrap {
     min-height: min(450px, 108vw);
-    margin-inline: -10px;
+    margin-inline: 0;
   }
   html[data-world='solar'] .space-scene {
     width: min(calc(100vw - 12px), 470px);
