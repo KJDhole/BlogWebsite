@@ -10,7 +10,7 @@ tags:
   - 工程实践
   - 问题解决
 cover: "/images/posts/personal-ip-real-work/cover.webp"
-draft: true
+draft: false
 ---
 
 这几天，我和一个做云服务很多年的前辈谈了两次，前后六个小时左右。
