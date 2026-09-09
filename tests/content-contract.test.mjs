@@ -4,9 +4,21 @@ import { readdir, readFile } from 'node:fs/promises'
 
 const postsDir = new URL('../src/content/posts/', import.meta.url)
 
-test('only the real published article is stored as Markdown content', async () => {
+test('published article set contains the first and second essays', async () => {
   const names = (await readdir(postsDir)).filter(name => name.endsWith('.md')).sort()
-  assert.deepEqual(names, ['commerce-agent-rules.md'])
+  const entries = await Promise.all(names.map(async name => ({
+    name,
+    source: await readFile(new URL(`../src/content/posts/${name}`, import.meta.url), 'utf8')
+  })))
+  const published = entries
+    .filter(({ source }) => !/^draft:\s*true\s*$/m.test(source))
+    .map(({ name }) => name)
+    .sort()
+
+  assert.deepEqual(published, ['commerce-agent-rules.md', 'personal-ip-real-work.md'])
+  const secondEssay = entries.find(({ name }) => name === 'personal-ip-real-work.md')
+  assert.ok(secondEssay)
+  assert.match(secondEssay.source, /^draft:\s*false\s*$/m)
 })
 
 test('published article preserves homepage metadata and contains exactly 24 laws', async () => {
