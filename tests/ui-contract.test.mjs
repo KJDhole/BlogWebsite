@@ -14,6 +14,23 @@ test('Astro homepage keeps the approved research folio controls around the cosmi
   assert.match(page, /<ArticleRow/)
 })
 
+test('theme ownership is shared through one world state instead of page-local toggles', async () => {
+  const baseLayout = await read('../src/layouts/BaseLayout.astro')
+  const page = await read('../src/pages/index.astro')
+  const siteHeader = await read('../src/components/SiteHeader.astro')
+  const homeScript = await read('../src/scripts/home.js')
+
+  assert.match(baseLayout, /dataset\.world/)
+  assert.match(baseLayout, /ThemeTransition/)
+  assert.match(baseLayout, /solar\.css/)
+  assert.match(page, /data-world-toggle/)
+  assert.match(siteHeader, /data-world-toggle/)
+  assert.doesNotMatch(siteHeader, /localStorage\.setItem\('glenn-blog-theme'/)
+  assert.doesNotMatch(homeScript, /function\s+applyTheme|function\s+getInitialTheme/)
+  assert.match(homeScript, /glenn:worldchange/)
+  assert.match(homeScript, /glenn:worldtransition/)
+})
+
 test('homepage client coordinates reversible cosmic motion without owning article data or navigation-flight choreography', async () => {
   const script = await read('../src/scripts/home.js')
   assert.doesNotMatch(script, /const\s+articles\s*=\s*\[/)
@@ -35,7 +52,7 @@ test('cosmic traveler geometry is cached outside the animation frame loop', asyn
 })
 
 test('responsive reduced-motion and deep-space containment rules survive the migration', async () => {
-  const styles = `${await read('../src/styles/global.css')}\n${await read('../src/styles/space.css')}`
+  const styles = `${await read('../src/styles/global.css')}\n${await read('../src/styles/space.css')}\n${await read('../src/styles/solar.css')}`
   assert.match(styles, /prefers-reduced-motion/)
   assert.match(styles, /max-width:\s*760px/)
   assert.match(styles, /\.space-scene/)

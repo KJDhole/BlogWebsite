@@ -48,9 +48,6 @@ export function createStarField(scene, { mobile = false } = {}) {
   const group = new THREE.Group()
   group.name = 'star-field'
 
-  // These layers are distributed inside the camera frustum rather than on a
-  // giant spherical shell. That keeps the visual density high without adding
-  // thousands of points that never reach the viewport.
   const far = createLayer({
     count: counts.far,
     spreadX: 5.1,
@@ -88,11 +85,14 @@ export function createStarField(scene, { mobile = false } = {}) {
   group.add(far.points, mid.points, near.points)
   scene.add(group)
 
+  let worldMix = 0
+
   function update(elapsedSeconds, storyState) {
     const field = storyState?.field ?? {}
     const energy = clamp01(field.energy ?? 0.22)
     const parallax = storyState?.reducedMotion ? 0 : clamp01(field.parallax ?? 0.12)
     const drift = storyState?.reducedMotion ? 0 : clamp01(field.drift ?? 0.35)
+    const nightVisibility = 1 - clamp01(worldMix)
 
     far.points.rotation.z = elapsedSeconds * 0.0008 * drift
     far.points.position.x = -parallax * 0.025
@@ -107,9 +107,19 @@ export function createStarField(scene, { mobile = false } = {}) {
     near.points.position.y = parallax * 0.048
 
     const pulse = storyState?.reducedMotion ? 1 : 0.96 + Math.sin(elapsedSeconds * 0.31) * 0.04
-    far.material.opacity = far.baseOpacity * (0.82 + energy * 0.30) * pulse
-    mid.material.opacity = mid.baseOpacity * (0.82 + energy * 0.38) * pulse
-    near.material.opacity = near.baseOpacity * (0.80 + energy * 0.44) * pulse
+    far.material.opacity = far.baseOpacity * (0.82 + energy * 0.30) * pulse * nightVisibility
+    mid.material.opacity = mid.baseOpacity * (0.82 + energy * 0.38) * pulse * nightVisibility
+    near.material.opacity = near.baseOpacity * (0.80 + energy * 0.44) * pulse * nightVisibility
+    group.visible = nightVisibility > 0.002
+  }
+
+  function setWorldMix(value) {
+    worldMix = clamp01(value)
+    const nightVisibility = 1 - worldMix
+    far.material.opacity = far.baseOpacity * nightVisibility
+    mid.material.opacity = mid.baseOpacity * nightVisibility
+    near.material.opacity = near.baseOpacity * nightVisibility
+    group.visible = nightVisibility > 0.002
   }
 
   function setTheme(theme) {
@@ -117,12 +127,10 @@ export function createStarField(scene, { mobile = false } = {}) {
     far.baseOpacity = dark ? 0.50 : 0.46
     mid.baseOpacity = dark ? 0.67 : 0.62
     near.baseOpacity = dark ? 0.80 : 0.72
-    far.material.opacity = far.baseOpacity
-    mid.material.opacity = mid.baseOpacity
-    near.material.opacity = near.baseOpacity
     far.material.color.set(dark ? 0xb9c7e2 : 0x586b8d)
     mid.material.color.set(dark ? 0xe0e9ff : 0x7186ab)
     near.material.color.set(dark ? 0xf8faff : 0x9aabca)
+    setWorldMix(worldMix)
   }
 
   function destroy() {
@@ -133,5 +141,5 @@ export function createStarField(scene, { mobile = false } = {}) {
     }
   }
 
-  return { update, setTheme, destroy }
+  return { group, update, setWorldMix, setTheme, destroy }
 }

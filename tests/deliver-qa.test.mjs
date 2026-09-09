@@ -21,10 +21,34 @@ test('deliver QA covers routes, themes, viewport matrix and editorial stress fix
   assert.match(script, /long-url/)
 })
 
+test('deliver QA verifies persisted themes resolve to the correct visual worlds', async () => {
+  const script = await read('../scripts/deliver-qa.mjs')
+  assert.match(script, /dataset\.world/)
+  assert.match(script, /light:\s*['"]solar['"]/)
+  assert.match(script, /dark:\s*['"]observatory['"]/)
+})
+
 test('deliver QA workflow builds, runs browser checks and preserves screenshots as an artifact', async () => {
   const workflow = await read('../.github/workflows/deliver-qa.yml')
   assert.match(workflow, /npm run build/)
   assert.match(workflow, /playwright@1\.55\.0/)
   assert.match(workflow, /node scripts\/deliver-qa\.mjs/)
+  assert.match(workflow, /actions\/upload-artifact@v4/)
+})
+
+test('world transition QA captures signature checkpoints, origin, phases, and both directions', async () => {
+  const qa = await read('../scripts/world-transition-qa.mjs')
+  const workflow = await read('../.github/workflows/world-transition-qa.yml')
+
+  assert.match(qa, /0,\s*180,\s*450,\s*700,\s*950,\s*1250,\s*1500/)
+  assert.match(qa, /dataset\.world/)
+  assert.match(qa, /dataset\.phase/)
+  assert.match(qa, /--world-origin-x/)
+  assert.match(qa, /--world-origin-y/)
+  assert.match(qa, /to-solar/)
+  assert.match(qa, /to-observatory/)
+  assert.match(qa, /screenshot/)
+  assert.match(qa, /scrollWidth/)
+  assert.match(workflow, /node scripts\/world-transition-qa\.mjs/)
   assert.match(workflow, /actions\/upload-artifact@v4/)
 })

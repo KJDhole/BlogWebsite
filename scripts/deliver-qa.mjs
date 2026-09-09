@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 
 const BASE_URL = 'http://127.0.0.1:4321'
 const OUT_DIR = 'deliver-qa'
+const WORLD_BY_THEME = Object.freeze({ light: 'solar', dark: 'observatory' })
 const viewports = [
   { name: 'desktop', width: 1440, height: 1000 },
   { name: 'laptop', width: 1024, height: 768 },
@@ -70,6 +71,7 @@ async function inspectPage(page, { theme, viewport, route }) {
     return {
       title: document.title,
       theme: root.dataset.theme || null,
+      world: root.dataset.world || null,
       innerWidth: window.innerWidth,
       scrollWidth: Math.max(root.scrollWidth, body?.scrollWidth ?? 0),
       articleWidth: article ? article.getBoundingClientRect().width : null,
@@ -79,6 +81,7 @@ async function inspectPage(page, { theme, viewport, route }) {
 
   const item = {
     theme,
+    expectedWorld: WORLD_BY_THEME[theme],
     viewport: viewport.name,
     route: route.name,
     status: response?.status() ?? null,
@@ -89,6 +92,7 @@ async function inspectPage(page, { theme, viewport, route }) {
 
   if (!response || !response.ok()) recordFailure('Route did not return a successful response', item)
   if (metrics.theme !== theme) recordFailure('Persisted theme did not resolve correctly', item)
+  if (metrics.world !== WORLD_BY_THEME[theme]) recordFailure('Persisted theme did not resolve to the expected visual world', item)
   if (metrics.scrollWidth > metrics.innerWidth + 1) recordFailure('Global horizontal overflow detected', item)
   if (consoleErrors.length) recordFailure('Browser console/page errors detected', item)
   if (route.name === 'article' && metrics.articleWidth && metrics.articleWidth > 760) recordFailure('Article reading measure exceeded 760px', item)
@@ -97,7 +101,7 @@ async function inspectPage(page, { theme, viewport, route }) {
   const shouldCapture = ['desktop', 'mobile'].includes(viewport.name) && ['home', 'article'].includes(route.name)
   if (shouldCapture) {
     await page.screenshot({
-      path: `${OUT_DIR}/${safeName(`${theme}-${viewport.name}-${route.name}`)}.png`,
+      path: `${OUT_DIR}/${safeName(`${WORLD_BY_THEME[theme]}-${viewport.name}-${route.name}`)}.png`,
       fullPage: true
     })
   }
@@ -116,7 +120,7 @@ async function testSearch(context, theme, viewport) {
     await page.waitForTimeout(80)
     const missing = await page.locator('.article-row').evaluateAll(rows => rows.filter(row => !row.hidden).length)
     await search.fill('')
-    report.search.push({ theme, viewport: viewport.name, matched, missing })
+    report.search.push({ theme, world: WORLD_BY_THEME[theme], viewport: viewport.name, matched, missing })
     if (matched !== 1 || missing !== 0) recordFailure('Search filtering contract failed', { theme, viewport: viewport.name, matched, missing })
   } finally {
     await page.close()
@@ -150,6 +154,7 @@ async function testStress(context, theme, viewport) {
       const longRect = longUrl?.getBoundingClientRect()
       const bodyRect = body?.getBoundingClientRect()
       return {
+        world: root.dataset.world || null,
         innerWidth: window.innerWidth,
         scrollWidth: root.scrollWidth,
         codeScrollable: Boolean(pre && pre.scrollWidth > pre.clientWidth),
@@ -162,8 +167,9 @@ async function testStress(context, theme, viewport) {
       }
     })
 
-    const item = { theme, viewport: viewport.name, ...metrics }
+    const item = { theme, expectedWorld: WORLD_BY_THEME[theme], viewport: viewport.name, ...metrics }
     report.stress.push(item)
+    if (metrics.world !== WORLD_BY_THEME[theme]) recordFailure('Stress page resolved to wrong visual world', item)
     if (metrics.scrollWidth > metrics.innerWidth + 1) recordFailure('Stress fixture caused global horizontal overflow', item)
     if (!metrics.codeScrollable) recordFailure('Long code line did not stay inside its own scroll container', item)
     if (!metrics.tableScrollable) recordFailure('Wide table did not stay inside its own scroll container', item)
@@ -172,7 +178,7 @@ async function testStress(context, theme, viewport) {
     if (!metrics.imagesContained || metrics.imageCount !== 3) recordFailure('Normal/wide/full image containment failed', item)
 
     await page.screenshot({
-      path: `${OUT_DIR}/${safeName(`${theme}-${viewport.name}-stress`)}.png`,
+      path: `${OUT_DIR}/${safeName(`${WORLD_BY_THEME[theme]}-${viewport.name}-stress`)}.png`,
       fullPage: true
     })
   } finally {
