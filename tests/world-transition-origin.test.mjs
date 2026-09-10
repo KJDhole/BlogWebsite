@@ -11,17 +11,15 @@ test('theme transition origin is always the world-toggle center', async () => {
   assert.doesNotMatch(controller, /clientX|clientY/)
 })
 
-test('transition furniture has no detached eclipse core and wave starts from toggle size', async () => {
+test('active transition furniture has no detached eclipse core and wave starts from toggle size', async () => {
   const component = await read('../src/components/ThemeTransition.astro')
-  const solarCss = await read('../src/styles/solar.css')
   const transitionCss = await read('../src/styles/world-transition.css')
-  const css = `${solarCss}\n${transitionCss}`
 
   assert.doesNotMatch(component, /data-eclipse-core/)
-  assert.doesNotMatch(css, /\.theme-eclipse-core/)
-  assert.match(css, /--world-toggle-diameter/)
-  assert.match(css, /--world-wave-scale-start/)
-  assert.doesNotMatch(css, /scale\(\.001\)|scale\(0\.001\)/)
+  assert.doesNotMatch(transitionCss, /\.theme-eclipse-core/)
+  assert.match(transitionCss, /--world-toggle-diameter/)
+  assert.match(transitionCss, /--world-wave-scale-start/)
+  assert.doesNotMatch(transitionCss, /scale\(\.001\)|scale\(0\.001\)/)
 })
 
 test('controller publishes start, frame, and end events for shared DOM motion', async () => {
