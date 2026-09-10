@@ -6,12 +6,14 @@ html[data-world-morphing='true'] [data-world-morph] {
   transform:
     translate3d(var(--morph-x, 0px), var(--morph-y, 0px), 0)
     scale(var(--morph-scale-x, 1), var(--morph-scale-y, 1));
+  transition: none !important;
   will-change: transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
   html[data-world-morphing='true'] [data-world-morph] {
     transform: none !important;
+    transition: none !important;
     will-change: auto;
   }
 }
