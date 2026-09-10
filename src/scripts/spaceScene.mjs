@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { createStarField } from './starField.mjs'
 import { createCosmicField } from './cosmicField.mjs'
-import { createSolarField } from './solarField.mjs'
+import { createSolarField, sampleSolarTransition } from './solarField.mjs'
 
 function clamp01(value) {
   return Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
@@ -73,9 +73,9 @@ export function createSpaceScene(canvas, {
   let lastFrame = performance.now()
   let elapsedSeconds = 0
 
-  function applyWorldMix(value, { stable = false } = {}) {
+  function applyStableWorldMix(value) {
     worldMix = clamp01(value)
-    if (stable) stars.setWorldMix(worldMix)
+    stars.setWorldMix(worldMix)
     solarField.setWorldMix(worldMix)
     cosmicField.group.visible = worldMix < 0.995
   }
@@ -117,7 +117,8 @@ export function createSpaceScene(canvas, {
   function setWorld(nextWorld) {
     currentWorld = nextWorld === 'observatory' ? 'observatory' : 'solar'
     stars.setTransitionState({ direction: 'none', progress: 1 })
-    applyWorldMix(currentWorld === 'solar' ? 1 : 0, { stable: true })
+    solarField.setTransitionState({ direction: 'none', progress: 1 })
+    applyStableWorldMix(currentWorld === 'solar' ? 1 : 0)
   }
 
   function setWorldTransition(detail = {}) {
@@ -131,14 +132,10 @@ export function createSpaceScene(canvas, {
       targetY: target.y
     })
 
-    if (detail.direction === 'to-solar') {
-      applyWorldMix(progress)
-    } else if (detail.direction === 'to-observatory') {
-      applyWorldMix(1 - progress)
-    } else if (detail.world) {
-      setWorld(detail.world)
-    }
-    solarField.setTransitionState(detail)
+    const solarPose = sampleSolarTransition(progress, detail.direction)
+    worldMix = solarPose.mix
+    cosmicField.group.visible = worldMix < 0.995
+    solarField.setTransitionState({ ...detail, progress })
   }
 
   function setStoryState(nextState) {
