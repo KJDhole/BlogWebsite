@@ -1,11 +1,14 @@
 ---
-const { post, readTime } = Astro.props
+const { post, readTime, index = 0 } = Astro.props
 const { title, description, date, category, tags } = post.data
 const href = `/writing/${post.id}/`
 const dateLabel = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()
+const entryNumber = String(index + 1).padStart(2, '0')
 ---
 <article
   class="article-row reveal-item is-visible"
+  data-world-morph={`article-row-${index}`}
+  data-entry-index={entryNumber}
   data-title={title}
   data-description={description}
   data-category={category}
