@@ -119,11 +119,11 @@ export function createGitHubClient({ token, owner, repo, fetchImpl = fetch }) {
     },
 
     async getCheckSummary(headSha) {
-      const data = await request(`/commits/${encodeURIComponent(headSha)}/check-runs?filter=latest&per_page=100`)
-      const checks = (data.check_runs ?? []).map(check => ({
-        name: check.name,
-        status: check.status,
-        conclusion: check.conclusion ?? null
+      const data = await request(`/actions/runs?head_sha=${encodeURIComponent(headSha)}&event=pull_request&per_page=100`)
+      const checks = (data.workflow_runs ?? []).map(run => ({
+        name: run.name,
+        status: run.status,
+        conclusion: run.conclusion ?? null
       }))
 
       if (checks.length === 0) return { state: 'pending', checks }
