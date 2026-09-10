@@ -11,8 +11,7 @@ html[data-world-morphing='true'] [data-world-morph] {
   will-change: transform;
 }
 
-/* One persistent WebGL viewport. The document-flow anchors reserve geometry;
-   the canvas itself can expand to a transition stage without creating a new renderer. */
+/* One persistent WebGL viewport. */
 html[data-layout-world] [data-space-scene][data-scene-viewport='active'] {
   position: fixed;
   left: var(--scene-left, 0px);
@@ -28,15 +27,10 @@ html[data-layout-world] [data-space-scene][data-scene-viewport='active'] {
   will-change: left, top, width, height;
 }
 
-/* The legacy Solar stylesheet supplied an older eyebrow pseudo-label and scene
-   geometry. Once the new layout world is active, those legacy presentation
-   hooks must not duplicate or override the shared-DOM morph surface. */
 html[data-layout-world='solar'][data-world='solar'] .world-eyebrow::before {
   content: none;
 }
 
-/* The Solar scene intentionally extends past the right edge. It is a cropped
-   observation field, not document width, so the hero is its visual viewport. */
 html[data-layout-world='solar'] .cosmic-hero {
   overflow: clip;
 }
@@ -56,7 +50,7 @@ html[data-layout-world='solar'] .cosmic-hero {
   }
 }
 
-/* The toggle itself is the ignition object. No detached circle is created. */
+/* The toggle is the only ignition object. */
 .theme-toggle::after {
   content: '';
   position: absolute;
@@ -86,28 +80,29 @@ html[data-world-transitioning='true'] .theme-toggle {
   z-index: 1001;
 }
 
-html[data-world-transitioning='true'][data-world-transition-phase='eclipse'] .theme-toggle::after {
-  opacity: calc(.16 + var(--world-phase-progress, 0) * .72);
+html[data-world-transitioning='true'][data-world-transition-phase='ignition'] .theme-toggle::after {
+  opacity: calc(.18 + var(--world-phase-progress, 0) * .72);
   transform: scale(calc(.9 + var(--world-phase-progress, 0) * .1));
 }
 
-html[data-world-transitioning='true'][data-world-transition-phase='totality'] .theme-toggle::after {
+html[data-world-transitioning='true'][data-world-transition-phase='convergence'] .theme-toggle::after,
+html[data-world-transitioning='true'][data-world-transition-phase='layout-release'] .theme-toggle::after {
   opacity: .92;
-  transform: scale(calc(1 + var(--world-phase-progress, 0) * .15));
+  transform: scale(calc(1 + var(--world-phase-progress, 0) * .13));
 }
 
-html[data-world-transitioning='true'][data-world-transition-phase='solar-wave'] .theme-toggle::after {
-  opacity: calc(.92 - var(--world-phase-progress, 0) * .72);
-  transform: scale(calc(1.15 + var(--world-phase-progress, 0) * .42));
+html[data-world-transitioning='true'][data-world-transition-phase='radiation'] .theme-toggle::after {
+  opacity: calc(.92 - var(--world-phase-progress, 0) * .82);
+  transform: scale(calc(1.13 + var(--world-phase-progress, 0) * .4));
 }
 
-html[data-world-transitioning='true'][data-world-transition-phase='solar-reveal'] .theme-toggle::after,
-html[data-world-transitioning='true'][data-world-transition-phase='archive-settle'] .theme-toggle::after {
+html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival'] .theme-toggle::after,
+html[data-world-transitioning='true'][data-world-transition-phase='index-reconstruction'] .theme-toggle::after,
+html[data-world-transitioning='true'][data-world-transition-phase='settle'] .theme-toggle::after {
   opacity: 0;
 }
 
-/* The page wave begins at the toggle's physical radius and only shows a thin
-   refractive boundary. The destination remains visible inside the ring. */
+/* Transparent radiation boundary; never an opaque wipe. */
 .theme-transition .theme-solar-wave {
   position: absolute;
   left: var(--world-origin-x);
@@ -142,38 +137,38 @@ html[data-world-transitioning='true'][data-world-transition-phase='archive-settl
     inset 0 0 54px rgba(255,248,226,.05);
 }
 
-html .theme-transition[data-phase='eclipse'] .theme-solar-wave,
-html .theme-transition[data-phase='totality'] .theme-solar-wave {
+html .theme-transition[data-phase='ignition'] .theme-solar-wave,
+html .theme-transition[data-phase='convergence'] .theme-solar-wave,
+html .theme-transition[data-phase='layout-release'] .theme-solar-wave {
   opacity: 0;
   transform: translate(-50%, -50%) scale(var(--world-wave-start-scale, .02));
 }
 
-html .theme-transition[data-phase='solar-wave'] .theme-solar-wave {
+html .theme-transition[data-phase='radiation'] .theme-solar-wave {
   opacity: 1;
   transform: translate(-50%, -50%) scale(var(--world-wave-scale, var(--world-wave-start-scale, .02)));
 }
 
-html .theme-transition[data-phase='solar-reveal'] .theme-solar-wave {
-  opacity: calc(1 - var(--world-phase-progress, 0) * .72);
+html .theme-transition[data-phase='solar-arrival'] .theme-solar-wave {
+  opacity: calc(1 - var(--world-phase-progress, 0) * .64);
   transform: translate(-50%, -50%) scale(var(--world-wave-scale, 1));
-  filter: saturate(calc(1.15 - var(--world-phase-progress, 0) * .15));
+  filter: saturate(calc(1.12 - var(--world-phase-progress, 0) * .12));
 }
 
-html .theme-transition[data-phase='archive-settle'] .theme-solar-wave {
-  opacity: calc(.28 - var(--world-phase-progress, 0) * .28);
-  transform: translate(-50%, -50%) scale(var(--world-wave-scale, 1.015));
+html .theme-transition[data-phase='index-reconstruction'] .theme-solar-wave {
+  opacity: calc(.36 - var(--world-phase-progress, 0) * .24);
+  transform: translate(-50%, -50%) scale(var(--world-wave-scale, 1.012));
 }
 
-/* Remove the old full-screen dimming prelude: ignition now happens on the button. */
-html .theme-transition[data-phase='totality']::before {
-  content: none;
+html .theme-transition[data-phase='settle'] .theme-solar-wave {
+  opacity: calc(.12 - var(--world-phase-progress, 0) * .12);
+  transform: translate(-50%, -50%) scale(var(--world-wave-scale, 1.017));
 }
 
-/* Match the phase-specific legacy selector specificity so the reverse wave
-   cannot fall back to an opaque near-black disc during reveal. */
-.theme-transition[data-direction='to-observatory'][data-phase='solar-wave'] .theme-solar-wave,
-.theme-transition[data-direction='to-observatory'][data-phase='solar-reveal'] .theme-solar-wave,
-.theme-transition[data-direction='to-observatory'][data-phase='archive-settle'] .theme-solar-wave {
+.theme-transition[data-direction='to-observatory'][data-phase='radiation'] .theme-solar-wave,
+.theme-transition[data-direction='to-observatory'][data-phase='solar-arrival'] .theme-solar-wave,
+.theme-transition[data-direction='to-observatory'][data-phase='index-reconstruction'] .theme-solar-wave,
+.theme-transition[data-direction='to-observatory'][data-phase='settle'] .theme-solar-wave {
   background:
     radial-gradient(circle,
       transparent 0 68%,
