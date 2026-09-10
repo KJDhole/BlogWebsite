@@ -11,7 +11,7 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
 ---
 <BaseLayout title={SITE.title} description={SITE.description}>
   <div class="page-shell home-shell">
-    <header class="site-topbar folio-topbar" data-world-morph="masthead">
+    <header class="site-topbar folio-topbar">
       <a class="brand" href="#top" aria-label="返回首页" data-world-morph="brand">GLENN<span class="brand-dot" aria-hidden="true"></span></a>
       <nav class="folio-nav" aria-label="主要导航" data-world-morph="primary-nav">
         <a href="#writing">Writing</a>
@@ -37,7 +37,7 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
 
     <main id="top">
       <section class="hero cosmic-hero reveal-block" aria-labelledby="hero-title">
-        <div class="hero-copy folio-intro" data-world-morph="hero-copy">
+        <div class="hero-copy folio-intro">
           <p
             class="eyebrow world-eyebrow"
             data-world-morph="hero-eyebrow"
