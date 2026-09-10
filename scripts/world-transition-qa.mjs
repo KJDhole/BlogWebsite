@@ -66,6 +66,17 @@ async function getToggleGeometry(page) {
   return { button, box, origin, radius }
 }
 
+async function dispatchOffCenterToggleClick(button, box) {
+  await button.evaluate((node, point) => {
+    node.dispatchEvent(new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      clientX: point.x,
+      clientY: point.y
+    }))
+  }, { x: box.x + 2, y: box.y + 2 })
+}
+
 async function armLiveProbe(page) {
   return page.evaluate(() => {
     window.__worldQaFrames = []
@@ -179,10 +190,11 @@ async function runLiveDirection(context, viewport, { fromWorld, toWorld, directi
   try {
     await loadWorld(page, fromWorld)
     const initial = await armLiveProbe(page)
-    const { button, origin } = await getToggleGeometry(page)
+    const { button, box, origin } = await getToggleGeometry(page)
 
-    // Deliberately click near the button's upper-left edge. Origin must still be the button center.
-    await button.click({ position: { x: 2, y: 2 } })
+    // Deliberately dispatch a click with coordinates near the button's upper-left edge.
+    // The controller must still use the measured toggle center as transition origin.
+    await dispatchOffCenterToggleClick(button, box)
     await waitForCheckpoint(page, 1500, toWorld)
 
     const state = await readLiveState(page)
@@ -235,8 +247,8 @@ async function captureLiveCheckpoint(context, viewport, { fromWorld, toWorld, di
   try {
     await loadWorld(page, fromWorld)
     const initial = await armLiveProbe(page)
-    const { button, origin } = await getToggleGeometry(page)
-    await button.click({ position: { x: 2, y: 2 } })
+    const { button, box, origin } = await getToggleGeometry(page)
+    await dispatchOffCenterToggleClick(button, box)
     await waitForCheckpoint(page, checkpoint, toWorld)
 
     const state = await readLiveState(page)
