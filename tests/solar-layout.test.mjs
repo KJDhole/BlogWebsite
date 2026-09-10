@@ -23,6 +23,15 @@ test('Solar layout keeps an ivory cobalt publication palette and cropped solar f
   assert.match(css, /overflow:\s*visible|overflow:\s*clip/)
 })
 
+test('Solar target geometry preserves Observatory palette until the semantic world swap', async () => {
+  const css = await read('../src/styles/solar-layout.css')
+  assert.match(css, /html\[data-layout-world=['"]solar['"]\]\[data-world=['"]observatory['"]\]/)
+  assert.match(css, /--solar-paper:\s*var\(--bg\)/)
+  assert.match(css, /--solar-ink:\s*var\(--text\)/)
+  assert.match(css, /--solar-rule:\s*var\(--line\)/)
+  assert.match(css, /color-scheme:\s*dark/)
+})
+
 test('Solar layout has explicit tablet and mobile editorial compositions', async () => {
   const css = await read('../src/styles/solar-layout.css')
   assert.match(css, /@media\s*\(max-width:\s*760px\)/)
