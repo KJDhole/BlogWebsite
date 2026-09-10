@@ -8,13 +8,16 @@ const OUT_DIR = 'world-transition-qa'
 const CHECKPOINTS = [0, 60, 120, 180, 300, 450, 520, 650, 820, 950, 1080, 1320, 1500]
 const PHASES = ['ignition', 'convergence', 'layout-release', 'radiation', 'solar-arrival', 'index-reconstruction', 'settle']
 const viewports = [
-  { name: 'desktop', width: 1440, height: 1000 },
-  { name: 'mobile', width: 390, height: 844 }
+  { name: 'desktop', width: 1440, height: 1000, exactFrames: true },
+  { name: 'laptop', width: 1024, height: 768, exactFrames: false },
+  { name: 'tablet', width: 768, height: 1024, exactFrames: false },
+  { name: 'mobile', width: 390, height: 844, exactFrames: true },
+  { name: 'compact', width: 360, height: 800, exactFrames: false }
 ]
 
 await mkdir(OUT_DIR, { recursive: true })
 const browser = await chromium.launch({ headless: true })
-const report = { liveRuns: [], frames: [], fold: [], failures: [] }
+const report = { liveRuns: [], hardeningRuns: [], reducedMotion: [], frames: [], fold: [], failures: [] }
 
 function fail(message, detail = {}) {
   report.failures.push({ message, ...detail })
@@ -62,6 +65,38 @@ async function getToggleGeometry(page) {
     Math.max(origin.y, viewport.height - origin.y)
   )
   return { button, box, origin, toggleRadius, radius }
+}
+
+async function inspectStableState(page) {
+  return page.evaluate(() => {
+    const root = document.documentElement
+    const layer = document.querySelector('[data-theme-transition]')
+    return {
+      world: root.dataset.world,
+      layoutWorld: root.dataset.layoutWorld,
+      worldTransitioning: root.dataset.worldTransitioning ?? null,
+      worldMorphing: root.dataset.worldMorphing ?? null,
+      layerActive: Boolean(layer?.classList.contains('is-active')),
+      innerWidth,
+      scrollWidth: Math.max(root.scrollWidth, document.body?.scrollWidth ?? 0)
+    }
+  })
+}
+
+async function captureStableState(page, viewport, world, label) {
+  const state = await inspectStableState(page)
+  if (state.world !== world || state.layoutWorld !== world) {
+    fail('Hardening stable state did not settle to one world/layout', { viewport: viewport.name, world, label, state })
+  }
+  if (state.worldTransitioning || state.worldMorphing || state.layerActive) {
+    fail('Hardening stable state retained transient transition state', { viewport: viewport.name, world, label, state })
+  }
+  if (state.scrollWidth > state.innerWidth + 1) {
+    fail('Hardening stable state caused horizontal overflow', { viewport: viewport.name, world, label, state })
+  }
+
+  await page.screenshot({ path: `${OUT_DIR}/${viewport.name}-${label}-stable.png`, fullPage: false })
+  report.hardeningRuns.push({ viewport: viewport.name, width: viewport.width, world, label, ...state })
 }
 
 async function runLiveDirection(page, viewport, { fromWorld, toWorld, direction }, clickSide) {
@@ -125,6 +160,77 @@ async function runLiveDirection(page, viewport, { fromWorld, toWorld, direction 
     sameHeroNode: state.sameHeroNode,
     sameArticleNodes: state.sameArticleNodes
   })
+}
+
+async function runReducedMotion(page, viewport) {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await loadWorld(page, 'observatory')
+  await page.evaluate(() => {
+    window.__reducedMotionEvents = { start: 0, transition: 0, end: 0 }
+    window.addEventListener('glenn:worldtransitionstart', () => { window.__reducedMotionEvents.start += 1 })
+    window.addEventListener('glenn:worldtransition', () => { window.__reducedMotionEvents.transition += 1 })
+    window.addEventListener('glenn:worldtransitionend', () => { window.__reducedMotionEvents.end += 1 })
+  })
+
+  const { button } = await getToggleGeometry(page)
+  await button.click()
+  await page.waitForFunction(() => {
+    const root = document.documentElement
+    return root.dataset.world === 'solar' && root.dataset.layoutWorld === 'solar'
+  })
+  await page.waitForTimeout(40)
+
+  const solarState = await page.evaluate(() => {
+    const root = document.documentElement
+    const layer = document.querySelector('[data-theme-transition]')
+    const wave = document.querySelector('[data-solar-wave]')
+    return {
+      world: root.dataset.world,
+      layoutWorld: root.dataset.layoutWorld,
+      worldTransitioning: root.dataset.worldTransitioning ?? null,
+      worldMorphing: root.dataset.worldMorphing ?? null,
+      layerActive: Boolean(layer?.classList.contains('is-active')),
+      waveOpacity: wave ? Number.parseFloat(getComputedStyle(wave).opacity) : 0,
+      innerWidth,
+      scrollWidth: Math.max(root.scrollWidth, document.body?.scrollWidth ?? 0),
+      events: { ...window.__reducedMotionEvents }
+    }
+  })
+
+  if (solarState.worldTransitioning || solarState.worldMorphing || solarState.layerActive) {
+    fail('Reduced motion activated animated transition surfaces', { viewport: viewport.name, state: solarState })
+  }
+  if (solarState.events.start !== 0 || solarState.events.transition !== 0) {
+    fail('Reduced motion dispatched animated transition frames', { viewport: viewport.name, state: solarState })
+  }
+  if (solarState.events.end !== 1) {
+    fail('Reduced motion did not emit one settled transition end', { viewport: viewport.name, state: solarState })
+  }
+  if (solarState.scrollWidth > solarState.innerWidth + 1) {
+    fail('Reduced motion Solar state caused horizontal overflow', { viewport: viewport.name, state: solarState })
+  }
+
+  await page.screenshot({ path: `${OUT_DIR}/${viewport.name}-reduced-solar.png`, fullPage: false })
+
+  const reverseToggle = page.locator('[data-world-toggle]').first()
+  await reverseToggle.click()
+  await page.waitForFunction(() => {
+    const root = document.documentElement
+    return root.dataset.world === 'observatory' && root.dataset.layoutWorld === 'observatory'
+  })
+  await page.waitForTimeout(40)
+  const observatoryState = await inspectStableState(page)
+
+  if (observatoryState.worldTransitioning || observatoryState.worldMorphing || observatoryState.layerActive) {
+    fail('Reduced motion reverse retained animated transition surfaces', { viewport: viewport.name, state: observatoryState })
+  }
+  if (observatoryState.scrollWidth > observatoryState.innerWidth + 1) {
+    fail('Reduced motion Observatory state caused horizontal overflow', { viewport: viewport.name, state: observatoryState })
+  }
+
+  await page.screenshot({ path: `${OUT_DIR}/${viewport.name}-reduced-observatory.png`, fullPage: false })
+  report.reducedMotion.push({ viewport: viewport.name, width: viewport.width, solar: solarState, observatory: observatoryState })
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
 }
 
 async function captureExactFrame(page, viewport, { fromWorld, toWorld, direction }, checkpoint) {
@@ -289,21 +395,23 @@ try {
 
     try {
       const toSolar = { fromWorld: 'observatory', toWorld: 'solar', direction: 'to-solar' }
+      const toObservatory = { fromWorld: 'solar', toWorld: 'observatory', direction: 'to-observatory' }
+
       await runLiveDirection(page, viewport, toSolar, 'left')
-      for (const checkpoint of CHECKPOINTS) await captureExactFrame(page, viewport, toSolar, checkpoint)
+      await captureStableState(page, viewport, 'solar', 'to-solar')
+
+      if (viewport.exactFrames) {
+        for (const checkpoint of CHECKPOINTS) await captureExactFrame(page, viewport, toSolar, checkpoint)
+      }
+
+      await runLiveDirection(page, viewport, toObservatory, 'right')
+      await captureStableState(page, viewport, 'observatory', 'to-observatory')
 
       if (viewport.name === 'desktop') {
-        const toObservatory = { fromWorld: 'solar', toWorld: 'observatory', direction: 'to-observatory' }
-        await runLiveDirection(page, viewport, toObservatory, 'right')
         for (const checkpoint of CHECKPOINTS) await captureExactFrame(page, viewport, toObservatory, checkpoint)
-      } else {
-        await loadWorld(page, 'solar')
-        const { button } = await getToggleGeometry(page)
-        await button.click()
-        await page.waitForFunction(() => document.documentElement.dataset.world === 'observatory')
-        await page.waitForTimeout(1200)
-        await page.screenshot({ path: `${OUT_DIR}/mobile-to-observatory-final.png`, fullPage: false })
       }
+
+      await runReducedMotion(page, viewport)
     } catch (error) {
       fail('Unhandled transition QA error', {
         viewport: viewport.name,
@@ -325,5 +433,5 @@ if (report.failures.length) {
   for (const failure of report.failures) console.error('-', failure.message, JSON.stringify(failure))
   process.exitCode = 1
 } else {
-  console.log(`World Transition QA passed: ${report.liveRuns.length} live transition run(s), ${report.frames.length} exact visual frame(s), ${report.fold.length} fold checkpoints.`)
+  console.log(`World Transition QA passed: ${report.liveRuns.length} live transition run(s), ${report.hardeningRuns.length} responsive stable checks, ${report.reducedMotion.length} reduced-motion checks, ${report.frames.length} exact visual frame(s), ${report.fold.length} fold checkpoints.`)
 }
