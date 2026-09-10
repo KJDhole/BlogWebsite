@@ -24,12 +24,17 @@ test('Solar layout keeps an ivory cobalt publication palette and cropped solar f
 })
 
 test('Solar target geometry preserves Observatory palette until the semantic world swap', async () => {
-  const css = await read('../src/styles/solar-layout.css')
-  assert.match(css, /html\[data-layout-world=['"]solar['"]\]\[data-world=['"]observatory['"]\]/)
-  assert.match(css, /--solar-paper:\s*var\(--bg\)/)
-  assert.match(css, /--solar-ink:\s*var\(--text\)/)
-  assert.match(css, /--solar-rule:\s*var\(--line\)/)
-  assert.match(css, /color-scheme:\s*dark/)
+  const [paletteCss, baseLayout] = await Promise.all([
+    read('../src/styles/solar-transition-palette.css'),
+    read('../src/layouts/BaseLayout.astro')
+  ])
+
+  assert.match(baseLayout, /import ['"]\.\.\/styles\/solar-transition-palette\.css['"]/)
+  assert.match(paletteCss, /html\[data-layout-world=['"]solar['"]\]\[data-world=['"]observatory['"]\]/)
+  assert.match(paletteCss, /--solar-paper:\s*var\(--bg\)/)
+  assert.match(paletteCss, /--solar-ink:\s*var\(--text\)/)
+  assert.match(paletteCss, /--solar-rule:\s*var\(--line\)/)
+  assert.match(paletteCss, /color-scheme:\s*dark/)
 })
 
 test('Solar layout has explicit tablet and mobile editorial compositions', async () => {
