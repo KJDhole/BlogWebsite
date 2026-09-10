@@ -33,6 +33,8 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
       </button>
     </header>
 
+    <SpaceScene />
+
     <main id="top">
       <section class="hero cosmic-hero reveal-block" aria-labelledby="hero-title">
         <div class="hero-copy folio-intro" data-world-morph="hero-copy">
@@ -61,7 +63,6 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
         <div class="orbit-wrap" aria-hidden="true" data-world-morph="scene-stage">
           <div class="scene-anchor scene-anchor-observatory" data-scene-anchor="observatory"></div>
           <div class="scene-anchor scene-anchor-solar" data-scene-anchor="solar"></div>
-          <SpaceScene />
           <p class="orbit-caption">slow systems · clear thinking</p>
         </div>
       </section>
