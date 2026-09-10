@@ -13,10 +13,23 @@ type ArticleSummary = {
 const list = document.querySelector<HTMLElement>('[data-article-list]')
 const state = document.querySelector<HTMLElement>('[data-dashboard-state]')
 
+const CATEGORY_LABELS: Record<string, string> = {
+  AI: 'AI',
+  Agent: 'Agent',
+  Development: '开发',
+  Product: '产品',
+  Thinking: '思考'
+}
+
 function statusLabel(status: ArticleSummary['status']) {
   if (status === 'publish_pending') return '发布中'
   if (status === 'draft') return '草稿'
   return '已发布'
+}
+
+function categoryLabel(category?: string) {
+  if (!category) return '未分类'
+  return CATEGORY_LABELS[category] ?? category
 }
 
 function renderArticle(article: ArticleSummary) {
@@ -32,7 +45,7 @@ function renderArticle(article: ArticleSummary) {
 
   const meta = document.createElement('p')
   meta.className = 'article-admin-meta'
-  meta.textContent = [article.category || '未分类', article.updated || article.date || '暂无日期'].join(' · ')
+  meta.textContent = [categoryLabel(article.category), article.updated || article.date || '暂无日期'].join(' · ')
   main.append(meta)
 
   const badge = document.createElement('span')
@@ -49,8 +62,8 @@ async function start() {
     const articles = await apiFetch<ArticleSummary[]>('/posts')
     list?.replaceChildren(...articles.map(renderArticle))
     if (state) state.textContent = `${articles.length} 篇文章`
-  } catch (error) {
-    if (state) state.textContent = error instanceof Error ? error.message : '文章加载失败'
+  } catch {
+    if (state) state.textContent = '文章加载失败'
   }
 }
 
