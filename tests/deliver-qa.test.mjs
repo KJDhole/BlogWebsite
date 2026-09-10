@@ -45,7 +45,9 @@ test('world transition QA captures dense live frames, toggle origin, same DOM, a
     assert.match(qa, new RegExp(phase))
   }
   assert.match(qa, /elapsedMs/)
-  assert.match(qa, /position:\s*\{\s*x:\s*2,\s*y:\s*2\s*\}/)
+  assert.match(qa, /new MouseEvent\(['"]click['"]/)
+  assert.match(qa, /clientX/)
+  assert.match(qa, /clientY/)
   assert.match(qa, /__worldQaHero/)
   assert.match(qa, /hero-title/)
   assert.match(qa, /--world-origin-x/)
