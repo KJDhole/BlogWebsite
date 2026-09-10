@@ -30,6 +30,10 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+      - name: Install editor API dependencies
+        run: npm install --prefix editor-api
+      - name: Test editor API
+        run: npm test --prefix editor-api
       - name: Verify production blog output
         run: |
           test -f dist/index.html
@@ -39,6 +43,10 @@ jobs:
           test -f dist/tags/ai/index.html
           test -f dist/tags/agent/index.html
           test -f dist/tags/architecture/index.html
+          test -f dist/admin/index.html
+          test -f dist/admin/login/index.html
+          test -f dist/admin/new/index.html
+          test -f dist/admin/editor/index.html
           test -f dist/404.html
           test -f dist/rss.xml
           ls dist/sitemap*.xml >/dev/null
@@ -51,7 +59,7 @@ jobs:
           fi
       - name: Prove Markdown-only publishing
         run: |
-          cat > src/content/posts/verification-sixth-post.md <<'EOF'
+          cat > src/content/posts/verification-sixth-post.md <<'EOF_POST'
           ---
           title: "Verification Sixth Post"
           description: "Temporary acceptance fixture proving Markdown-only publishing."
@@ -64,7 +72,7 @@ jobs:
           ---
 
           Temporary acceptance fixture proving Markdown-only publishing.
-          EOF
+          EOF_POST
           npm run build
           test -f dist/writing/verification-sixth-post/index.html
           grep -q "Verification Sixth Post" dist/index.html
