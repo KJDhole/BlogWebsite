@@ -184,7 +184,7 @@ function initializeSceneViewport() {
 }
 
 function initializeWorldMorph() {
-  worldMorph?.destroy()
+  if (worldMorph) worldMorph.destroy()
   worldMorph = createWorldMorph(document.documentElement, {
     reducedMotion: reducedMotion.matches
   })
@@ -192,7 +192,7 @@ function initializeWorldMorph() {
 }
 
 window.addEventListener('glenn:worldtransitionstart', () => {
-  worldMorph?.finish()
+  if (worldMorph) worldMorph.finish()
   worldMorphPrepared = false
 })
 
@@ -207,12 +207,12 @@ window.addEventListener('glenn:worldtransition', event => {
   const detail = event.detail ?? {}
   const elapsedMs = Number.isFinite(detail.elapsedMs) ? detail.elapsedMs : (detail.progress ?? 0) * 1500
 
-  if (!worldMorphPrepared && elapsedMs >= 300) {
-    worldMorph?.prepare(detail.toWorld)
+  if (!worldMorphPrepared && elapsedMs >= 300 && worldMorph) {
+    worldMorph.prepare(detail.toWorld)
     worldMorphPrepared = true
   }
-  if (worldMorphPrepared) {
-    worldMorph?.setProgress(getMorphProgress(elapsedMs), {
+  if (worldMorphPrepared && worldMorph) {
+    worldMorph.setProgress(getMorphProgress(elapsedMs), {
       articleProgress: getIndexProgress(elapsedMs)
     })
   }
@@ -222,7 +222,7 @@ window.addEventListener('glenn:worldtransition', event => {
 })
 
 window.addEventListener('glenn:worldtransitionend', event => {
-  worldMorph?.finish()
+  if (worldMorph) worldMorph.finish()
   worldMorphPrepared = false
   const world = event.detail?.toWorld || document.documentElement.dataset.world || 'solar'
   document.documentElement.dataset.layoutWorld = world
@@ -331,7 +331,7 @@ function handleViewportChange() {
     initializeWorldMorph()
   } else {
     sceneViewport?.refresh()
-    worldMorph?.refresh()
+    if (worldMorph) worldMorph.refresh()
     spaceScene?.resize()
   }
 
@@ -345,7 +345,7 @@ window.addEventListener('resize', handleViewportChange)
 mobileMedia.addEventListener?.('change', handleViewportChange)
 reducedMotion.addEventListener?.('change', handleViewportChange)
 window.addEventListener('pagehide', () => {
-  worldMorph?.destroy()
+  if (worldMorph) worldMorph.destroy()
   sceneViewport?.destroy()
   spaceScene?.destroy()
 })
