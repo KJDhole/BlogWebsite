@@ -23,7 +23,15 @@ html[data-world-morphing='true'] [data-world-morph] {
   margin: 0;
   pointer-events: none;
   transform: none;
+  overflow: clip;
+  contain: layout paint style;
   will-change: left, top, width, height;
+}
+
+/* The Solar scene intentionally extends past the right edge. It is a cropped
+   observation field, not document width, so the hero is its visual viewport. */
+html[data-layout-world='solar'] .cosmic-hero {
+  overflow: clip;
 }
 
 /* Signature world-wave polish: the new world remains visible inside the wave. */
