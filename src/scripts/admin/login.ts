@@ -1,4 +1,4 @@
-import { apiFetch } from './api'
+import { ApiError, apiFetch } from './api'
 
 const form = document.querySelector<HTMLFormElement>('[data-login-form]')
 const errorBox = document.querySelector<HTMLElement>('[data-login-error]')
@@ -25,7 +25,9 @@ form?.addEventListener('submit', async event => {
     window.location.replace('/admin/')
   } catch (error) {
     if (errorBox) {
-      errorBox.textContent = error instanceof Error ? error.message : 'Sign in failed'
+      errorBox.textContent = error instanceof ApiError && error.status === 401
+        ? '用户名或密码不正确'
+        : '登录失败，请稍后重试'
       errorBox.classList.remove('is-hidden')
     }
   } finally {
