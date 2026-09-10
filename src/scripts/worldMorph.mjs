@@ -1,4 +1,5 @@
 const clamp01 = value => Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
+const normalizeZero = value => value === 0 ? 0 : value
 
 export function createFlipDelta(fromRect, toRect) {
   return {
@@ -13,8 +14,8 @@ export function sampleFlip(delta, progress) {
   const t = clamp01(progress)
   const remaining = 1 - t
   return {
-    x: delta.x * remaining,
-    y: delta.y * remaining,
+    x: normalizeZero(delta.x * remaining),
+    y: normalizeZero(delta.y * remaining),
     scaleX: 1 + (delta.scaleX - 1) * remaining,
     scaleY: 1 + (delta.scaleY - 1) * remaining
   }
