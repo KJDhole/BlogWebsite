@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a single-user browser article editor that saves private drafts, edits existing Markdown posts, creates reviewed GitHub PRs, and merges approved content without changing the public Astro/GitHub Pages architecture.
+**Goal:** Add a single-user browser article editor that saves unfinished private drafts, edits existing Markdown posts, creates GitHub PRs, waits for CI, and merges approved content without changing the public Astro/GitHub Pages architecture.
 
-**Architecture:** Keep the public site fully static. Add static `/admin` pages that talk to a separate Fastify Editor API over HTTPS; the API owns authentication, SQLite drafts/sessions, Markdown serialization, GitHub write credentials, PR creation, CI status checks, and merge actions. Published content remains `src/content/posts/*.md` on GitHub `main`.
+**Architecture:** Keep the public site fully static. Add static `/admin` pages that call a separate Fastify Editor API over HTTPS. The API owns authentication, SQLite drafts/sessions, Markdown parsing/serialization, GitHub credentials, conflict checks, PR creation, CI status, and merge actions. Published content remains `src/content/posts/*.md` on GitHub `main`.
 
-**Tech Stack:** Astro 7, browser TypeScript, `marked`, `dompurify`, Node.js 22, Fastify, `@fastify/cookie`, `@fastify/cors`, `@fastify/rate-limit`, `bcryptjs`, `better-sqlite3`, `gray-matter`, `yaml`, native `fetch`, Node test runner, Docker, Nginx, GitHub Actions.
+**Tech Stack:** Astro 7, browser TypeScript, `marked`, `dompurify`, Node.js 22, Fastify 5, `@fastify/cookie`, `@fastify/cors`, `@fastify/rate-limit`, `bcryptjs`, `better-sqlite3`, `gray-matter`, `yaml`, native `fetch`, Node test runner, Docker, Nginx, GitHub Actions.
 
 **Spec:** `docs/superpowers/specs/2026-09-10-article-editor-admin-design.md`
 
@@ -14,84 +14,93 @@
 
 - Public blog remains `output: 'static'`; do not move public routes to SSR.
 - Published article truth remains `src/content/posts/*.md` on `main`.
-- Draft bodies must not be written into `src/content/posts/` before publish submission.
-- Publishing must be `temporary branch -> PR -> CI success -> explicit merge -> main`; never write directly to `main` from the Editor API.
-- GitHub credentials, password hash, session secret, and cookies must never be rendered into static HTML or sent to browser JavaScript.
-- Existing content schema remains `AI | Agent | Development | Product | Thinking`.
-- Existing unknown frontmatter keys must survive parse/edit/serialize round trips.
-- Existing published slug is immutable in V1; an unpublished new draft may be renamed only while `sourceSha === null` and status is `draft`.
-- All browser API calls use `credentials: 'include'`; all mutation endpoints require authenticated session plus exact allowed Origin.
-- Login rate limit: 5 attempts per minute per IP.
-- Session lifetime: 7 days; cookie is `HttpOnly`, `Secure` in production, `SameSite=Lax`.
-- Editor API logs must redact authorization, cookies, password fields, `GITHUB_TOKEN`, and `SESSION_SECRET`.
-- Main repository tests (`npm test`, `npm run build`) must continue passing.
+- Draft bodies never enter `src/content/posts/` before publish submission.
+- Unfinished drafts must be savable even when title/description/body are incomplete; full validation runs only on publish.
+- Publishing is always `temporary branch -> PR -> CI success -> explicit merge -> main`; Editor API never writes directly to `main`.
+- GitHub token, password hash, session secret, raw session token, and cookies never appear in static HTML or browser JavaScript.
+- Category values remain exactly `AI | Agent | Development | Product | Thinking`.
+- Unknown existing frontmatter keys survive parse/edit/serialize round trips.
+- Published slug is immutable in V1; an unpublished draft may be renamed only when `sourceSha === null` and status is `draft`.
+- Browser API calls always use `credentials: 'include'`.
+- Every mutation requires authenticated session plus exact allowed `Origin`.
+- Login rate limit is 5 attempts per minute per IP.
+- Session lifetime is 7 days; cookie is `HttpOnly`, `SameSite=Lax`, and `Secure` in production.
+- Editor API logs redact authorization, cookie, password, and secret-bearing values.
+- Existing `npm test` and `npm run build` must continue passing.
 
 ---
 
 ## File Map
 
-### Public/static admin client
+### Static admin client
 
-- `src/config/admin.ts` — compile-time Editor API base URL only.
-- `src/components/admin/AdminShell.astro` — shared admin page frame.
-- `src/components/admin/ArticleEditor.astro` — shared editor form/preview markup for new and edit pages.
-- `src/pages/admin/login.astro` — login surface.
-- `src/pages/admin/index.astro` — article/draft list.
-- `src/pages/admin/new.astro` — new article editor.
-- `src/pages/admin/editor.astro` — existing article editor; reads `?slug=` in browser.
-- `src/scripts/admin/api.ts` — credentialed API wrapper.
-- `src/scripts/admin/login.ts` — login/session behavior.
-- `src/scripts/admin/dashboard.ts` — article list loading/actions.
-- `src/scripts/admin/editor.ts` — editor state, autosafe manual save, preview, publish/status/merge.
-- `src/styles/admin.css` — isolated admin styling.
-- `tests/admin-ui-contract.test.mjs` — static admin route/UI contract.
+```text
+src/config/admin.ts
+src/components/admin/AdminShell.astro
+src/components/admin/ArticleEditor.astro
+src/pages/admin/login.astro
+src/pages/admin/index.astro
+src/pages/admin/new.astro
+src/pages/admin/editor.astro
+src/scripts/admin/api.ts
+src/scripts/admin/login.ts
+src/scripts/admin/dashboard.ts
+src/scripts/admin/editor.ts
+src/styles/admin.css
+tests/admin-ui-contract.test.mjs
+```
 
 ### Editor API
 
-- `editor-api/package.json` / `editor-api/package-lock.json` — isolated runtime dependencies and scripts.
-- `editor-api/.env.example` — required environment variables without secrets.
-- `editor-api/src/config.mjs` — validated config loader.
-- `editor-api/src/article.mjs` — article types-by-contract, validation, parse/serialize.
-- `editor-api/src/db.mjs` — SQLite schema and draft/session stores.
-- `editor-api/src/auth.mjs` — password verification, session token hashing, auth hooks.
-- `editor-api/src/github.mjs` — narrow GitHub REST client.
-- `editor-api/src/publishing.mjs` — conflict check, branch/file/PR/status/merge orchestration.
-- `editor-api/src/app.mjs` — Fastify app and routes.
-- `editor-api/src/server.mjs` — production entrypoint.
-- `editor-api/tests/article.test.mjs` — Markdown contract tests.
-- `editor-api/tests/db-auth.test.mjs` — draft/session/auth tests.
-- `editor-api/tests/github.test.mjs` — GitHub request contract tests.
-- `editor-api/tests/publishing.test.mjs` — publish state-machine tests.
-- `editor-api/tests/app.test.mjs` — HTTP/auth/origin route tests.
-- `editor-api/Dockerfile` — production container.
-- `editor-api/README.md` — deployment/configuration runbook.
+```text
+editor-api/package.json
+editor-api/package-lock.json
+editor-api/.env.example
+editor-api/src/config.mjs
+editor-api/src/article.mjs
+editor-api/src/db.mjs
+editor-api/src/auth.mjs
+editor-api/src/github.mjs
+editor-api/src/publishing.mjs
+editor-api/src/app.mjs
+editor-api/src/server.mjs
+editor-api/tests/article.test.mjs
+editor-api/tests/db-auth.test.mjs
+editor-api/tests/github.test.mjs
+editor-api/tests/publishing.test.mjs
+editor-api/tests/app.test.mjs
+editor-api/Dockerfile
+editor-api/README.md
+```
 
 ### Integration
 
-- `.github/workflows/ci.yml` — install/test Editor API in PR CI while leaving GitHub Pages deployment static.
+```text
+.github/workflows/ci.yml
+```
 
 ---
 
-### Task 1: Markdown Article Contract
+### Task 1: Article Contract and Markdown Round Trip
 
 **Files:**
 - Create: `editor-api/package.json`
+- Generate: `editor-api/package-lock.json`
 - Create: `editor-api/src/article.mjs`
 - Create: `editor-api/tests/article.test.mjs`
-- Create: `editor-api/.env.example`
-- Generate: `editor-api/package-lock.json`
 
 **Interfaces:**
-- Produces: `CATEGORIES: readonly string[]`
-- Produces: `validateArticle(article): string[]`
+- Produces: `CATEGORIES`
 - Produces: `validateSlug(slug): string[]`
+- Produces: `validateDraftArticle(article): string[]`
+- Produces: `validatePublishArticle(article): string[]`
 - Produces: `parseArticleMarkdown({ slug, source, sourceSha }): ArticleRecord`
-- Produces: `serializeArticleMarkdown(article, { mode, now }): string`
-- `ArticleRecord` shape: `{ slug, title, description, date, updated, category, tags, visual, cover, sourceUrl, sourceLabel, body, extraFrontmatter, sourceSha }`.
+- Produces: `serializePublishedArticleMarkdown(article, { mode, now }): string`
+- `ArticleRecord`: `{ slug, title, description, date, updated, category, tags, visual, cover, sourceUrl, sourceLabel, body, extraFrontmatter, sourceSha }`.
 
-- [ ] **Step 1: Create the isolated API package and install only required V1 dependencies**
+- [ ] **Step 1: Create the Editor API package**
 
-Create `editor-api/package.json`:
+Create `editor-api/package.json` exactly:
 
 ```json
 {
@@ -123,97 +132,133 @@ Run:
 npm install --prefix editor-api
 ```
 
-Expected: `editor-api/package-lock.json` is created and install exits 0.
+Expected: install exits 0 and creates `editor-api/package-lock.json`.
 
-- [ ] **Step 2: Write failing parse/serialize/validation tests**
+- [ ] **Step 2: Write failing article tests**
 
-Create `editor-api/tests/article.test.mjs` with cases equivalent to:
+Create `editor-api/tests/article.test.mjs` with these complete cases:
 
 ```js
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   parseArticleMarkdown,
-  serializeArticleMarkdown,
-  validateArticle,
+  serializePublishedArticleMarkdown,
+  validateDraftArticle,
+  validatePublishArticle,
   validateSlug
 } from '../src/article.mjs'
 
-const source = `---\ntitle: "Existing"\ndescription: "Desc"\ndate: 2026-09-01\ncategory: Thinking\ntags:\n  - AI\nvisual: paper\ncustomField: keep-me\ndraft: false\n---\n\n# Body\n`
+const existingSource = `---\ntitle: "Existing"\ndescription: "Desc"\ndate: 2026-09-01\ncategory: Thinking\ntags:\n  - AI\nvisual: paper\nsourceUrl: "https://example.com/source"\ncustomField: keep-me\ndraft: false\n---\n\n# Body\n`
 
-test('parse and serialize preserves unknown frontmatter', () => {
-  const article = parseArticleMarkdown({ slug: 'existing', source, sourceSha: 'sha-1' })
+test('draft validation allows unfinished content but still protects slug/category shape', () => {
+  const errors = validateDraftArticle({
+    slug: 'unfinished-draft', title: '', description: '', category: '', tags: [], body: ''
+  })
+  assert.deepEqual(errors, [])
+  assert.ok(validateDraftArticle({ slug: '../bad', category: '', tags: [], body: '' }).length > 0)
+  assert.ok(validateDraftArticle({ slug: 'ok', category: 'Other', tags: [], body: '' }).length > 0)
+})
+
+test('publish validation requires complete content', () => {
+  const errors = validatePublishArticle({
+    slug: 'unfinished-draft', title: '', description: '', category: 'Thinking', tags: [], body: ''
+  })
+  assert.ok(errors.length >= 4)
+})
+
+test('parse and serialize preserves unknown frontmatter and existing date', () => {
+  const article = parseArticleMarkdown({ slug: 'existing', source: existingSource, sourceSha: 'sha-1' })
   assert.equal(article.extraFrontmatter.customField, 'keep-me')
-  const out = serializeArticleMarkdown(article, { mode: 'update', now: new Date('2026-09-10T00:00:00Z') })
+  assert.equal(article.visual, 'paper')
+  assert.equal(article.sourceUrl, 'https://example.com/source')
+  const out = serializePublishedArticleMarkdown(article, {
+    mode: 'update', now: new Date('2026-09-10T00:00:00Z')
+  })
   assert.match(out, /customField: keep-me/)
+  assert.match(out, /visual: paper/)
   assert.match(out, /date: 2026-09-01/)
   assert.match(out, /updated: 2026-09-10/)
   assert.match(out, /draft: false/)
   assert.match(out, /# Body/)
 })
 
-test('new article gets date but no updated field', () => {
+test('new publish gets date and omits updated', () => {
   const article = {
     slug: 'new-post', title: 'New', description: 'Desc', date: '', updated: null,
     category: 'Agent', tags: ['AI'], visual: null, cover: null,
     sourceUrl: null, sourceLabel: null, body: 'Hello', extraFrontmatter: {}, sourceSha: null
   }
-  const out = serializeArticleMarkdown(article, { mode: 'create', now: new Date('2026-09-10T00:00:00Z') })
+  const out = serializePublishedArticleMarkdown(article, {
+    mode: 'create', now: new Date('2026-09-10T00:00:00Z')
+  })
   assert.match(out, /date: 2026-09-10/)
   assert.doesNotMatch(out, /^updated:/m)
 })
 
-test('validation rejects bad slug and category', () => {
+test('slug format is lower-kebab-case only', () => {
+  assert.deepEqual(validateSlug('valid-slug-2'), [])
   assert.ok(validateSlug('../bad').length > 0)
-  assert.ok(validateArticle({ slug: 'ok', title: '', description: '', category: 'Other', tags: [], body: '' }).length > 0)
+  assert.ok(validateSlug('HasCaps').length > 0)
 })
 ```
 
-- [ ] **Step 3: Run the tests and prove they fail before implementation**
+- [ ] **Step 3: Run the test and verify RED**
 
-Run:
+```bash
+node --test editor-api/tests/article.test.mjs
+```
+
+Expected: FAIL because `editor-api/src/article.mjs` does not exist.
+
+- [ ] **Step 4: Implement the article module**
+
+`editor-api/src/article.mjs` must:
+
+```js
+export const CATEGORIES = ['AI', 'Agent', 'Development', 'Product', 'Thinking']
+
+export function validateSlug(slug) {
+  const errors = []
+  if (typeof slug !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || slug.length > 120) {
+    errors.push('slug must be lower-kebab-case and at most 120 characters')
+  }
+  return errors
+}
+
+export function validateDraftArticle(article) {
+  const errors = [...validateSlug(article.slug)]
+  if (article.category && !CATEGORIES.includes(article.category)) errors.push('invalid category')
+  if (article.tags !== undefined && !Array.isArray(article.tags)) errors.push('tags must be an array')
+  return errors
+}
+
+export function validatePublishArticle(article) {
+  const errors = [...validateDraftArticle(article)]
+  if (!article.title?.trim()) errors.push('title is required')
+  if (!article.description?.trim()) errors.push('description is required')
+  if (!CATEGORIES.includes(article.category)) errors.push('category is required')
+  if (!Array.isArray(article.tags) || article.tags.length === 0 || article.tags.some(tag => typeof tag !== 'string' || !tag.trim())) errors.push('at least one tag is required')
+  if (!article.body?.trim()) errors.push('body is required')
+  return errors
+}
+```
+
+For parse/serialize, use `gray-matter` plus `yaml`. Known keys are `title`, `description`, `date`, `updated`, `category`, `tags`, `visual`, `cover`, `sourceUrl`, `sourceLabel`, `draft`; all other keys go into `extraFrontmatter`. Serialization merges `extraFrontmatter` back, then known fields, and forces `draft: false`. Convert dates to `YYYY-MM-DD` deterministically.
+
+- [ ] **Step 5: Run GREEN and commit**
 
 ```bash
 npm test --prefix editor-api
-```
-
-Expected: FAIL because `../src/article.mjs` does not exist.
-
-- [ ] **Step 4: Implement validation and deterministic Markdown conversion**
-
-In `editor-api/src/article.mjs`:
-
-- use `gray-matter` to split frontmatter/body;
-- keep known keys separate and collect all unknown keys into `extraFrontmatter`;
-- validate slug with `^[a-z0-9]+(?:-[a-z0-9]+)*$` and max length 120;
-- reject empty title/description/body, unsupported category, empty/non-string tags;
-- on create set `date` to `YYYY-MM-DD` when absent and omit `updated`;
-- on update preserve original `date` and set `updated` to `YYYY-MM-DD`;
-- always emit `draft: false` only in publish serialization;
-- merge `extraFrontmatter` back before YAML serialization so fields such as `visual`, future metadata, or custom fields are not silently lost.
-
-The exported function signatures must exactly match the Interfaces block above.
-
-- [ ] **Step 5: Run focused tests, then commit**
-
-Run:
-
-```bash
-npm test --prefix editor-api
-```
-
-Expected: PASS.
-
-Commit:
-
-```bash
-git add editor-api/package.json editor-api/package-lock.json editor-api/.env.example editor-api/src/article.mjs editor-api/tests/article.test.mjs
+git add editor-api/package.json editor-api/package-lock.json editor-api/src/article.mjs editor-api/tests/article.test.mjs
 git commit -m "feat: add editor article contract"
 ```
 
+Expected: tests PASS.
+
 ---
 
-### Task 2: SQLite Drafts, Sessions, and Authentication
+### Task 2: SQLite Draft and Session Store
 
 **Files:**
 - Create: `editor-api/src/db.mjs`
@@ -221,52 +266,87 @@ git commit -m "feat: add editor article contract"
 - Create: `editor-api/tests/db-auth.test.mjs`
 
 **Interfaces:**
-- Consumes: `validateArticle`, `validateSlug` from Task 1.
-- Produces: `createStore({ filename }): EditorStore`
-- `EditorStore` methods: `getDraft(slug)`, `listDrafts()`, `saveDraft({ article, sourceSha })`, `renameDraft(oldSlug, newSlug)`, `setPublishPending(slug, meta)`, `deleteDraft(slug)`, `createSession({ tokenHash, expiresAt })`, `getSession(tokenHash)`, `deleteSession(tokenHash)`, `deleteExpiredSessions(now)`.
-- Produces: `hashSessionToken(token): string`
-- Produces: `verifyAdminPassword({ username, password, config }): Promise<boolean>`
+- Produces: `createStore({ filename })`
+- Store methods: `getDraft`, `listDrafts`, `saveDraft`, `renameDraft`, `setPublishPending`, `deleteDraft`, `createSession`, `getSession`, `deleteSession`, `deleteExpiredSessions`, `close`.
+- Produces: `hashSessionToken(token)`
+- Produces: `verifyAdminPassword({ username, password, config })`.
 
-- [ ] **Step 1: Write failing persistence and auth tests**
+- [ ] **Step 1: Write failing persistence/auth tests**
 
-Cover these exact behaviors in `editor-api/tests/db-auth.test.mjs` using a temporary SQLite file:
+Create `editor-api/tests/db-auth.test.mjs`:
 
 ```js
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { createStore } from '../src/db.mjs'
 import { hashSessionToken } from '../src/auth.mjs'
 
-test('draft survives store reopen and keeps source sha', () => {
-  // create temp DB, save a draft, close store, reopen same file
-  // assert title/body/sourceSha/status === draft
+const article = {
+  slug: 'draft-one', title: '', description: '', category: '', tags: [], body: '',
+  date: '', updated: null, visual: null, cover: null, sourceUrl: null, sourceLabel: null,
+  extraFrontmatter: {}, sourceSha: null
+}
+
+test('draft persists across store reopen and remains unfinished', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'glenn-editor-'))
+  const filename = join(dir, 'editor.sqlite')
+  let store = createStore({ filename })
+  store.saveDraft({ article, sourceSha: null })
+  store.close()
+  store = createStore({ filename })
+  const loaded = store.getDraft('draft-one')
+  assert.equal(loaded.article.title, '')
+  assert.equal(loaded.sourceSha, null)
+  assert.equal(loaded.status, 'draft')
+  store.close()
+  rmSync(dir, { recursive: true, force: true })
 })
 
-test('unpublished draft can rename but published-source draft cannot', () => {
-  // sourceSha null -> rename succeeds
-  // sourceSha sha-1 -> rename throws code SLUG_LOCKED
+test('unpublished draft can rename and source-backed draft cannot', () => {
+  const store = createStore({ filename: ':memory:' })
+  store.saveDraft({ article, sourceSha: null })
+  store.renameDraft('draft-one', 'draft-renamed')
+  assert.equal(store.getDraft('draft-renamed').article.slug, 'draft-renamed')
+  store.saveDraft({ article: { ...article, slug: 'published-one' }, sourceSha: 'sha-1' })
+  assert.throws(() => store.renameDraft('published-one', 'published-two'), error => error.code === 'SLUG_LOCKED')
+  store.close()
 })
 
-test('session lookup uses a hash rather than raw cookie token', () => {
+test('publish metadata is persisted', () => {
+  const store = createStore({ filename: ':memory:' })
+  store.saveDraft({ article, sourceSha: null })
+  store.setPublishPending('draft-one', { prNumber: 12, branch: 'content/editor-draft-one-1', headSha: 'head-1' })
+  const loaded = store.getDraft('draft-one')
+  assert.equal(loaded.status, 'publish_pending')
+  assert.equal(loaded.prNumber, 12)
+  assert.equal(loaded.publishHeadSha, 'head-1')
+  store.close()
+})
+
+test('session token is stored/queried by hash', () => {
   assert.notEqual(hashSessionToken('raw-token'), 'raw-token')
+  const store = createStore({ filename: ':memory:' })
+  const tokenHash = hashSessionToken('raw-token')
+  store.createSession({ tokenHash, expiresAt: '2099-01-01T00:00:00.000Z' })
+  assert.equal(store.getSession(tokenHash).tokenHash, tokenHash)
+  store.close()
 })
 ```
 
-Also assert `setPublishPending` stores `prNumber`, `branch`, and `headSha` and changes status to `publish_pending`.
-
-- [ ] **Step 2: Run the focused test and verify failure**
-
-Run:
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test editor-api/tests/db-auth.test.mjs
 ```
 
-Expected: FAIL because store/auth modules do not exist.
+Expected: FAIL because modules do not exist.
 
-- [ ] **Step 3: Implement the SQLite schema and store**
+- [ ] **Step 3: Implement SQLite schema and store**
 
-Create these tables in `editor-api/src/db.mjs`:
+Use `better-sqlite3` and execute:
 
 ```sql
 CREATE TABLE IF NOT EXISTS drafts (
@@ -288,11 +368,11 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 ```
 
-Use parameterized statements only. Parse/stringify `payload_json` at the store boundary. `renameDraft` must run inside a transaction and reject a rename when `source_sha IS NOT NULL` or status is not `draft`.
+`saveDraft` validates only with `validateDraftArticle`, never `validatePublishArticle`. `renameDraft` runs in a transaction, rejects `source_sha IS NOT NULL`, rejects status other than `draft`, and rewrites both row key and `article.slug` inside `payload_json`.
 
-- [ ] **Step 4: Implement password/session helpers**
+- [ ] **Step 4: Implement auth helpers**
 
-In `editor-api/src/auth.mjs`:
+Create `editor-api/src/auth.mjs`:
 
 ```js
 import crypto from 'node:crypto'
@@ -308,68 +388,65 @@ export async function verifyAdminPassword({ username, password, config }) {
 }
 ```
 
-Do not log `password`, hash input, raw session tokens, or bcrypt hash.
-
-- [ ] **Step 5: Run tests and commit**
-
-Run:
+- [ ] **Step 5: Run GREEN and commit**
 
 ```bash
-node --test editor-api/tests/db-auth.test.mjs
 npm test --prefix editor-api
-```
-
-Expected: PASS.
-
-Commit:
-
-```bash
 git add editor-api/src/db.mjs editor-api/src/auth.mjs editor-api/tests/db-auth.test.mjs
 git commit -m "feat: add editor draft and session storage"
 ```
 
+Expected: tests PASS.
+
 ---
 
-### Task 3: Narrow GitHub REST Client
+### Task 3: GitHub REST Client
 
 **Files:**
 - Create: `editor-api/src/github.mjs`
 - Create: `editor-api/tests/github.test.mjs`
 
 **Interfaces:**
-- Produces: `createGitHubClient({ token, owner, repo, fetchImpl }): GitHubClient`
-- Methods: `getMainHeadSha()`, `listDirectory(path, ref)`, `getContent(path, ref)`, `createBranch(name, sha)`, `putContent({ path, branch, content, message, sha })`, `createPullRequest({ title, body, head, base })`, `getPullRequest(number)`, `getCheckSummary(headSha)`, `mergePullRequest({ number, expectedHeadSha })`.
-- `getContent` returns `{ content, sha } | null` and maps GitHub 404 to `null` only for content lookup.
-- `getCheckSummary` returns `{ state: 'pending' | 'success' | 'failure', checks: Array<{name,status,conclusion}> }`.
+- Produces `createGitHubClient({ token, owner, repo, fetchImpl })`.
+- Methods: `getMainHeadSha`, `listDirectory`, `getContent`, `createBranch`, `putContent`, `createPullRequest`, `getPullRequest`, `getCheckSummary`, `mergePullRequest`.
 
-- [ ] **Step 1: Write request-contract tests using an injected fake fetch**
+- [ ] **Step 1: Write failing request-contract tests**
 
-Test exact paths/methods without real network calls:
+Use an injected fake fetch and assert requests never need real GitHub access:
 
 ```js
-const calls = []
-const fetchImpl = async (url, options = {}) => {
-  calls.push({ url, options })
-  return new Response(JSON.stringify({ sha: 'abc', content: Buffer.from('hello').toString('base64') }), {
-    status: 200,
-    headers: { 'content-type': 'application/json' }
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { createGitHubClient } from '../src/github.mjs'
+
+test('GitHub client sends versioned authenticated requests', async () => {
+  const calls = []
+  const fetchImpl = async (url, options = {}) => {
+    calls.push({ url, options })
+    return new Response(JSON.stringify({ ref: 'refs/heads/main', object: { sha: 'main-sha' } }), {
+      status: 200, headers: { 'content-type': 'application/json' }
+    })
+  }
+  const github = createGitHubClient({ token: 'secret-token', owner: 'KJDhole', repo: 'BlogWebsite', fetchImpl })
+  const sha = await github.getMainHeadSha()
+  assert.equal(sha, 'main-sha')
+  assert.match(calls[0].url, /repos\/KJDhole\/BlogWebsite\/git\/ref\/heads\/main$/)
+  assert.equal(calls[0].options.headers.Authorization, 'Bearer secret-token')
+  assert.equal(calls[0].options.headers['X-GitHub-Api-Version'], '2022-11-28')
+})
+
+test('content 404 maps to null', async () => {
+  const github = createGitHubClient({
+    token: 'x', owner: 'KJDhole', repo: 'BlogWebsite',
+    fetchImpl: async () => new Response(JSON.stringify({ message: 'Not Found' }), { status: 404 })
   })
-}
+  assert.equal(await github.getContent('src/content/posts/missing.md', 'main'), null)
+})
 ```
 
-Assert every request sets:
+Add tests that inspect request bodies for `createBranch`, `putContent`, `createPullRequest`, and `mergePullRequest({ number, expectedHeadSha })`. Add a check-summary test where queued checks => `pending`, failed check => `failure`, and all completed successful/neutral/skipped checks => `success`.
 
-```text
-Accept: application/vnd.github+json
-Authorization: Bearer <token>
-X-GitHub-Api-Version: 2022-11-28
-```
-
-Cover `GET /git/ref/heads/main`, contents read/write, refs creation, PR creation/read, check-runs/status read, and merge with expected head SHA.
-
-- [ ] **Step 2: Run test and verify failure**
-
-Run:
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test editor-api/tests/github.test.mjs
@@ -377,203 +454,245 @@ node --test editor-api/tests/github.test.mjs
 
 Expected: FAIL because `github.mjs` does not exist.
 
-- [ ] **Step 3: Implement only the GitHub endpoints required by V1**
+- [ ] **Step 3: Implement the narrow client**
 
-Implement a shared `request(path, { method, body, allow404 })` helper. For non-2xx responses throw an error containing status plus GitHub `message`, but never include the Authorization header/token.
+Use a single internal request helper:
 
-`putContent` must Base64-encode UTF-8 content and send `sha` only for an update. `createBranch` must create `refs/heads/<branch>`. `mergePullRequest` must send:
+```js
+const API = 'https://api.github.com'
 
-```json
-{
-  "merge_method": "squash",
-  "sha": "<expected-head-sha>"
+async function request(path, { method = 'GET', body, allow404 = false } = {}) {
+  const response = await fetchImpl(`${API}/repos/${owner}/${repo}${path}`, {
+    method,
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${token}`,
+      'X-GitHub-Api-Version': '2022-11-28',
+      ...(body ? { 'Content-Type': 'application/json' } : {})
+    },
+    body: body ? JSON.stringify(body) : undefined
+  })
+  if (allow404 && response.status === 404) return null
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    const error = new Error(payload.message || `GitHub request failed: ${response.status}`)
+    error.status = response.status
+    throw error
+  }
+  return payload
 }
 ```
 
-For CI state, combine check-runs so any completed failing/cancelled/timed_out/action_required check yields `failure`, any queued/in_progress/missing check yields `pending`, and all completed successful/skipped/neutral checks yields `success` only when at least one check exists.
+`putContent` Base64-encodes UTF-8. `createBranch` posts `refs/heads/<branch>`. `mergePullRequest` sends `{ merge_method: 'squash', sha: expectedHeadSha }`. `getCheckSummary` returns `pending` when there are zero checks, because CI has not appeared yet.
 
-- [ ] **Step 4: Run tests and commit**
-
-Run:
+- [ ] **Step 4: Run GREEN and commit**
 
 ```bash
-node --test editor-api/tests/github.test.mjs
 npm test --prefix editor-api
-```
-
-Expected: PASS.
-
-Commit:
-
-```bash
 git add editor-api/src/github.mjs editor-api/tests/github.test.mjs
 git commit -m "feat: add editor GitHub client"
 ```
 
+Expected: tests PASS.
+
 ---
 
-### Task 4: Publishing State Machine
+### Task 4: Conflict-Safe Publishing Service
 
 **Files:**
 - Create: `editor-api/src/publishing.mjs`
 - Create: `editor-api/tests/publishing.test.mjs`
 
 **Interfaces:**
-- Consumes: article serializer from Task 1, store from Task 2, GitHub client from Task 3.
-- Produces: `createPublishingService({ store, github, clock }): PublishingService`
+- Produces: `createPublishingService({ store, github, clock })`.
 - Methods: `submit(slug)`, `status(slug)`, `merge(slug)`.
-- `submit` returns `{ prNumber, prUrl, branch, headSha }`.
-- `status` returns `{ state: 'draft'|'pending'|'failed'|'ready'|'published', prNumber, prUrl, checks }`.
-- `merge` returns `{ state: 'published', mergeCommitSha }`.
+- States: `draft | pending | failed | ready | published`.
 
-- [ ] **Step 1: Write failing state-machine tests with fake store/GitHub objects**
+- [ ] **Step 1: Write failing publishing tests**
 
-Cover at least these scenarios:
+Use fixed fakes:
 
-```text
-existing draft sourceSha == current main file sha -> submit allowed
-existing draft sourceSha != current main file sha -> throw SOURCE_CONFLICT
-new draft and main file already exists -> throw SOURCE_CONFLICT
-submit -> branch content/editor-<slug>-<timestamp>, put file, create PR, store publish_pending
-status with no/computing checks -> pending
-status with failed check -> failed
-status with all successful checks and open mergeable PR -> ready
-merge before ready -> throw CI_NOT_READY
-merge when head SHA changed from stored publish_head_sha -> throw PR_HEAD_CHANGED
-successful merge -> delete draft and return published
+```js
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { createPublishingService } from '../src/publishing.mjs'
+
+function makeStore(draft) {
+  let current = structuredClone(draft)
+  return {
+    getDraft: () => current,
+    setPublishPending: (_slug, meta) => { current = { ...current, status: 'publish_pending', prNumber: meta.prNumber, publishBranch: meta.branch, publishHeadSha: meta.headSha } },
+    deleteDraft: () => { current = null }
+  }
+}
+
+test('source SHA mismatch blocks existing article publish', async () => {
+  const store = makeStore({
+    article: { slug: 'existing', title: 'T', description: 'D', category: 'Thinking', tags: ['AI'], body: 'Body', date: '2026-09-01', extraFrontmatter: {} },
+    sourceSha: 'old-sha', status: 'draft'
+  })
+  const github = { getContent: async () => ({ sha: 'new-sha', content: '' }) }
+  const service = createPublishingService({ store, github, clock: () => new Date('2026-09-10T06:00:00Z') })
+  await assert.rejects(() => service.submit('existing'), error => error.code === 'SOURCE_CONFLICT')
+})
+
+test('new draft cannot overwrite an existing main file', async () => {
+  const store = makeStore({
+    article: { slug: 'new-post', title: 'T', description: 'D', category: 'Thinking', tags: ['AI'], body: 'Body', extraFrontmatter: {} },
+    sourceSha: null, status: 'draft'
+  })
+  const github = { getContent: async () => ({ sha: 'already-exists', content: '' }) }
+  const service = createPublishingService({ store, github, clock: () => new Date('2026-09-10T06:00:00Z') })
+  await assert.rejects(() => service.submit('new-post'), error => error.code === 'SOURCE_CONFLICT')
+})
 ```
 
-Use a fixed clock `new Date('2026-09-10T06:00:00Z')` so branch names are deterministic.
+Add complete tests for successful submit ordering, no-check => pending, failed checks => failed, successful checks + open mergeable PR => ready, merge-before-ready => `CI_NOT_READY`, changed PR head => `PR_HEAD_CHANGED`, and successful merge deletes the draft.
 
-- [ ] **Step 2: Run test and verify failure**
-
-Run:
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test editor-api/tests/publishing.test.mjs
 ```
 
-Expected: FAIL because publishing service does not exist.
+Expected: FAIL because `publishing.mjs` does not exist.
 
-- [ ] **Step 3: Implement conflict-safe submission**
+- [ ] **Step 3: Implement submit**
 
-`submit(slug)` must perform this order exactly:
+`submit(slug)` order is fixed:
 
 ```text
-load draft
-validate article
-read main target file
-compare target SHA against draft sourceSha
-read main HEAD SHA
-create timestamped content branch
-serialize Markdown in create/update mode
-create/update src/content/posts/<slug>.md on branch
-create PR to main
-persist publish_pending metadata
-return PR metadata
+1. load draft
+2. validatePublishArticle(article)
+3. read main target path src/content/posts/<slug>.md
+4. existing: require current sha === sourceSha
+5. new: require target path missing
+6. read main HEAD
+7. create content/editor-<slug>-<UTC timestamp> branch
+8. serialize published Markdown in create/update mode
+9. write file on temporary branch
+10. create PR to main
+11. persist publish_pending metadata
+12. return PR metadata
 ```
 
-Do not set `publish_pending` until PR creation succeeds. On any GitHub failure leave the draft body intact and status `draft`.
+If validation or GitHub operations fail before PR creation, keep the draft as `draft` and never delete its body.
 
-- [ ] **Step 4: Implement status and guarded merge**
+- [ ] **Step 4: Implement status and merge**
 
-`status(slug)` must re-read the PR and checks every call; do not trust stale browser state. `merge(slug)` must call `status(slug)` first and proceed only for `ready`, re-check the PR head SHA against the stored head SHA, call GitHub merge with expected SHA, then delete the draft.
+`status(slug)` re-fetches PR and checks every time. `ready` requires: PR open, PR head SHA equals stored `publishHeadSha`, GitHub reports mergeable `true`, and check summary is `success`.
 
-- [ ] **Step 5: Run tests and commit**
+`merge(slug)` calls `status(slug)` first, rejects anything except `ready`, calls `mergePullRequest` with the stored expected head SHA, verifies GitHub returns merged success, then deletes the draft.
 
-Run:
+- [ ] **Step 5: Run GREEN and commit**
 
 ```bash
-node --test editor-api/tests/publishing.test.mjs
 npm test --prefix editor-api
-```
-
-Expected: PASS.
-
-Commit:
-
-```bash
 git add editor-api/src/publishing.mjs editor-api/tests/publishing.test.mjs
 git commit -m "feat: add conflict-safe article publishing"
 ```
 
+Expected: tests PASS.
+
 ---
 
-### Task 5: Fastify Editor API Routes and Security Boundary
+### Task 5: Secured Fastify API
 
 **Files:**
+- Create: `editor-api/.env.example`
 - Create: `editor-api/src/config.mjs`
 - Create: `editor-api/src/app.mjs`
 - Create: `editor-api/src/server.mjs`
 - Create: `editor-api/tests/app.test.mjs`
-- Modify: `editor-api/.env.example`
 
 **Interfaces:**
-- Consumes: Tasks 1-4.
-- Produces: `buildApp({ config, store, github, clock }): FastifyInstance` for tests.
-- HTTP contract:
-  - `POST /auth/login`
-  - `POST /auth/logout`
-  - `GET /auth/session`
-  - `GET /posts`
-  - `GET /posts/:slug`
-  - `POST /drafts`
-  - `PUT /drafts/:slug`
-  - `DELETE /drafts/:slug`
-  - `POST /publish/:slug`
-  - `GET /publish/:slug/status`
-  - `POST /publish/:slug/merge`
-
-- [ ] **Step 1: Write failing HTTP tests with `app.inject()`**
-
-Tests must prove:
 
 ```text
-GET /auth/session unauthenticated -> 401
-POST /drafts unauthenticated -> 401
-wrong Origin on authenticated POST/PUT/DELETE -> 403
-bad login -> 401 with generic { error: 'Invalid credentials' }
-valid login -> Set-Cookie contains HttpOnly and SameSite=Lax
-GET /posts after login -> published + draft statuses without secrets
-GET /posts/:slug prefers SQLite draft over GitHub main
-PUT published article draft records current GitHub SHA on first save
-rename of sourceSha != null article -> 409 SLUG_LOCKED
-POST publish maps SOURCE_CONFLICT -> 409
-POST merge maps CI_NOT_READY -> 409
+POST   /auth/login
+POST   /auth/logout
+GET    /auth/session
+GET    /posts
+GET    /posts/:slug
+POST   /drafts
+PUT    /drafts/:slug
+DELETE /drafts/:slug
+POST   /publish/:slug
+GET    /publish/:slug/status
+POST   /publish/:slug/merge
 ```
 
-Use dependency injection for store/GitHub and bcrypt hash generated inside the test fixture.
+- [ ] **Step 1: Create safe environment contract**
 
-- [ ] **Step 2: Run the HTTP test and verify failure**
+Create `editor-api/.env.example` exactly:
 
-Run:
+```dotenv
+NODE_ENV=production
+PORT=8787
+ADMIN_ORIGIN=https://blog.minglingyun.com
+ADMIN_USERNAME=glenn
+ADMIN_PASSWORD_HASH=replace-with-bcrypt-hash
+SESSION_SECRET=replace-with-at-least-32-random-characters
+GITHUB_TOKEN=github_pat_replace_with_fine_grained_token
+GITHUB_OWNER=KJDhole
+GITHUB_REPO=BlogWebsite
+SQLITE_PATH=/app/data/editor.sqlite
+```
+
+No real password/token/hash is committed.
+
+- [ ] **Step 2: Write failing HTTP/security tests**
+
+`editor-api/tests/app.test.mjs` uses `app.inject()` and asserts:
+
+```js
+assert.equal((await app.inject({ method: 'GET', url: '/auth/session' })).statusCode, 401)
+assert.equal((await app.inject({ method: 'POST', url: '/drafts', payload: {} })).statusCode, 401)
+```
+
+Then log in with a test bcrypt hash, capture the signed cookie, and assert:
+
+```text
+Set-Cookie includes HttpOnly
+Set-Cookie includes SameSite=Lax
+wrong Origin on authenticated mutation => 403
+GET /posts requires auth
+GET /posts/:slug prefers SQLite draft over main content
+unfinished draft POST/PUT is accepted when slug is valid
+publish maps incomplete article validation to 400
+publish maps SOURCE_CONFLICT to 409
+merge maps CI_NOT_READY to 409
+```
+
+- [ ] **Step 3: Verify RED**
 
 ```bash
 node --test editor-api/tests/app.test.mjs
 ```
 
-Expected: FAIL because app/config/server modules do not exist.
+Expected: FAIL because app/config/server do not exist.
 
-- [ ] **Step 3: Implement strict configuration validation**
+- [ ] **Step 4: Implement strict config**
 
-`editor-api/src/config.mjs` must require:
+`loadConfig(env = process.env)` returns:
 
-```text
-PORT (default 8787)
-NODE_ENV
-ADMIN_ORIGIN
-ADMIN_USERNAME
-ADMIN_PASSWORD_HASH
-SESSION_SECRET (minimum 32 characters)
-GITHUB_TOKEN
-GITHUB_OWNER (default KJDhole)
-GITHUB_REPO (default BlogWebsite)
-SQLITE_PATH (default ./data/editor.sqlite)
+```js
+{
+  port: Number(env.PORT ?? 8787),
+  nodeEnv: env.NODE_ENV ?? 'development',
+  adminOrigin: env.ADMIN_ORIGIN,
+  adminUsername: env.ADMIN_USERNAME,
+  adminPasswordHash: env.ADMIN_PASSWORD_HASH,
+  sessionSecret: env.SESSION_SECRET,
+  githubToken: env.GITHUB_TOKEN,
+  githubOwner: env.GITHUB_OWNER ?? 'KJDhole',
+  githubRepo: env.GITHUB_REPO ?? 'BlogWebsite',
+  sqlitePath: env.SQLITE_PATH ?? './data/editor.sqlite'
+}
 ```
 
-`editor-api/.env.example` lists names and safe examples only; never include a real PAT, real password, or real password hash.
+Reject missing required values and `SESSION_SECRET.length < 32` before server startup.
 
-- [ ] **Step 4: Implement auth, CORS, Origin checks, and routes**
+- [ ] **Step 5: Implement Fastify app security boundary**
 
 Register:
 
@@ -583,93 +702,101 @@ await app.register(cors, { origin: config.adminOrigin, credentials: true })
 await app.register(rateLimit, { global: false })
 ```
 
-The login route uses route-level `rateLimit: { max: 5, timeWindow: '1 minute' }`. On success generate `crypto.randomBytes(32).toString('base64url')`, store only `hashSessionToken(rawToken)`, and set cookie `glenn_editor_session` for 7 days.
+Login route config:
 
-All non-auth data routes require a valid, non-expired session. Every mutation also requires `request.headers.origin === config.adminOrigin`.
-
-Configure Fastify logging redaction for:
-
-```text
-req.headers.authorization
-req.headers.cookie
-res.headers.set-cookie
-body.password
+```js
+config: { rateLimit: { max: 5, timeWindow: '1 minute' } }
 ```
 
-`server.mjs` builds real store/GitHub dependencies and listens on `0.0.0.0`.
+On successful login:
 
-- [ ] **Step 5: Run API tests and commit**
+```js
+const rawToken = crypto.randomBytes(32).toString('base64url')
+store.createSession({
+  tokenHash: hashSessionToken(rawToken),
+  expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+})
+reply.setCookie('glenn_editor_session', rawToken, {
+  httpOnly: true,
+  secure: config.nodeEnv === 'production',
+  sameSite: 'lax',
+  path: '/',
+  maxAge: 7 * 24 * 60 * 60,
+  signed: true
+})
+```
 
-Run:
+All data routes require a valid non-expired session. Mutation routes additionally require `request.headers.origin === config.adminOrigin`.
+
+Fastify logger redact paths:
+
+```js
+[
+  'req.headers.authorization',
+  'req.headers.cookie',
+  'res.headers.set-cookie',
+  'body.password'
+]
+```
+
+`POST /drafts` and `PUT /drafts/:slug` use draft validation only. `POST /publish/:slug` triggers publish validation inside the publishing service.
+
+- [ ] **Step 6: Implement post/draft aggregation**
+
+`GET /posts` lists `src/content/posts` from GitHub `main`, parses each Markdown file, overlays any SQLite draft by slug, and returns only non-secret fields plus status.
+
+`GET /posts/:slug` returns SQLite draft first. If no draft exists, read GitHub `main`, parse Markdown, and return `sourceSha` so the first save can pin conflict detection.
+
+For a first save of an existing article, the server obtains/preserves the GitHub SHA itself; never trust a browser-supplied SHA as authoritative.
+
+- [ ] **Step 7: Run GREEN and commit**
 
 ```bash
 npm test --prefix editor-api
-```
-
-Expected: PASS.
-
-Commit:
-
-```bash
-git add editor-api/src/config.mjs editor-api/src/app.mjs editor-api/src/server.mjs editor-api/tests/app.test.mjs editor-api/.env.example
+git add editor-api/.env.example editor-api/src/config.mjs editor-api/src/app.mjs editor-api/src/server.mjs editor-api/tests/app.test.mjs
 git commit -m "feat: expose secured editor API"
 ```
 
+Expected: tests PASS.
+
 ---
 
-### Task 6: Static Admin UI and Markdown Preview
+### Task 6: Static Admin UI and Sanitized Preview
 
 **Files:**
 - Modify: `package.json`
 - Modify: `package-lock.json`
-- Create: `src/config/admin.ts`
-- Create: `src/components/admin/AdminShell.astro`
-- Create: `src/components/admin/ArticleEditor.astro`
-- Create: `src/pages/admin/login.astro`
-- Create: `src/pages/admin/index.astro`
-- Create: `src/pages/admin/new.astro`
-- Create: `src/pages/admin/editor.astro`
-- Create: `src/scripts/admin/api.ts`
-- Create: `src/scripts/admin/login.ts`
-- Create: `src/scripts/admin/dashboard.ts`
-- Create: `src/scripts/admin/editor.ts`
-- Create: `src/styles/admin.css`
-- Create: `tests/admin-ui-contract.test.mjs`
+- Create all static admin client files from File Map.
 
 **Interfaces:**
-- Consumes HTTP contract from Task 5.
-- Produces public static routes `/admin/login/`, `/admin/`, `/admin/new/`, `/admin/editor/`.
-- `src/scripts/admin/api.ts` exports `apiFetch(path, options)` and always uses `credentials: 'include'`.
-- Existing article edit URL is `/admin/editor/?slug=<encoded-slug>`.
+- Produces routes `/admin/login/`, `/admin/`, `/admin/new/`, `/admin/editor/`.
+- Existing article edit link is `/admin/editor/?slug=<encoded-slug>`.
+- `apiFetch(path, options)` always sends `credentials: 'include'`.
 
-- [ ] **Step 1: Add preview dependencies**
-
-Run:
+- [ ] **Step 1: Install preview dependencies**
 
 ```bash
 npm install marked dompurify
 ```
 
-Expected: root `package.json` and `package-lock.json` change; no React/Vue framework is added.
+Expected: only `marked` and `dompurify` are added; no React/Vue framework.
 
-- [ ] **Step 2: Write failing static admin contract tests**
+- [ ] **Step 2: Write failing UI contract tests**
 
-Create `tests/admin-ui-contract.test.mjs` that reads source files and asserts:
+Create `tests/admin-ui-contract.test.mjs` using `readFile`/`readdir` and assert:
 
 ```text
-login page contains username/password form
-admin index contains New Article action and article-list mount point
-new/editor pages both render ArticleEditor
-ArticleEditor contains title, slug, description, date, category, tags, cover, body fields
-buttons exist for Save Draft, Submit Publish, Merge & Publish, Preview
-API wrapper includes credentials: 'include'
-no source file under src/pages/admin or src/scripts/admin contains GITHUB_TOKEN or ADMIN_PASSWORD_HASH
-editor route uses URLSearchParams for slug instead of a dynamic Astro [...slug] route
+login page has username/password form
+admin index has New Article action and article-list mount point
+new/editor both render ArticleEditor
+ArticleEditor has title, slug, description, date, category, tags, cover, body fields
+buttons exist: Save Draft, Submit Publish, Merge & Publish, Preview
+api.ts contains credentials: 'include'
+editor.ts uses URLSearchParams for slug
+no src/pages/admin or src/scripts/admin file contains GITHUB_TOKEN or ADMIN_PASSWORD_HASH
 ```
 
-- [ ] **Step 3: Run root tests and verify the new test fails**
-
-Run:
+- [ ] **Step 3: Verify RED**
 
 ```bash
 node --test tests/admin-ui-contract.test.mjs
@@ -677,7 +804,7 @@ node --test tests/admin-ui-contract.test.mjs
 
 Expected: FAIL because admin files do not exist.
 
-- [ ] **Step 4: Implement shared admin shell and authentication flow**
+- [ ] **Step 4: Implement API wrapper and session gate**
 
 `src/config/admin.ts`:
 
@@ -685,77 +812,101 @@ Expected: FAIL because admin files do not exist.
 export const EDITOR_API_BASE = import.meta.env.PUBLIC_EDITOR_API_BASE ?? 'https://editor-api.minglingyun.com'
 ```
 
-`apiFetch` prefixes this base and throws a typed error for non-2xx JSON responses. Login submits username/password, then navigates to `/admin/`. Dashboard/editor pages call `GET /auth/session` during startup; on 401 they redirect to `/admin/login/` before requesting article data.
+`src/scripts/admin/api.ts`:
 
-Static HTML may be publicly downloadable because GitHub Pages is static, but it must contain no article data or secrets; protected content is loaded only after authenticated API access.
+```ts
+import { EDITOR_API_BASE } from '../../config/admin'
 
-- [ ] **Step 5: Implement dashboard and editor behavior**
-
-Dashboard renders rows with status `Published`, `Draft`, or `Publish Pending` and links existing articles to `/admin/editor/?slug=...`.
-
-Editor state rules:
-
-```text
-/admin/new/ -> blank article; slug generated from title but remains manually editable until first draft save
-/admin/editor/?slug=x -> GET /posts/x, load draft first if API returns one
-Save Draft -> POST /drafts for first new save; otherwise PUT /drafts/:slug
-Published source (sourceSha != null) -> slug input disabled
-Unpublished draft rename -> PUT /drafts/:oldSlug with new article.slug, then update current slug in client state
-Submit Publish -> POST /publish/:slug
-Publish Pending -> poll only when user is on page, at 10-second intervals, GET /publish/:slug/status
-ready -> enable Merge & Publish
-failed/pending -> merge button disabled
-Merge & Publish -> POST /publish/:slug/merge, then show published confirmation + public article link
+export async function apiFetch(path: string, options: RequestInit = {}) {
+  const response = await fetch(`${EDITOR_API_BASE}${path}`, {
+    ...options,
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...(options.headers ?? {}) }
+  })
+  const data = await response.json().catch(() => null)
+  if (!response.ok) {
+    const error = new Error(data?.error ?? `Request failed: ${response.status}`)
+    ;(error as Error & { status?: number; code?: string }).status = response.status
+    ;(error as Error & { status?: number; code?: string }).code = data?.code
+    throw error
+  }
+  return data
+}
 ```
 
-For preview:
+Dashboard/editor call `/auth/session` on startup and redirect to `/admin/login/` on 401 before loading article data.
+
+- [ ] **Step 5: Implement editor flow**
+
+Behavior is fixed:
+
+```text
+/admin/new/ -> blank editor
+slug auto-generates from title but can be manually edited
+first new save -> POST /drafts
+subsequent save -> PUT /drafts/:slug
+/admin/editor/?slug=x -> GET /posts/x
+sourceSha != null -> slug disabled
+sourceSha == null + status draft -> rename allowed through PUT with changed article.slug
+Submit Publish -> POST /publish/:slug
+publish_pending -> poll status every 10s only while page is visible
+ready -> enable Merge & Publish
+pending/failed -> merge disabled
+Merge & Publish -> POST /publish/:slug/merge
+successful merge -> show public `/writing/<slug>/` link
+```
+
+Do not auto-publish on autosave. V1 uses an explicit `Save Draft` button; browser text remains untouched if the network save fails.
+
+- [ ] **Step 6: Implement sanitized Markdown preview**
+
+`src/scripts/admin/editor.ts` imports:
+
+```ts
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
+```
+
+Render only:
 
 ```ts
 const html = DOMPurify.sanitize(marked.parse(markdown) as string)
 preview.innerHTML = html
 ```
 
-Never insert unsanitized Markdown output into `innerHTML`.
+Never insert raw `marked.parse()` output directly.
 
-- [ ] **Step 6: Implement restrained admin styling**
+- [ ] **Step 7: Implement restrained admin layout**
 
-Use a clean writing-workbench layout that borrows existing typography/tokens but does not reuse homepage space animation. Desktop: metadata strip + editor/preview two-column area. Mobile: editor/preview tabs. Keep focus outlines, labels, readable contrast, and keyboard-accessible buttons.
+Desktop: metadata header + editor/preview two-column workbench. Mobile: edit/preview toggle. Reuse existing type/color tokens where practical, but do not include homepage orbit/space animation. Labels, focus outlines, disabled states, errors, and keyboard controls are required.
 
-- [ ] **Step 7: Run root tests/build and commit**
-
-Run:
+- [ ] **Step 8: Run GREEN/build and commit**
 
 ```bash
 npm test
 npm run build
-```
-
-Expected: PASS, with generated `dist/admin/index.html`, `dist/admin/login/index.html`, `dist/admin/new/index.html`, and `dist/admin/editor/index.html`.
-
-Commit:
-
-```bash
+test -f dist/admin/index.html
+test -f dist/admin/login/index.html
+test -f dist/admin/new/index.html
+test -f dist/admin/editor/index.html
 git add package.json package-lock.json src/config/admin.ts src/components/admin src/pages/admin src/scripts/admin src/styles/admin.css tests/admin-ui-contract.test.mjs
 git commit -m "feat: add static article editor UI"
 ```
 
+Expected: all commands PASS.
+
 ---
 
-### Task 7: CI, Container, and Deployment Contract
+### Task 7: CI and Production Container
 
 **Files:**
 - Modify: `.github/workflows/ci.yml`
 - Create: `editor-api/Dockerfile`
 - Create: `editor-api/README.md`
 
-**Interfaces:**
-- Existing GitHub Pages deployment stays unchanged.
-- PR CI verifies both the static site and Editor API.
-- Production API container listens on port `8787` and persists `/app/data`.
+- [ ] **Step 1: Extend PR CI only**
 
-- [ ] **Step 1: Extend PR CI without touching the Pages deploy workflow**
-
-After the existing root install/test/build steps in `.github/workflows/ci.yml`, add:
+Add after root build verification:
 
 ```yaml
 - name: Install editor API dependencies
@@ -764,47 +915,70 @@ After the existing root install/test/build steps in `.github/workflows/ci.yml`, 
   run: npm test --prefix editor-api
 ```
 
-Do not add Editor API startup/deployment to `.github/workflows/deploy.yml`; that workflow must continue deploying only `./dist` to GitHub Pages.
+Do not modify `.github/workflows/deploy.yml` to deploy the API; GitHub Pages continues deploying only `dist`.
 
-- [ ] **Step 2: Create a production Dockerfile**
+- [ ] **Step 2: Create Dockerfile**
 
-`editor-api/Dockerfile` must use Node 22, install with `npm ci --omit=dev`, copy only the API package, create `/app/data`, expose 8787, and start `node src/server.mjs` as a non-root user.
+Create `editor-api/Dockerfile` exactly:
 
-Expected container contract:
-
-```bash
-docker build -t glenn-blog-editor-api ./editor-api
-docker run --rm -p 8787:8787 --env-file ./editor-api/.env -v glenn-editor-data:/app/data glenn-blog-editor-api
+```dockerfile
+FROM node:22-bookworm-slim
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY src ./src
+RUN mkdir -p /app/data && chown -R node:node /app
+USER node
+ENV NODE_ENV=production
+ENV PORT=8787
+EXPOSE 8787
+CMD ["node", "src/server.mjs"]
 ```
 
-- [ ] **Step 3: Write the deployment runbook**
+- [ ] **Step 3: Write deployment runbook**
 
-`editor-api/README.md` must include these exact production concepts:
+`editor-api/README.md` must document:
 
 ```text
 DNS: editor-api.minglingyun.com -> existing server
 Nginx HTTPS reverse proxy -> 127.0.0.1:8787
 ADMIN_ORIGIN=https://blog.minglingyun.com
 SQLITE_PATH=/app/data/editor.sqlite
-GitHub fine-grained PAT restricted to KJDhole/BlogWebsite
-PAT permissions: Contents read/write, Pull requests read/write, Checks/commit status read as required by CI status endpoint
-never put PAT/password/session secret in GitHub Pages PUBLIC_* variables
-persist /app/data volume
-backup SQLite file before container replacement
+persist /app/data as a Docker volume
+fine-grained PAT restricted to KJDhole/BlogWebsite
+PAT: Contents read/write, Pull requests read/write, read access needed for checks/status
+never expose PAT/password/session secret as PUBLIC_* variables
+backup SQLite before replacing the container/volume
 ```
 
-Also give commands to generate secrets:
+Include Nginx example:
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name editor-api.minglingyun.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8787;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+```
+
+Secret generation commands:
 
 ```bash
-node -e "console.log(require('bcryptjs').hashSync(process.argv[1], 12))" 'YOUR_PASSWORD'
+node -e "console.log(require('bcryptjs').hashSync(process.argv[1], 12))" 'CHOOSE_PASSWORD_INTERACTIVELY'
 node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))"
 ```
 
-Do not include a real password in the repository.
+The repository never stores the generated values.
 
-- [ ] **Step 4: Run full verification**
-
-Run:
+- [ ] **Step 4: Run full verification and commit**
 
 ```bash
 npm ci
@@ -813,32 +987,21 @@ npm run build
 npm ci --prefix editor-api
 npm test --prefix editor-api
 docker build -t glenn-blog-editor-api ./editor-api
-```
-
-Expected: every command exits 0.
-
-- [ ] **Step 5: Commit integration/deployment files**
-
-```bash
 git add .github/workflows/ci.yml editor-api/Dockerfile editor-api/README.md
 git commit -m "chore: verify and package editor API"
 ```
 
+Expected: every command exits 0.
+
 ---
 
-### Task 8: End-to-End Acceptance and PR
+### Task 8: End-to-End Acceptance and Pull Request
 
 **Files:**
-- Modify only if verification finds defects in files owned by Tasks 1-7.
-- No new product scope.
+- Modify only defects discovered in Tasks 1-7.
+- Do not add product scope.
 
-**Interfaces:**
-- Consumes the complete V1 system.
-- Produces one reviewable PR from `feature/article-editor-admin` to `main`.
-
-- [ ] **Step 1: Run repository identity and cleanliness checks**
-
-Run:
+- [ ] **Step 1: Identity/cleanliness hard check**
 
 ```bash
 git rev-parse --show-toplevel
@@ -848,11 +1011,9 @@ git remote -v
 git log -1 --oneline
 ```
 
-Expected: repository is `BlogWebsite`, branch is `feature/article-editor-admin`, no unexpected changes exist.
+Expected: `BlogWebsite`, branch `feature/article-editor-admin`, no unexpected files.
 
-- [ ] **Step 2: Run all automated acceptance checks**
-
-Run:
+- [ ] **Step 2: Automated acceptance**
 
 ```bash
 npm test
@@ -862,61 +1023,68 @@ npm test --prefix editor-api
 
 Expected: PASS.
 
-- [ ] **Step 3: Perform a local browser/API smoke test with a throwaway GitHub client fixture or test repository mode**
+- [ ] **Step 3: Browser/API smoke acceptance**
 
-Verify this user flow without touching production `main`:
+Use local API plus mocked/fake GitHub boundary; do not touch production `main` during smoke testing.
+
+Verify:
 
 ```text
 login
-new article
-Markdown preview
-save draft
-reload page and draft survives
-edit title/body/tags
-submit publish using mocked/test GitHub boundary
+create unfinished article
+save unfinished draft
+reload and recover draft
+finish metadata/body
+preview sanitized Markdown
+submit publish
 observe pending -> ready
-merge action calls guarded merge path
+merge only after ready
+existing article loads with slug locked
+existing visual/sourceUrl/sourceLabel/custom frontmatter survive edit/publish serialization
+network save failure leaves current editor text visible
+source SHA conflict blocks overwrite
 ```
 
-Also verify an existing post loads with immutable slug and preserves `visual`, `sourceUrl`, `sourceLabel`, or any extra frontmatter after save/serialize.
-
-- [ ] **Step 4: Security smoke checks**
-
-Search built/static output and source:
+- [ ] **Step 4: Static secret scan**
 
 ```bash
-grep -R "GITHUB_TOKEN\|ADMIN_PASSWORD_HASH\|SESSION_SECRET" dist src || true
+grep -R "github_pat_\|GITHUB_TOKEN\|ADMIN_PASSWORD_HASH\|SESSION_SECRET" dist src || true
 grep -R "Authorization: Bearer" dist src || true
 ```
 
-Expected: no secret values or secret-bearing code paths exist in browser output. Literal environment-variable names may appear only in server-side docs/config, never as values in `dist`.
+Expected: no real secrets and no browser-side secret-bearing code. Environment variable names may exist only in server-side files/docs, not as populated values in `dist`.
 
-- [ ] **Step 5: Compare branch to main and create PR**
-
-Run:
+- [ ] **Step 5: Diff check and PR**
 
 ```bash
 git diff --stat origin/main...HEAD
 git diff --check origin/main...HEAD
 ```
 
-Expected: only article-editor/admin/API/CI/docs changes, and `git diff --check` exits 0.
+Expected: only editor/admin/API/CI/docs changes and no whitespace errors.
 
-Create PR title:
-
-```text
-feat: add browser article editor and safe publishing flow
-```
-
-PR body must summarize:
+Create PR:
 
 ```text
+Title: feat: add browser article editor and safe publishing flow
+
+Body:
 - static /admin editor with sanitized Markdown preview
-- private SQLite drafts + single-user session auth
+- unfinished private SQLite drafts + single-user session auth
 - conflict-safe GitHub branch/PR publishing
 - CI-gated explicit merge
 - public Astro/GitHub Pages architecture unchanged
-- test/build commands and deployment notes
+- test/build/deployment verification included
 ```
 
-Do not merge the PR automatically. Final merge remains an explicit user/reviewer action.
+Do not merge automatically. Final merge remains an explicit user/reviewer action.
+
+---
+
+## Self-Review Result
+
+- Spec coverage: login, list, new/edit, unfinished drafts, preview, publish PR, CI status, guarded merge, conflict handling, deployment, and tests all map to Tasks 1-8.
+- Draft/publish validation split is explicit: unfinished drafts save; publish is strict.
+- Interface names are consistent across tasks: `validateDraftArticle`, `validatePublishArticle`, `serializePublishedArticleMarkdown`, `createStore`, `createGitHubClient`, `createPublishingService`, `buildApp`.
+- No runtime dynamic Astro slug route is used for admin editing; existing edit uses `/admin/editor/?slug=`.
+- Public deployment workflow remains static and independent of Editor API availability.
