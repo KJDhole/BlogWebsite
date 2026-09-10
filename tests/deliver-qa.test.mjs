@@ -36,7 +36,7 @@ test('deliver QA workflow builds, runs browser checks and preserves screenshots 
   assert.match(workflow, /actions\/upload-artifact@v4/)
 })
 
-test('world transition QA captures dense live frames, toggle origin, same DOM, and both directions', async () => {
+test('world transition QA combines real-click integrity with deterministic exact frame capture', async () => {
   const qa = await read('../scripts/world-transition-qa.mjs')
   const workflow = await read('../.github/workflows/world-transition-qa.yml')
 
@@ -44,6 +44,11 @@ test('world transition QA captures dense live frames, toggle origin, same DOM, a
   for (const phase of ['ignition', 'fold', 'layout-release', 'radiation', 'solar-arrival', 'index-rebuild', 'settle']) {
     assert.match(qa, new RegExp(phase))
   }
+  assert.match(qa, /runLiveDirection/)
+  assert.match(qa, /captureExactCheckpoint/)
+  assert.match(qa, /dispatchExactFrame/)
+  assert.match(qa, /glenn:worldtransitionstart/)
+  assert.match(qa, /glenn:worldtransitionend/)
   assert.match(qa, /elapsedMs/)
   assert.match(qa, /new MouseEvent\(['"]click['"]/)
   assert.match(qa, /clientX/)
@@ -53,6 +58,8 @@ test('world transition QA captures dense live frames, toggle origin, same DOM, a
   assert.match(qa, /--world-origin-x/)
   assert.match(qa, /--world-origin-y/)
   assert.match(qa, /--world-toggle-diameter/)
+  assert.match(qa, /--world-wave-scale/)
+  assert.match(qa, /overflowing/)
   assert.match(qa, /data-theme-transition/)
   assert.match(qa, /to-solar/)
   assert.match(qa, /to-observatory/)
