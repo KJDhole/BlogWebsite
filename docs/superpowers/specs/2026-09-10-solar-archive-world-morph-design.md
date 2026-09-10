@@ -10,7 +10,7 @@ The current light mode reads as the same homepage with a different palette. The 
 
 The switch itself must explain the relationship between the worlds. It is not a fade or theme toggle. The page visibly reorganizes itself:
 
-**Observatory → gravitational fold → button ignition → solar radiation → editorial re-layout → Solar Archive**
+**Observatory → button ignition → gravitational fold → solar radiation → editorial re-layout → Solar Archive**
 
 The final Solar Archive should feel like a scientific publication with the kinetic confidence of a launch keynote during transition, then settle into a restrained Swiss/editorial system.
 
@@ -75,7 +75,7 @@ Separate visual world from layout target:
 - `data-layout-world` controls the target geometry of the page.
 - Stable state always has both values equal.
 
-During a transition, `data-layout-world` changes first so the browser can calculate the destination layout while `data-world` is still the source world.
+During a transition, `data-layout-world` changes first so the browser can calculate the destination layout while `data-world` is still the source world. The semantic `data-world` commit happens at the start of the radiation phase; source-world appearance outside the expanding reveal remains protected by the transition surface until the wave passes. Morphing DOM elements remain the same nodes throughout.
 
 ### FLIP morph
 
@@ -191,6 +191,7 @@ The wave is a transition boundary, not a full-screen white flash.
 
 - Fold completes into the button.
 - Solar wave expands from button diameter to the viewport edges.
+- `data-world` commits to Solar while the transition surface preserves the source appearance outside the wave.
 - Destination layout is already moving underneath it.
 - Warm paper and cobalt structure become visible inside the wave.
 
