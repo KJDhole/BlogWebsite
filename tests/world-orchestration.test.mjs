@@ -47,6 +47,7 @@ test('home orchestrates FLIP, cached scene anchors, and defers stable scene comm
   assert.match(home, /sceneViewport\?\.beginTransition/)
   assert.match(home, /sceneViewport\?\.captureTarget/)
   assert.match(home, /sceneViewport\?\.finishTransition/)
+  assert.doesNotMatch(home, /controls\.style\.transform\s*=\s*['"]none['"]/)
   assert.match(viewport, /transitionRects/)
   assert.match(viewport, /beginTransition/)
   assert.match(viewport, /captureTarget/)
@@ -55,7 +56,9 @@ test('home orchestrates FLIP, cached scene anchors, and defers stable scene comm
 
 test('article date, content, and metadata are independently morphable without nested row transforms', async () => {
   const row = await read('../src/components/ArticleRow.astro')
-  assert.doesNotMatch(row, /<article[\s\S]*?data-world-morph=/)
+  const articleOpeningTag = row.match(/<article[\s\S]*?>/)?.[0] ?? ''
+  assert.ok(articleOpeningTag)
+  assert.doesNotMatch(articleOpeningTag, /data-world-morph=/)
   assert.match(row, /data-world-morph={`article-date-\$\{index\}`}/)
   assert.match(row, /data-world-morph={`article-main-\$\{index\}`}/)
   assert.match(row, /data-world-morph={`article-meta-\$\{index\}`}/)
