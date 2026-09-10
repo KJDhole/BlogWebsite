@@ -1,19 +1,19 @@
 ---
 import AdminShell from '../../components/admin/AdminShell.astro'
 ---
-<AdminShell title="Sign in" subtitle="Only the private writing workspace is protected; the public blog stays static." showLogout={false}>
+<AdminShell title="登录" subtitle="进入你的私人写作后台。" showLogout={false}>
   <section class="login-card">
     <form data-login-form>
       <label class="admin-field">
-        <span>Username</span>
+        <span>用户名</span>
         <input name="username" autocomplete="username" required />
       </label>
       <label class="admin-field">
-        <span>Password</span>
+        <span>密码</span>
         <input name="password" type="password" autocomplete="current-password" required />
       </label>
       <p class="login-error is-hidden" data-login-error role="alert"></p>
-      <button class="admin-primary-button login-submit" type="submit">Enter workspace</button>
+      <button class="admin-primary-button login-submit" type="submit">登录</button>
     </form>
   </section>
 </AdminShell>
