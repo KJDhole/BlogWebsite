@@ -261,7 +261,7 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
     solarLimb.position.x = limbBaseX + transitionFrame.offsetX
     solarLimb.position.y = limbBaseY + transitionFrame.offsetY
 
-    const activeReveal = state.phase === 'solar-reveal' || state.phase === 'archive-settle'
+    const activeReveal = state.phase === 'solar-arrival' || state.phase === 'index-reconstruction'
     transitionPulse = activeReveal ? 1 - clamp01(state.phaseProgress ?? 0) * 0.6 : 0
     uniforms.uTransitionPulse.value = transitionPulse
     applyMix()
