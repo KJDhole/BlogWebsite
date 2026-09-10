@@ -54,6 +54,7 @@ test('hero support copy clears the title path before layout release and returns 
   assert.match(css, /\.social-row/)
   assert.match(css, /\.solar-observation-meta/)
   assert.match(css, /\.orbit-caption/)
+  assert.match(css, /data-world-transition-phase=['"]layout-release['"][\s\S]*?\.orbit-caption\s*\{[\s\S]*?opacity:\s*0\s*!important/)
 })
 
 test('Solar layout has explicit tablet and mobile editorial compositions', async () => {
