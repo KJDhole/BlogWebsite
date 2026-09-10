@@ -17,13 +17,15 @@
   left: 0 !important;
   top: 0 !important;
   width: var(--scene-width, 1px) !important;
+  max-width: calc(100vw - var(--scene-x, 0px)) !important;
   height: var(--scene-height, 1px) !important;
   aspect-ratio: auto !important;
   margin: 0 !important;
   transform: translate3d(var(--scene-x, 0px), var(--scene-y, 0px), 0) !important;
   transform-origin: 0 0;
   pointer-events: none;
-  overflow: visible;
+  overflow: hidden;
+  contain: layout paint;
   z-index: 0;
 }
 
