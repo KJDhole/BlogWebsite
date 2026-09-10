@@ -68,16 +68,16 @@ Editor API (Node.js, 私有服务)
 
 ## Admin Surface
 
-### `/admin/login`
+### `/admin/login/`
 
 - 单用户登录
 - 不提供注册入口
-- 登录成功进入 `/admin`
+- 登录成功进入 `/admin/`
 - 登录失败只返回通用错误，不暴露账号是否存在
 
-### `/admin`
+### `/admin/`
 
-文章列表显示：
+文章列表由“GitHub main 已发布文章 + SQLite 草稿”合并得到，显示：
 
 - 标题
 - slug
@@ -92,9 +92,16 @@ Editor API (Node.js, 私有服务)
 - 继续草稿
 - 查看线上文章
 
-### `/admin/new`
+### `/admin/editor/`
 
-新建文章字段：
+这是一个固定静态页面，不使用运行时动态 Astro 路由。
+
+- 新建：`/admin/editor/`
+- 编辑：`/admin/editor/?slug=personal-ip-real-work`
+
+这样在 `output: 'static'` + GitHub Pages 下也能处理任意新 slug。
+
+字段：
 
 - title
 - slug
@@ -109,15 +116,14 @@ Editor API (Node.js, 私有服务)
 
 `AI | Agent | Development | Product | Thinking`
 
-slug 默认由标题生成，但允许手动修改；创建后如果文章已经发布，slug 默认锁定，避免无意改变线上 URL。
-
-### `/admin/edit/:slug`
+slug 默认由标题生成，但允许手动修改；文章一旦已经发布，slug 默认锁定，避免无意改变线上 URL。
 
 加载顺序：
 
-1. 优先读取该文章未发布草稿。
+1. 有 slug 时优先读取该文章未发布草稿。
 2. 没有草稿则读取 GitHub `main` 中的 Markdown。
-3. 编辑后保存到 SQLite 草稿，不直接改 GitHub。
+3. 无 slug 时初始化新文章草稿。
+4. 编辑后保存到 SQLite 草稿，不直接改 GitHub。
 
 布局：
 
@@ -173,18 +179,22 @@ drafts
 - payload_json
 - source_sha
 - status
+- publish_pr_number
+- publish_branch
 - created_at
 - updated_at
 ```
 
 `payload_json` 保存文章字段与正文。
 
-`source_sha` 记录开始编辑时对应的 GitHub 文件 SHA，用于发布前做冲突检查。
+`source_sha` 记录开始编辑时对应的 GitHub 文件 SHA，用于发布前做冲突检查；新文章为 `null`。
 
 状态：
 
 - `draft`
 - `publish_pending`
+
+`publish_pr_number` 和 `publish_branch` 用来保证刷新页面后仍能恢复发布进度。
 
 发布成功并合并后，对应草稿删除或标记完成。
 
@@ -199,16 +209,17 @@ drafts
 1. 服务端校验登录状态。
 2. 校验 title / description / category / tags / slug / Markdown。
 3. 从 GitHub 获取目标文件当前 SHA。
-4. 与草稿 `source_sha` 比较；不一致则阻止覆盖并提示“线上版本已变化”。
-5. 创建临时分支：`content/editor-<slug>-<timestamp>`。
-6. 新建或更新 `src/content/posts/<slug>.md`。
-7. 创建 Pull Request 到 `main`。
-8. 草稿状态改为 `publish_pending`。
-9. 后台显示 PR 链接和 CI 状态。
+4. 已发布文章与草稿 `source_sha` 比较；不一致则阻止覆盖并提示“线上版本已变化”。
+5. 新文章确认目标 Markdown 文件当前不存在。
+6. 创建临时分支：`content/editor-<slug>-<timestamp>`。
+7. 新建或更新 `src/content/posts/<slug>.md`。
+8. 创建 Pull Request 到 `main`。
+9. 草稿状态改为 `publish_pending`，记录 PR 和分支。
+10. 后台显示 PR 链接和 CI 状态。
 
 ### 第二步：合并发布
 
-当 PR 检查通过后，后台显示 `合并并发布`。
+当 PR 的 CI 检查通过后，后台显示 `合并并发布`。
 
 点击后：
 
@@ -238,7 +249,9 @@ V1 使用单用户账号，不做用户表。
 - Token 永不发送到浏览器。
 - 密码只存哈希，不存明文。
 - 登录成功使用 HttpOnly + Secure session cookie。
-- API 只允许博客后台 Origin。
+- Cookie 使用合适的 SameSite 策略，并只发送给 Editor API。
+- 管理前端跨 Origin 调 API 时显式使用 credentials。
+- API CORS 只允许 `https://blog.minglingyun.com`。
 - 所有写操作校验 Origin / session。
 - 登录接口做基础速率限制。
 - 日志不得记录密码、cookie、GitHub Token 或完整 Authorization header。
@@ -273,8 +286,7 @@ POST   /publish/:slug/merge
 src/pages/admin/
   login.astro
   index.astro
-  new.astro
-  edit/[slug].astro
+  editor.astro
 
 src/components/admin/
   AdminShell.astro
@@ -300,6 +312,9 @@ editor-api/
     routes/
   tests/
   Dockerfile
+
+.github/workflows/
+  editor-api-ci.yml
 ```
 
 Editor API 与公开 Astro build 解耦；GitHub Pages workflow 继续只构建静态站。
@@ -312,9 +327,11 @@ Editor API 独立部署到已有服务器，通过 Nginx 暴露 HTTPS，例如�
 
 `https://editor-api.minglingyun.com`
 
-后台 `/admin` 仍由当前博客静态站提供。
+后台 `/admin/` 仍由当前博客静态站提供。
 
-部署时只需要在服务器环境中配置管理员密码哈希、session secret 和 GitHub fine-grained PAT。
+Editor API 使用持久化目录保存 SQLite，例如容器内 `/data/editor.db` 映射到宿主机 volume，容器重建不能丢草稿。
+
+部署时只在服务器环境中配置管理员密码哈希、session secret 和 GitHub fine-grained PAT。
 
 ## Failure Handling
 
@@ -329,7 +346,9 @@ Editor API 独立部署到已有服务器，通过 Nginx 暴露 HTTPS，例如�
 
 ## Testing
 
-至少覆盖：
+公开博客现有 `CI` 继续在 Pull Request 到 `main` 时执行 `npm test` 与 `npm run build`。
+
+Editor API 使用独立 `editor-api-ci.yml`，至少覆盖：
 
 - frontmatter parse / serialize 往返不丢字段
 - 新文章 Markdown 生成
@@ -340,12 +359,12 @@ Editor API 独立部署到已有服务器，通过 Nginx 暴露 HTTPS，例如�
 - source SHA 冲突阻止发布
 - publish 创建 branch + file + PR 的 GitHub client contract
 - CI 未通过时禁止 merge
-- admin 页面基础 UI contract
-- 现有博客 `npm test` 与 `npm run build` 继续通过
+
+管理前端增加基础 UI contract 测试，并保证现有博客测试与构建继续通过。
 
 ## Acceptance Criteria
 
-完成后，我可以只通过浏览器完成下面流程：
+完成后，可以只通过浏览器完成：
 
 ```text
 登录
