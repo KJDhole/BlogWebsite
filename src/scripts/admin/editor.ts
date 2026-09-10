@@ -35,7 +35,7 @@ const titleInput = input<HTMLInputElement>('title')
 const slugInput = input<HTMLInputElement>('slug')
 const descriptionInput = input<HTMLTextAreaElement>('description')
 const dateInput = input<HTMLInputElement>('date')
-const categoryInput = input<HTMLSelectElement>('category')
+const categoryInput = input<HTMLInputElement>('category')
 const tagsInput = input<HTMLInputElement>('tags')
 const coverInput = input<HTMLInputElement>('cover')
 const bodyInput = input<HTMLTextAreaElement>('body')
@@ -51,6 +51,12 @@ const publishState = root.querySelector<HTMLElement>('[data-publish-state]')!
 const errorBox = root.querySelector<HTMLElement>('[data-editor-error]')!
 const publicLink = root.querySelector<HTMLAnchorElement>('[data-public-link]')!
 const wordCount = root.querySelector<HTMLElement>('[data-word-count]')!
+const categoryOptions = [...root.querySelectorAll<HTMLButtonElement>('[data-category-option]')]
+const tagOptions = root.querySelector<HTMLElement>('[data-tag-options]')!
+const newTagToggle = root.querySelector<HTMLButtonElement>('[data-new-tag-toggle]')!
+const tagCreate = root.querySelector<HTMLElement>('[data-tag-create]')!
+const newTagInput = root.querySelector<HTMLInputElement>('[data-new-tag]')!
+const addTagButton = root.querySelector<HTMLButtonElement>('[data-add-tag]')!
 
 let articleExtra: Record<string, unknown> = {}
 let articleVisual: string | null = null
@@ -61,7 +67,18 @@ let currentSlug: string | null = null
 let isNew = root.dataset.mode === 'new'
 let slugTouched = !isNew
 let pollTimer: number | null = null
+let selectedTags = new Set<string>()
 const fallbackSlug = `post-${Date.now().toString(36)}`
+
+const friendlyErrors: Record<string, string> = {
+  INVALID_SLUG: '文章链接格式不正确',
+  SLUG_EXISTS: '这个文章链接已经存在',
+  PUBLISH_PENDING: '文章正在发布，暂时不能修改',
+  CI_NOT_READY: '发布检查还没完成',
+  SOURCE_CONFLICT: '线上文章已经变化，请刷新后再编辑',
+  PR_HEAD_CHANGED: '发布内容已经变化，请重新提交',
+  MERGE_FAILED: '发布失败，请稍后重试'
+}
 
 function today() {
   const now = new Date()
@@ -78,6 +95,60 @@ function slugify(value: string) {
   return slug || fallbackSlug
 }
 
+function syncCategoryButtons() {
+  for (const button of categoryOptions) {
+    const selected = button.dataset.categoryOption === categoryInput.value
+    button.classList.toggle('is-selected', selected)
+    button.setAttribute('aria-pressed', String(selected))
+  }
+}
+
+function setCategory(value: string) {
+  categoryInput.value = value
+  syncCategoryButtons()
+}
+
+function ensureTagOption(tag: string) {
+  const buttons = [...tagOptions.querySelectorAll<HTMLButtonElement>('[data-tag-option]')]
+  let button = buttons.find(item => item.dataset.tagOption === tag)
+  if (!button) {
+    button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'choice-chip choice-chip-custom'
+    button.dataset.tagOption = tag
+    button.setAttribute('aria-pressed', 'false')
+    button.textContent = tag
+    tagOptions.append(button)
+  }
+  return button
+}
+
+function syncTagInput() {
+  tagsInput.value = [...selectedTags].join(', ')
+  for (const button of tagOptions.querySelectorAll<HTMLButtonElement>('[data-tag-option]')) {
+    const selected = selectedTags.has(button.dataset.tagOption ?? '')
+    button.classList.toggle('is-selected', selected)
+    button.setAttribute('aria-pressed', String(selected))
+  }
+}
+
+function setTags(tags: string[]) {
+  selectedTags = new Set(tags.map(tag => tag.trim()).filter(Boolean))
+  selectedTags.forEach(ensureTagOption)
+  syncTagInput()
+}
+
+function addCustomTag() {
+  const tag = newTagInput.value.trim()
+  if (!tag) return
+  ensureTagOption(tag)
+  selectedTags.add(tag)
+  syncTagInput()
+  newTagInput.value = ''
+  tagCreate.classList.add('is-hidden')
+  newTagToggle.textContent = '＋ 新建标签'
+}
+
 function collectArticle(): Article {
   return {
     slug: slugInput.value.trim(),
@@ -85,7 +156,7 @@ function collectArticle(): Article {
     description: descriptionInput.value,
     date: dateInput.value,
     category: categoryInput.value,
-    tags: tagsInput.value.split(',').map(tag => tag.trim()).filter(Boolean),
+    tags: [...selectedTags],
     visual: articleVisual,
     cover: coverInput.value.trim() || null,
     sourceUrl: articleSourceUrl,
@@ -100,13 +171,19 @@ function renderPreview() {
   const markdown = bodyInput.value
   const html = marked.parse(markdown) as string
   preview.innerHTML = DOMPurify.sanitize(html)
-  const words = markdown.trim() ? markdown.trim().split(/\s+/).length : 0
-  wordCount.textContent = `${words} word${words === 1 ? '' : 's'}`
+  const chars = Array.from(markdown.replace(/\s/g, '')).length
+  wordCount.textContent = `${chars} 字`
 }
 
 function showError(error: unknown) {
-  let message = error instanceof Error ? error.message : 'Something went wrong'
-  if (error instanceof ApiError && error.details?.length) message = error.details.join(' · ')
+  let message = '操作失败，请稍后重试'
+  if (error instanceof ApiError && error.code && friendlyErrors[error.code]) {
+    message = friendlyErrors[error.code]
+  } else if (error instanceof ApiError && error.details?.length) {
+    message = error.details.join(' · ')
+  } else if (error instanceof Error) {
+    message = error.message
+  }
   errorBox.textContent = message
   errorBox.classList.remove('is-hidden')
 }
@@ -122,8 +199,8 @@ function fillArticle(article: Article) {
   slugInput.value = article.slug ?? ''
   descriptionInput.value = article.description ?? ''
   dateInput.value = article.date ?? ''
-  categoryInput.value = article.category ?? ''
-  tagsInput.value = (article.tags ?? []).join(', ')
+  setCategory(article.category ?? '')
+  setTags(article.tags ?? [])
   coverInput.value = article.cover ?? ''
   bodyInput.value = article.body ?? ''
   articleExtra = article.extraFrontmatter ?? {}
@@ -132,7 +209,7 @@ function fillArticle(article: Article) {
   articleSourceLabel = article.sourceLabel ?? null
   sourceSha = article.sourceSha ?? null
   slugInput.disabled = Boolean(sourceSha)
-  saveState.textContent = article.status === 'publish_pending' ? 'Publish pending' : sourceSha ? 'Published source loaded' : 'Draft loaded'
+  saveState.textContent = article.status === 'publish_pending' ? '发布中' : sourceSha ? '已加载线上版本' : '已加载草稿'
   publicLink.href = `/writing/${encodeURIComponent(article.slug)}/`
   publicLink.classList.toggle('is-hidden', !sourceSha)
   renderPreview()
@@ -145,6 +222,9 @@ function setPendingMode(pending: boolean) {
   for (const control of root.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input, textarea, select')) {
     control.disabled = pending || (control === slugInput && Boolean(sourceSha))
   }
+  for (const button of root.querySelectorAll<HTMLButtonElement>('[data-category-option], [data-tag-option], [data-new-tag-toggle], [data-add-tag]')) {
+    button.disabled = pending
+  }
   if (pending) startPolling()
   else stopPolling()
 }
@@ -153,11 +233,11 @@ async function saveDraft() {
   clearError()
   const article = collectArticle()
   if (!article.slug) {
-    showError(new Error('Slug is required before saving'))
+    showError(new Error('请先填写文章标题'))
     return null
   }
   saveButton.disabled = true
-  saveState.textContent = 'Saving…'
+  saveState.textContent = '正在保存…'
   try {
     let saved: Article
     if (isNew && !currentSlug) {
@@ -172,10 +252,10 @@ async function saveDraft() {
     slugInput.value = saved.slug
     slugInput.disabled = Boolean(sourceSha)
     history.replaceState(null, '', `/admin/editor/?slug=${encodeURIComponent(saved.slug)}`)
-    saveState.textContent = 'Draft saved'
+    saveState.textContent = '已保存'
     return saved
   } catch (error) {
-    saveState.textContent = 'Save failed'
+    saveState.textContent = '保存失败'
     showError(error)
     return null
   } finally {
@@ -190,7 +270,7 @@ function setPublishMessage(message: string, prUrl?: string | null) {
     link.href = prUrl
     link.target = '_blank'
     link.rel = 'noreferrer'
-    link.textContent = 'Open PR'
+    link.textContent = '查看发布详情'
     link.className = 'editor-pr-link'
     publishState.append(' ', link)
   }
@@ -204,7 +284,7 @@ async function submitPublish() {
   clearError()
   try {
     const result = await apiFetch<{ prNumber: number; prUrl: string }>(`/publish/${encodeURIComponent(currentSlug)}`, { method: 'POST' })
-    setPublishMessage(`PR #${result.prNumber} created. Waiting for CI…`, result.prUrl)
+    setPublishMessage('已提交发布，正在自动检查…', result.prUrl)
     setPendingMode(true)
   } catch (error) {
     submitButton.disabled = false
@@ -217,23 +297,24 @@ function applyPublishStatus(status: PublishStatus) {
   mergeButton.classList.add('is-hidden')
   mergeButton.disabled = true
   if (status.state === 'ready') {
-    setPublishMessage(`PR #${status.prNumber} passed CI and is ready to merge.`, status.prUrl)
+    setPublishMessage('检查通过，可以发布。', status.prUrl)
     mergeButton.classList.remove('is-hidden')
     mergeButton.disabled = false
   } else if (status.state === 'failed') {
-    setPublishMessage(`PR #${status.prNumber} needs attention before publishing.`, status.prUrl)
+    setPublishMessage('发布检查未通过，请查看详情。', status.prUrl)
     setPendingMode(true)
     stopPolling()
   } else if (status.state === 'published') {
     sourceSha = 'published'
     setPendingMode(false)
-    setPublishMessage('Published.')
+    setPublishMessage('已发布。')
+    saveState.textContent = '已发布'
     if (currentSlug) {
       publicLink.href = `/writing/${encodeURIComponent(currentSlug)}/`
       publicLink.classList.remove('is-hidden')
     }
   } else {
-    setPublishMessage(`PR #${status.prNumber ?? ''} is waiting for CI…`, status.prUrl)
+    setPublishMessage('正在检查发布状态…', status.prUrl)
   }
 }
 
@@ -280,7 +361,7 @@ async function boot() {
   if (!isNew) {
     const slug = new URLSearchParams(window.location.search).get('slug')
     if (!slug) {
-      showError(new Error('Missing article slug'))
+      showError(new Error('没有找到这篇文章'))
       return
     }
     try {
@@ -299,10 +380,41 @@ titleInput.addEventListener('input', () => {
 })
 slugInput.addEventListener('input', () => { slugTouched = true })
 bodyInput.addEventListener('input', renderPreview)
+
+for (const button of categoryOptions) {
+  button.addEventListener('click', () => setCategory(button.dataset.categoryOption ?? ''))
+}
+
+tagOptions.addEventListener('click', event => {
+  const target = event.target
+  if (!(target instanceof Element)) return
+  const button = target.closest<HTMLButtonElement>('[data-tag-option]')
+  const tag = button?.dataset.tagOption
+  if (!tag) return
+  if (selectedTags.has(tag)) selectedTags.delete(tag)
+  else selectedTags.add(tag)
+  syncTagInput()
+})
+
+newTagToggle.addEventListener('click', () => {
+  const willOpen = tagCreate.classList.contains('is-hidden')
+  tagCreate.classList.toggle('is-hidden', !willOpen)
+  newTagToggle.textContent = willOpen ? '收起' : '＋ 新建标签'
+  if (willOpen) newTagInput.focus()
+})
+
+addTagButton.addEventListener('click', addCustomTag)
+newTagInput.addEventListener('keydown', event => {
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    addCustomTag()
+  }
+})
+
 previewButton.addEventListener('click', () => {
-  const showingPreview = previewPane.classList.toggle('is-mobile-visible')
-  inputPane.classList.toggle('is-mobile-hidden', showingPreview)
-  previewButton.textContent = showingPreview ? 'Editor' : 'Preview'
+  const showingPreview = previewPane.classList.toggle('is-preview-visible')
+  inputPane.classList.toggle('is-editor-hidden', showingPreview)
+  previewButton.textContent = showingPreview ? '继续编辑' : '预览'
 })
 saveButton.addEventListener('click', saveDraft)
 submitButton.addEventListener('click', submitPublish)
