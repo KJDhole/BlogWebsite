@@ -11,6 +11,21 @@ html[data-world-morphing='true'] [data-world-morph] {
   will-change: transform;
 }
 
+/* One persistent WebGL viewport. The document-flow anchors reserve geometry;
+   the canvas itself can expand to a transition stage without creating a new renderer. */
+[data-space-scene][data-scene-viewport='active'] {
+  position: fixed;
+  left: var(--scene-left, 0px);
+  top: var(--scene-top, 0px);
+  width: var(--scene-width, 1px);
+  height: var(--scene-height, 1px);
+  z-index: 2;
+  margin: 0;
+  pointer-events: none;
+  transform: none;
+  will-change: left, top, width, height;
+}
+
 /* Signature world-wave polish: the new world remains visible inside the wave. */
 .theme-transition .theme-solar-wave {
   background:
