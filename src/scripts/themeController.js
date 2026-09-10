@@ -63,6 +63,7 @@ function setTransitionGeometry({ origin, waveRadius, toggleDiameter, waveScaleSt
   root.style.setProperty('--world-wave-radius', `${waveRadius}px`)
   root.style.setProperty('--world-toggle-diameter', `${toggleDiameter}px`)
   root.style.setProperty('--world-wave-scale-start', String(waveScaleStart))
+  root.style.setProperty('--world-wave-scale', String(waveScaleStart))
 }
 
 function commitWorld(toWorld) {
@@ -90,9 +91,24 @@ function transitionDetail({ fromWorld, toWorld, direction, geometry, frame, comm
   }
 }
 
+function getWaveScale(detail) {
+  const start = detail.waveScaleStart
+  const full = 1.02
+  if (detail.phase === 'radiation') {
+    return detail.direction === 'to-observatory'
+      ? full + (start - full) * detail.phaseProgress
+      : start + (full - start) * detail.phaseProgress
+  }
+
+  const afterRadiation = detail.elapsedMs >= WORLD_COMMIT_AT_MS
+  if (detail.direction === 'to-observatory') return afterRadiation ? start : full
+  return afterRadiation ? full : start
+}
+
 function paintTransitionFrame(detail) {
   root.style.setProperty('--world-transition-progress', String(detail.progress))
   root.style.setProperty('--world-phase-progress', String(detail.phaseProgress))
+  root.style.setProperty('--world-wave-scale', String(getWaveScale(detail)))
   if (transitionLayer) {
     transitionLayer.dataset.phase = detail.phase
     transitionLayer.dataset.direction = detail.direction
@@ -110,6 +126,7 @@ function finishTransition(detail) {
   }
   root.style.removeProperty('--world-transition-progress')
   root.style.removeProperty('--world-phase-progress')
+  root.style.removeProperty('--world-wave-scale')
   dispatchTransitionEvent('glenn:worldtransitionend', {
     ...detail,
     progress: 1,
