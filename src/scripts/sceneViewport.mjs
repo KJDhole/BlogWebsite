@@ -36,6 +36,7 @@ export function createSceneViewport(sceneNode, { getAnchor, reducedMotion = fals
   let destroyed = false
   let currentWorld = 'solar'
   let lastRect = null
+  let transitionRects = null
 
   function getStageRect() {
     return {
@@ -64,7 +65,29 @@ export function createSceneViewport(sceneNode, { getAnchor, reducedMotion = fals
   function setWorld(world) {
     if (destroyed) return
     currentWorld = world === 'observatory' ? 'observatory' : 'solar'
+    transitionRects = null
     applyRect(readAnchor(currentWorld))
+  }
+
+  function beginTransition(fromWorld) {
+    if (destroyed) return
+    const sourceWorld = fromWorld === 'observatory' ? 'observatory' : 'solar'
+    transitionRects = {
+      fromWorld: sourceWorld,
+      toWorld: null,
+      from: readAnchor(sourceWorld),
+      stage: getStageRect(),
+      to: null
+    }
+  }
+
+  function captureTarget(toWorld) {
+    if (destroyed) return
+    const destination = toWorld === 'observatory' ? 'observatory' : 'solar'
+    if (!transitionRects) beginTransition(currentWorld)
+    transitionRects.toWorld = destination
+    transitionRects.to = readAnchor(destination)
+    transitionRects.stage = getStageRect()
   }
 
   function setTransition(detail = {}) {
@@ -79,16 +102,30 @@ export function createSceneViewport(sceneNode, { getAnchor, reducedMotion = fals
       return
     }
 
+    const cached = transitionRects && transitionRects.fromWorld === fromWorld && transitionRects.toWorld === toWorld
+      ? transitionRects
+      : null
+
     applyRect(sampleSceneViewport({
-      from: readAnchor(fromWorld),
-      stage: getStageRect(),
-      to: readAnchor(toWorld),
+      from: cached?.from ?? readAnchor(fromWorld),
+      stage: cached?.stage ?? getStageRect(),
+      to: cached?.to ?? readAnchor(toWorld),
       progress
     }))
   }
 
-  function refresh() {
+  function finishTransition(world) {
     if (destroyed) return
+    currentWorld = world === 'observatory' ? 'observatory' : 'solar'
+    const finalRect = transitionRects?.toWorld === currentWorld && transitionRects?.to
+      ? transitionRects.to
+      : readAnchor(currentWorld)
+    transitionRects = null
+    applyRect(finalRect)
+  }
+
+  function refresh() {
+    if (destroyed || transitionRects) return
     setWorld(currentWorld)
   }
 
@@ -99,7 +136,17 @@ export function createSceneViewport(sceneNode, { getAnchor, reducedMotion = fals
   function destroy() {
     destroyed = true
     lastRect = null
+    transitionRects = null
   }
 
-  return { setWorld, setTransition, refresh, getRect, destroy }
+  return {
+    setWorld,
+    beginTransition,
+    captureTarget,
+    setTransition,
+    finishTransition,
+    refresh,
+    getRect,
+    destroy
+  }
 }
