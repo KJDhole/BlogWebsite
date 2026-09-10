@@ -10,7 +10,7 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
 ---
 <BaseLayout title={SITE.title} description={SITE.description}>
-  <div class="page-shell">
+  <div class="page-shell home-shell">
     <header class="site-topbar folio-topbar" data-world-morph="masthead">
       <a class="brand" href="#top" aria-label="返回首页" data-world-morph="brand">GLENN<span class="brand-dot" aria-hidden="true"></span></a>
       <nav class="folio-nav" aria-label="主要导航" data-world-morph="primary-nav">
