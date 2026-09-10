@@ -14,6 +14,7 @@ function unavailableApi() {
     setTheme() {},
     setWorld() {},
     setWorldTransition() {},
+    getDebugState() { return null },
     resize() {},
     destroy() {}
   }
@@ -52,9 +53,12 @@ export function createSpaceScene(canvas, {
   camera.lookAt(0, 0, 0)
 
   // All visual worlds are instantiated once and share this renderer/context.
-  const stars = createStarField(scene, { mobile })
+  const stars = createStarField(scene, { mobile, reducedMotion })
   const cosmicField = createCosmicField(scene, { mobile })
   const solarField = createSolarField(scene, { mobile, reducedMotion })
+  const targetNdc = new THREE.Vector3()
+  const targetWorld = new THREE.Vector3()
+  const targetDirection = new THREE.Vector3()
 
   let currentStory = {
     field: { energy: 0.22, parallax: 0, drift: reducedMotion ? 0 : 0.35 },
@@ -70,9 +74,9 @@ export function createSpaceScene(canvas, {
   let lastFrame = performance.now()
   let elapsedSeconds = 0
 
-  function applyWorldMix(value) {
+  function applyWorldMix(value, { updateStars = true } = {}) {
     worldMix = clamp01(value)
-    stars.setWorldMix(worldMix)
+    if (updateStars) stars.setWorldMix(worldMix)
     solarField.setWorldMix(worldMix)
     cosmicField.group.visible = worldMix < 0.995
   }
@@ -86,6 +90,25 @@ export function createSpaceScene(canvas, {
     camera.aspect = width / height
     camera.updateProjectionMatrix()
     renderer.setSize(width, height, false)
+  }
+
+  function getTransitionTarget(detail = {}) {
+    const parent = canvas.parentElement
+    const rect = parent?.getBoundingClientRect?.() ?? canvas.getBoundingClientRect()
+    const width = Math.max(1, rect.width || canvas.clientWidth || 1)
+    const height = Math.max(1, rect.height || canvas.clientHeight || 1)
+    const originX = Number.isFinite(detail.originX) ? detail.originX : rect.left + width / 2
+    const originY = Number.isFinite(detail.originY) ? detail.originY : rect.top + height / 2
+    const ndcX = ((originX - rect.left) / width) * 2 - 1
+    const ndcY = -(((originY - rect.top) / height) * 2 - 1)
+
+    targetNdc.set(ndcX, ndcY, 0.5).unproject(camera)
+    targetDirection.copy(targetNdc).sub(camera.position).normalize()
+    const distance = Math.abs(targetDirection.z) > 0.0001
+      ? (0 - camera.position.z) / targetDirection.z
+      : 0
+    targetWorld.copy(camera.position).addScaledVector(targetDirection, distance)
+    return targetWorld
   }
 
   function setTheme(nextTheme) {
@@ -102,10 +125,18 @@ export function createSpaceScene(canvas, {
 
   function setWorldTransition(detail = {}) {
     const progress = clamp01(detail.progress ?? 0)
+    const target = getTransitionTarget(detail)
+    stars.setTransitionState({
+      ...detail,
+      targetX: target.x,
+      targetY: target.y,
+      targetZ: 0
+    })
+
     if (detail.direction === 'to-solar') {
-      applyWorldMix(progress)
+      applyWorldMix(progress, { updateStars: false })
     } else if (detail.direction === 'to-observatory') {
-      applyWorldMix(1 - progress)
+      applyWorldMix(1 - progress, { updateStars: false })
     } else if (detail.world) {
       setWorld(detail.world)
     }
@@ -115,6 +146,14 @@ export function createSpaceScene(canvas, {
   function setStoryState(nextState) {
     if (!nextState) return
     currentStory = nextState
+  }
+
+  function getDebugState() {
+    return {
+      world: currentWorld,
+      worldMix,
+      stars: stars.getDebugState?.() ?? null
+    }
   }
 
   function renderFrame(now) {
@@ -186,6 +225,7 @@ export function createSpaceScene(canvas, {
     setTheme,
     setWorld,
     setWorldTransition,
+    getDebugState,
     resize,
     destroy
   }

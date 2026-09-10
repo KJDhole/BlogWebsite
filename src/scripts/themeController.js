@@ -7,7 +7,7 @@ import {
 
 const STORAGE_KEY = 'glenn-blog-theme'
 const DURATION_MS = 1500
-const SWAP_AT_MS = 450
+const SWAP_AT_MS = 520
 const root = document.documentElement
 const transitionLayer = document.querySelector('[data-theme-transition]')
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -30,26 +30,32 @@ function updateToggleLabels(world = getCurrentWorld()) {
 function applyWorld(world) {
   const theme = worldToTheme(world)
   root.dataset.world = world
+  root.dataset.layoutWorld = world
   root.dataset.theme = theme
   localStorage.setItem(STORAGE_KEY, theme)
   updateToggleLabels(world)
   return { theme, world }
 }
 
+function dispatch(name, detail) {
+  window.dispatchEvent(new CustomEvent(name, { detail }))
+}
+
 function dispatchWorldChange(detail) {
-  window.dispatchEvent(new CustomEvent('glenn:worldchange', { detail }))
+  dispatch('glenn:worldchange', detail)
 }
 
 function dispatchWorldTransition(detail) {
-  window.dispatchEvent(new CustomEvent('glenn:worldtransition', { detail }))
+  dispatch('glenn:worldtransition', detail)
 }
 
-function getOrigin(button, event) {
+function getOrigin(button) {
   const rect = button.getBoundingClientRect()
-  const hasPointerCoordinates = Number.isFinite(event?.clientX) && Number.isFinite(event?.clientY) && (event.clientX !== 0 || event.clientY !== 0)
+  const toggleRadius = Math.max(rect.width, rect.height) / 2
   return {
-    x: hasPointerCoordinates ? event.clientX : rect.left + rect.width / 2,
-    y: hasPointerCoordinates ? event.clientY : rect.top + rect.height / 2
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
+    toggleRadius
   }
 }
 
@@ -58,10 +64,31 @@ function setTransitionGeometry(origin) {
     Math.max(origin.x, window.innerWidth - origin.x),
     Math.max(origin.y, window.innerHeight - origin.y)
   )
+  const toggleRadius = Math.max(1, origin.toggleRadius)
+  const waveStartScale = Math.min(1, toggleRadius / Math.max(1, radius))
   root.style.setProperty('--world-origin-x', `${origin.x}px`)
   root.style.setProperty('--world-origin-y', `${origin.y}px`)
+  root.style.setProperty('--world-toggle-radius', `${toggleRadius}px`)
   root.style.setProperty('--world-wave-radius', `${radius}px`)
-  return radius
+  root.style.setProperty('--world-wave-start-scale', String(waveStartScale))
+  root.style.setProperty('--world-wave-scale', String(waveStartScale))
+  return { radius, toggleRadius, waveStartScale }
+}
+
+function getWaveScale(frame, waveStartScale) {
+  if (frame.phase === 'radiation') {
+    return waveStartScale + (1 - waveStartScale) * frame.phaseProgress
+  }
+  if (frame.phase === 'solar-arrival') {
+    return 1 + frame.phaseProgress * 0.012
+  }
+  if (frame.phase === 'index-reconstruction') {
+    return 1.012 + frame.phaseProgress * 0.005
+  }
+  if (frame.phase === 'settle') {
+    return 1.017 + frame.phaseProgress * 0.003
+  }
+  return waveStartScale
 }
 
 function swapWorld(toWorld) {
@@ -79,7 +106,7 @@ function swapWorld(toWorld) {
   dispatchWorldChange(next ?? { theme: worldToTheme(toWorld), world: toWorld })
 }
 
-function finishTransition() {
+function finishTransition({ fromWorld, toWorld, direction }) {
   running = false
   frameHandle = 0
   transitionLayer?.classList.remove('is-active')
@@ -87,16 +114,46 @@ function finishTransition() {
     delete transitionLayer.dataset.phase
     delete transitionLayer.dataset.direction
   }
+  delete root.dataset.worldTransitioning
+  delete root.dataset.worldTransitionPhase
+  delete root.dataset.worldTransitionDirection
+  root.dataset.layoutWorld = toWorld
   root.style.removeProperty('--world-transition-progress')
   root.style.removeProperty('--world-phase-progress')
+  root.style.removeProperty('--world-wave-scale')
+  dispatch('glenn:worldtransitionend', {
+    fromWorld,
+    toWorld,
+    world: toWorld,
+    theme: worldToTheme(toWorld),
+    direction,
+    elapsedMs: DURATION_MS,
+    progress: 1
+  })
 }
 
-function runTransition({ fromWorld, toWorld, direction, origin }) {
+function runTransition({ fromWorld, toWorld, direction, origin, waveStartScale }) {
   running = true
   let startedAt = 0
   let swapped = false
+  root.dataset.worldTransitioning = 'true'
+  root.dataset.worldTransitionDirection = direction
   transitionLayer?.classList.add('is-active')
   if (transitionLayer) transitionLayer.dataset.direction = direction
+
+  dispatch('glenn:worldtransitionstart', {
+    fromWorld,
+    toWorld,
+    world: fromWorld,
+    theme: worldToTheme(fromWorld),
+    direction,
+    originX: origin.x,
+    originY: origin.y,
+    toggleRadius: origin.toggleRadius,
+    elapsedMs: 0,
+    progress: 0,
+    layoutWorld: fromWorld
+  })
 
   const tick = now => {
     if (!startedAt) startedAt = now
@@ -108,8 +165,10 @@ function runTransition({ fromWorld, toWorld, direction, origin }) {
       swapWorld(toWorld)
     }
 
+    root.dataset.worldTransitionPhase = frame.phase
     root.style.setProperty('--world-transition-progress', String(frame.progress))
     root.style.setProperty('--world-phase-progress', String(frame.phaseProgress))
+    root.style.setProperty('--world-wave-scale', String(getWaveScale(frame, waveStartScale)))
     if (transitionLayer) {
       transitionLayer.dataset.phase = frame.phase
       transitionLayer.dataset.direction = direction
@@ -120,46 +179,65 @@ function runTransition({ fromWorld, toWorld, direction, origin }) {
       toWorld,
       theme: worldToTheme(toWorld),
       world: swapped ? toWorld : fromWorld,
+      layoutWorld: root.dataset.layoutWorld || fromWorld,
       direction,
+      elapsedMs: frame.elapsedMs,
       progress: frame.progress,
       phase: frame.phase,
       phaseProgress: frame.phaseProgress,
       originX: origin.x,
-      originY: origin.y
+      originY: origin.y,
+      toggleRadius: origin.toggleRadius
     })
 
     if (elapsed < DURATION_MS) {
       frameHandle = requestAnimationFrame(tick)
     } else {
       if (!swapped) swapWorld(toWorld)
-      finishTransition()
+      finishTransition({ fromWorld, toWorld, direction })
     }
   }
 
   frameHandle = requestAnimationFrame(tick)
 }
 
-function requestWorldToggle(button, event) {
+function requestWorldToggle(button) {
   if (running) return
   const fromWorld = getCurrentWorld()
   const toWorld = fromWorld === 'solar' ? 'observatory' : 'solar'
   const direction = getTransitionDirection(fromWorld, toWorld)
-  const origin = getOrigin(button, event)
-  setTransitionGeometry(origin)
+  const origin = getOrigin(button)
+  const geometry = setTransitionGeometry(origin)
 
   if (reducedMotion.matches) {
     const next = applyWorld(toWorld)
     dispatchWorldChange(next)
+    dispatch('glenn:worldtransitionend', {
+      fromWorld,
+      toWorld,
+      world: toWorld,
+      theme: next.theme,
+      direction,
+      elapsedMs: 0,
+      progress: 1,
+      reducedMotion: true
+    })
     return
   }
 
-  runTransition({ fromWorld, toWorld, direction, origin })
+  runTransition({
+    fromWorld,
+    toWorld,
+    direction,
+    origin,
+    waveStartScale: geometry.waveStartScale
+  })
 }
 
 document.addEventListener('click', event => {
   const button = event.target.closest?.('[data-world-toggle]')
   if (!button) return
-  requestWorldToggle(button, event)
+  requestWorldToggle(button)
 })
 
 document.addEventListener('keydown', event => {
@@ -167,15 +245,15 @@ document.addEventListener('keydown', event => {
   const button = event.target.closest?.('[data-world-toggle]')
   if (!button) return
   event.preventDefault()
-  requestWorldToggle(button, null)
+  requestWorldToggle(button)
 })
 
 window.addEventListener('pagehide', () => {
   if (frameHandle) cancelAnimationFrame(frameHandle)
 })
 
-// Keep persisted light/dark semantics while exposing the richer personality vocabulary.
 const initialTheme = root.dataset.theme === 'dark' ? 'dark' : 'light'
 const initialWorld = themeToWorld(initialTheme)
 root.dataset.world = initialWorld
+root.dataset.layoutWorld = initialWorld
 updateToggleLabels(initialWorld)

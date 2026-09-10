@@ -68,14 +68,35 @@ async function inspectPage(page, { theme, viewport, route }) {
     const root = document.documentElement
     const body = document.body
     const article = document.querySelector('.article-body')
+    const innerWidth = window.innerWidth
+    const overflowCandidates = [...document.querySelectorAll('body *')]
+      .map(node => {
+        const rect = node.getBoundingClientRect()
+        const style = getComputedStyle(node)
+        return {
+          tag: node.tagName.toLowerCase(),
+          id: node.id || null,
+          className: typeof node.className === 'string' ? node.className : null,
+          left: Math.round(rect.left * 10) / 10,
+          right: Math.round(rect.right * 10) / 10,
+          width: Math.round(rect.width * 10) / 10,
+          position: style.position,
+          transform: style.transform,
+          overflowX: style.overflowX
+        }
+      })
+      .filter(item => item.width > 0 && (item.right > innerWidth + 1 || item.left < -1))
+      .slice(0, 20)
+
     return {
       title: document.title,
       theme: root.dataset.theme || null,
       world: root.dataset.world || null,
-      innerWidth: window.innerWidth,
+      innerWidth,
       scrollWidth: Math.max(root.scrollWidth, body?.scrollWidth ?? 0),
       articleWidth: article ? article.getBoundingClientRect().width : null,
-      articleFontSize: article ? Number.parseFloat(getComputedStyle(article).fontSize) : null
+      articleFontSize: article ? Number.parseFloat(getComputedStyle(article).fontSize) : null,
+      overflowCandidates
     }
   })
 

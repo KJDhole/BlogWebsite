@@ -4,53 +4,61 @@ import { readFile } from 'node:fs/promises'
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8')
 
-test('BaseLayout mounts one global signature transition surface', async () => {
+test('BaseLayout mounts one global transition surface without detached eclipse objects', async () => {
   const layout = await read('../src/layouts/BaseLayout.astro')
   const transition = await read('../src/components/ThemeTransition.astro')
   assert.match(layout, /ThemeTransition/)
-  assert.match(transition, /data-eclipse-core/)
-  assert.match(transition, /data-corona/)
   assert.match(transition, /data-solar-wave/)
   assert.match(transition, /world-transition\.css/)
   assert.match(transition, /Two modes of the same mind\./)
+  assert.doesNotMatch(transition, /data-eclipse-core/)
+  assert.doesNotMatch(transition, /data-corona/)
 })
 
-test('theme controller uses actual toggle origin and progressive enhancement', async () => {
+test('theme controller always uses the toggle center instead of pointer coordinates', async () => {
   const controller = await read('../src/scripts/themeController.js')
   assert.match(controller, /getBoundingClientRect/)
+  assert.match(controller, /rect\.left\s*\+\s*rect\.width\s*\/\s*2/)
+  assert.match(controller, /rect\.top\s*\+\s*rect\.height\s*\/\s*2/)
+  assert.doesNotMatch(controller, /clientX|clientY/)
+  assert.match(controller, /toggleRadius/)
+  assert.match(controller, /--world-toggle-radius/)
+  assert.match(controller, /--world-wave-start-scale/)
   assert.match(controller, /startViewTransition/)
   assert.match(controller, /prefers-reduced-motion/)
   assert.match(controller, /glenn:worldtransition/)
   assert.match(controller, /glenn:worldchange/)
   assert.match(controller, /Math\.hypot/)
   assert.match(controller, /1500/)
-  assert.match(controller, /450/)
+  assert.match(controller, /520/)
 })
 
-test('Solar reveal is not implemented as a generic white wipe', async () => {
+test('Solar reveal is a transparent toggle-origin radiation field, not a detached black or white wipe', async () => {
   const solarCss = await read('../src/styles/solar.css')
   const transitionCss = await read('../src/styles/world-transition.css')
   const css = `${solarCss}\n${transitionCss}`
-  assert.match(css, /\.theme-eclipse-core/)
-  assert.match(css, /\.theme-corona/)
-  assert.match(css, /\.theme-solar-wave/)
+  assert.match(transitionCss, /\.theme-toggle::after/)
+  assert.match(transitionCss, /\.theme-solar-wave/)
   assert.match(css, /--world-origin-x/)
   assert.match(css, /--world-origin-y/)
   assert.match(css, /--world-wave-radius/)
+  assert.match(transitionCss, /--world-wave-start-scale/)
   assert.match(transitionCss, /radial-gradient\(circle,\s*transparent\s+0\s+6[5-9]%/)
+  assert.doesNotMatch(transitionCss, /theme-eclipse-core/)
+  assert.doesNotMatch(transitionCss, /scale\(\.001\)/)
   assert.doesNotMatch(transitionCss, /rgba\(244,\s*240,\s*230,\s*\.98\)\s*0\s*76%/)
   assert.doesNotMatch(css, /background:\s*white\s*;/i)
 })
 
-test('reverse Observatory wave keeps the destination visible through wave and reveal', async () => {
+test('reverse Observatory wave keeps the destination visible through radiation and arrival', async () => {
   const transitionCss = await read('../src/styles/world-transition.css')
   assert.match(
     transitionCss,
-    /\.theme-transition\[data-direction=['"]to-observatory['"]\]\[data-phase=['"]solar-wave['"]\]\s+\.theme-solar-wave/
+    /\.theme-transition\[data-direction=['"]to-observatory['"]\]\[data-phase=['"]radiation['"]\]\s+\.theme-solar-wave/
   )
   assert.match(
     transitionCss,
-    /\.theme-transition\[data-direction=['"]to-observatory['"]\]\[data-phase=['"]solar-reveal['"]\]\s+\.theme-solar-wave/
+    /\.theme-transition\[data-direction=['"]to-observatory['"]\]\[data-phase=['"]solar-arrival['"]\]\s+\.theme-solar-wave/
   )
 })
 
@@ -121,4 +129,24 @@ test('dual-world motion keeps explicit mobile, reduced-motion, and renderer guar
   assert.match(scene, /webglcontextlost/)
   assert.match(scene, /ResizeObserver/)
   assert.match(scene, /renderer\.dispose\(\)/)
+})
+
+test('homepage exposes one shared morphable DOM tree for Observatory and Solar', async () => {
+  const page = await read('../src/pages/index.astro')
+  assert.equal((page.match(/posts\.map/g) ?? []).length, 1)
+  assert.equal((page.match(/id="hero-title"/g) ?? []).length, 1)
+  assert.match(page, /data-world-morph="hero-title"/)
+  assert.match(page, /data-world-morph="hero-eyebrow"/)
+  assert.match(page, /data-world-morph="primary-nav"/)
+  assert.match(page, /data-world-morph="writing-heading"/)
+  assert.match(page, /data-scene-anchor="observatory"/)
+  assert.match(page, /data-scene-anchor="solar"/)
+  assert.doesNotMatch(page, /solar-homepage-copy|duplicate-solar-list/)
+})
+
+test('article rows expose stable morph identity without duplicating title content', async () => {
+  const row = await read('../src/components/ArticleRow.astro')
+  assert.match(row, /data-world-morph=/)
+  assert.match(row, /data-entry-index=/)
+  assert.equal((row.match(/class="article-title"/g) ?? []).length, 1)
 })
