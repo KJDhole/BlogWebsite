@@ -36,15 +36,22 @@ test('deliver QA workflow builds, runs browser checks and preserves screenshots 
   assert.match(workflow, /actions\/upload-artifact@v4/)
 })
 
-test('world transition QA captures signature checkpoints, origin, phases, and both directions', async () => {
+test('world transition QA captures dense live frames, toggle origin, same DOM, and both directions', async () => {
   const qa = await read('../scripts/world-transition-qa.mjs')
   const workflow = await read('../.github/workflows/world-transition-qa.yml')
 
-  assert.match(qa, /0,\s*180,\s*450,\s*700,\s*950,\s*1250,\s*1500/)
-  assert.match(qa, /dataset\.world/)
-  assert.match(qa, /dataset\.phase/)
+  assert.match(qa, /0,\s*60,\s*120,\s*180,\s*300,\s*450,\s*520,\s*650,\s*820,\s*950,\s*1080,\s*1320,\s*1500/)
+  for (const phase of ['ignition', 'fold', 'layout-release', 'radiation', 'solar-arrival', 'index-rebuild', 'settle']) {
+    assert.match(qa, new RegExp(phase))
+  }
+  assert.match(qa, /elapsedMs/)
+  assert.match(qa, /position:\s*\{\s*x:\s*2,\s*y:\s*2\s*\}/)
+  assert.match(qa, /__worldQaHero/)
+  assert.match(qa, /hero-title/)
   assert.match(qa, /--world-origin-x/)
   assert.match(qa, /--world-origin-y/)
+  assert.match(qa, /--world-toggle-diameter/)
+  assert.match(qa, /data-theme-transition/)
   assert.match(qa, /to-solar/)
   assert.match(qa, /to-observatory/)
   assert.match(qa, /screenshot/)
