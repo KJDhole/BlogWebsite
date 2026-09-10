@@ -4,6 +4,41 @@ function clamp01(value) {
   return Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
 }
 
+function rangeProgress(value, start, end) {
+  return clamp01((value - start) / Math.max(0.0001, end - start))
+}
+
+function smoothstep(value) {
+  const t = clamp01(value)
+  return t * t * (3 - 2 * t)
+}
+
+export function sampleSolarTransition(progress, direction) {
+  const p = clamp01(progress)
+  if (direction === 'to-solar') {
+    const arrival = smoothstep(rangeProgress(p, 0.347, 0.72))
+    if (arrival >= 1) return { mix: 1, offsetX: 0, offsetY: 0, scale: 1 }
+    return {
+      mix: arrival,
+      offsetX: (1 - arrival) * 0.72,
+      offsetY: (1 - arrival) * 0.16,
+      scale: 1 + (1 - arrival) * 0.08
+    }
+  }
+
+  if (direction === 'to-observatory') {
+    const withdraw = smoothstep(rangeProgress(p, 0, 0.35))
+    return {
+      mix: 1 - withdraw,
+      offsetX: withdraw * 0.72,
+      offsetY: withdraw * 0.16,
+      scale: 1 + withdraw * 0.08
+    }
+  }
+
+  return { mix: direction === 'solar' ? 1 : 0, offsetX: 0, offsetY: 0, scale: 1 }
+}
+
 function createMagneticArc({ start, control, end, color, opacity }) {
   const curve = new THREE.QuadraticBezierCurve3(
     new THREE.Vector3(...start),
@@ -153,7 +188,8 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
   solarLimb.position.set(mobile ? 2.86 : 3.28, mobile ? 0.16 : 0.08, -0.45)
 
   const spectral = createSpectralGrid(mobile)
-  spectral.lines.position.set(mobile ? 1.92 : 2.18, 0.03, 0)
+  const spectralBaseX = mobile ? 1.92 : 2.18
+  spectral.lines.position.set(spectralBaseX, 0.03, 0)
 
   const arcA = createMagneticArc({
     start: [0.62, 0.72, -0.12],
@@ -183,7 +219,7 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
 
   let worldMix = 0
   let transitionPulse = 0
-  let darkTheme = false
+  let transitionState = null
 
   function applyMix() {
     const mix = clamp01(worldMix)
@@ -199,7 +235,7 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
   }
 
   function setTheme(theme) {
-    darkTheme = theme === 'dark'
+    const darkTheme = theme === 'dark'
     spectral.material.color.set(darkTheme ? 0x6f88b5 : 0x3f66a3)
     arcA.material.color.set(darkTheme ? 0x6f8fc8 : 0x315f9f)
     arcB.material.color.set(darkTheme ? 0x8ba5cf : 0x7296c5)
@@ -208,12 +244,28 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
 
   function setTransitionState(state = {}) {
     if (reducedMotion) {
+      transitionState = null
       transitionPulse = 0
       uniforms.uTransitionPulse.value = 0
       return
     }
-    const activeReveal = state.phase === 'solar-reveal' || state.phase === 'archive-settle'
-    transitionPulse = activeReveal ? 1 - clamp01(state.phaseProgress ?? 0) * 0.6 : 0
+
+    const direction = state.direction
+    const progress = clamp01(state.progress ?? 0)
+    if (direction !== 'to-solar' && direction !== 'to-observatory') {
+      transitionState = null
+      transitionPulse = 0
+      uniforms.uTransitionPulse.value = 0
+      return
+    }
+
+    transitionState = { direction, progress }
+    const pose = sampleSolarTransition(progress, direction)
+    worldMix = pose.mix
+    applyMix()
+
+    const activePulse = state.phase === 'radiation' || state.phase === 'solar-arrival'
+    transitionPulse = activePulse ? 1 - clamp01(state.phaseProgress ?? 0) * 0.55 : 0
     uniforms.uTransitionPulse.value = transitionPulse
   }
 
@@ -224,14 +276,25 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
     const energy = clamp01(storyState?.field?.energy ?? 0.22)
     uniforms.uOpacity.value = (mobile ? 0.76 : 0.83) * (0.97 + energy * 0.035)
 
+    if (transitionState && !calm) {
+      const pose = sampleSolarTransition(transitionState.progress, transitionState.direction)
+      group.position.x = pose.offsetX
+      group.position.y = pose.offsetY
+      group.scale.setScalar(pose.scale)
+      spectral.lines.position.x = spectralBaseX
+      return
+    }
+
+    group.position.x = 0
+    group.scale.setScalar(1)
     if (calm) {
       group.position.y = 0
-      spectral.lines.position.x = mobile ? 1.92 : 2.18
+      spectral.lines.position.x = spectralBaseX
       return
     }
 
     group.position.y = Math.sin(elapsedSeconds * 0.04) * (mobile ? 0.004 : 0.008) * worldMix
-    spectral.lines.position.x = (mobile ? 1.92 : 2.18) + Math.sin(elapsedSeconds * 0.018) * 0.009 * worldMix
+    spectral.lines.position.x = spectralBaseX + Math.sin(elapsedSeconds * 0.018) * 0.009 * worldMix
   }
 
   function destroy() {
