@@ -10,6 +10,8 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
 ---
 <BaseLayout title={SITE.title} description={SITE.description}>
+  <SpaceScene />
+
   <div class="page-shell">
     <header class="site-topbar folio-topbar" data-world-morph="masthead">
       <a class="brand" href="#top" aria-label="返回首页" data-world-morph="brand">GLENN<span class="brand-dot" aria-hidden="true"></span></a>
@@ -62,7 +64,6 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
         <div class="scene-anchor scene-anchor-solar" data-scene-anchor="solar" aria-hidden="true"></div>
 
         <div class="orbit-wrap" aria-hidden="true" data-world-morph="scene-stage">
-          <SpaceScene />
           <p class="orbit-caption">slow systems · clear thinking</p>
         </div>
       </section>
