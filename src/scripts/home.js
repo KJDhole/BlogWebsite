@@ -1,6 +1,7 @@
 import { filterArticleMetadata } from './filterArticles.mjs'
 import { getCosmicPath, getCosmicPathD, sampleCosmicPath } from './cosmicPath.mjs'
 import { getScrollStoryState, getStoryScrollDistance } from './scrollStory.mjs'
+import { createSceneViewport } from './sceneViewport.mjs'
 import { createSpaceScene } from './spaceScene.mjs'
 
 const state = { query: '', category: 'All' }
@@ -30,6 +31,7 @@ let currentStory = getScrollStoryState(0, {
 })
 let currentCosmicPath = null
 let spaceScene = null
+let sceneViewport = null
 let sceneMobile = mobileMedia.matches
 let sceneReduced = reducedMotion.matches
 let scrollStoryLayoutSettled = false
@@ -137,11 +139,23 @@ function scheduleScrollStory() {
   })
 }
 
+function createViewportController() {
+  sceneViewport?.destroy()
+  sceneViewport = createSceneViewport(spaceSceneNode, {
+    reducedMotion: sceneReduced,
+    getAnchor(world) {
+      return document.querySelector(`[data-scene-anchor="${world}"]`)?.getBoundingClientRect()
+    }
+  })
+  sceneViewport.setWorld(document.documentElement.dataset.world || 'solar')
+}
+
 function initializeSpaceScene() {
   spaceScene?.destroy()
   sceneMobile = mobileMedia.matches
   sceneReduced = reducedMotion.matches
   spaceSceneNode?.classList.remove('is-fallback')
+  createViewportController()
   spaceScene = createSpaceScene(spaceCanvas, {
     mobile: sceneMobile,
     reducedMotion: sceneReduced,
@@ -151,15 +165,19 @@ function initializeSpaceScene() {
     }
   })
   spaceScene.setStoryState(currentStory)
+  spaceScene.resize()
 }
 
 window.addEventListener('glenn:worldchange', event => {
   const { world, theme } = event.detail ?? {}
+  sceneViewport?.setWorld?.(world)
   spaceScene?.setWorld?.(world)
   spaceScene?.setTheme?.(theme)
 })
 
 window.addEventListener('glenn:worldtransition', event => {
+  sceneViewport?.setTransition?.(event.detail)
+  spaceScene?.resize?.()
   spaceScene?.setWorldTransition?.(event.detail)
 })
 
@@ -260,7 +278,10 @@ document.querySelectorAll('.reveal-block').forEach(node => observer.observe(node
 function handleViewportChange() {
   const qualityChanged = sceneMobile !== mobileMedia.matches || sceneReduced !== reducedMotion.matches
   if (qualityChanged) initializeSpaceScene()
-  else spaceScene?.resize()
+  else {
+    sceneViewport?.refresh()
+    spaceScene?.resize()
+  }
 
   refreshCosmicGeometry()
   const active = document.querySelector('.filter-button.is-active')
