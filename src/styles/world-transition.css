@@ -1,3 +1,16 @@
+/* Shared-DOM FLIP transform surface. Layout geometry is owned by data-layout-world;
+   this layer only applies transient inverse transforms during a world morph. */
+[data-world-morph] {
+  transform-origin: 0 0;
+}
+
+html[data-world-morphing='true'] [data-world-morph] {
+  transform:
+    translate3d(var(--morph-x, 0px), var(--morph-y, 0px), 0)
+    scale(var(--morph-scale-x, 1), var(--morph-scale-y, 1));
+  will-change: transform;
+}
+
 /* Signature world-wave polish: the new world remains visible inside the wave. */
 .theme-transition .theme-solar-wave {
   background:
