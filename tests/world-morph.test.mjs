@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { createFlipDelta, sampleFlip } from '../src/scripts/worldMorph.mjs'
+import { createFlipDelta, sampleFlip, selectWorldMorphNodes } from '../src/scripts/worldMorph.mjs'
 
 test('createFlipDelta maps destination geometry back to source geometry', () => {
   const from = { left: 100, top: 80, width: 400, height: 120 }
@@ -23,4 +23,13 @@ test('sampleFlip clamps progress outside the 0..1 interval', () => {
   const delta = { x: -20, y: 10, scaleX: 0.8, scaleY: 1.2 }
   assert.deepEqual(sampleFlip(delta, -1), delta)
   assert.deepEqual(sampleFlip(delta, 2), { x: 0, y: 0, scaleX: 1, scaleY: 1 })
+})
+
+test('nested morph wrappers are excluded so parent and child FLIP transforms do not compound', () => {
+  const child = { contains: () => false }
+  const parent = { contains: node => node === child }
+  const sibling = { contains: () => false }
+  const root = { querySelectorAll: () => [parent, child, sibling] }
+
+  assert.deepEqual(selectWorldMorphNodes(root), [child, sibling])
 })
