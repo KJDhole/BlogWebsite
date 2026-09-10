@@ -1,0 +1,8 @@
+/* Solar-only containment rules that keep intrinsic editorial rails inside the page shell. */
+@media (max-width: 880px) {
+  html[data-layout-world='solar'] .home-shell .filter-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+}
