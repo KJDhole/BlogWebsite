@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { interpolateRect, createViewportStage } from '../src/scripts/sceneViewport.mjs'
+import { interpolateRect, createViewportStage, fitRectToViewport } from '../src/scripts/sceneViewport.mjs'
 
 test('interpolateRect moves the one scene viewport continuously between anchors', () => {
   const from = { left: 820, top: 130, width: 430, height: 430 }
@@ -29,4 +29,22 @@ test('interpolateRect clamps progress', () => {
   const to = { left: 50, top: 60, width: 70, height: 80 }
   assert.deepEqual(interpolateRect(from, to, -1), from)
   assert.deepEqual(interpolateRect(from, to, 2), to)
+})
+
+test('fitRectToViewport keeps an intentionally cropped Solar scene from widening the document', () => {
+  assert.deepEqual(
+    fitRectToViewport(
+      { left: 180, top: 96, width: 410, height: 390 },
+      { width: 390, height: 844 }
+    ),
+    { left: 0, top: 96, width: 390, height: 390 }
+  )
+
+  assert.deepEqual(
+    fitRectToViewport(
+      { left: 980, top: 34, width: 620, height: 590 },
+      { width: 1440, height: 1000 }
+    ),
+    { left: 820, top: 34, width: 620, height: 590 }
+  )
 })
