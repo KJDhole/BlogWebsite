@@ -30,7 +30,7 @@ export function loadConfig(env = process.env) {
     sessionSecret,
     githubToken: required(env, 'GITHUB_TOKEN'),
     githubOwner: env.GITHUB_OWNER ?? 'KJDhole',
-    githubRepo: env.GITHUB_REPO ?? 'BlogWebsite',
+    githubRepo: env.GITHUB_CONTENT_REPO ?? 'Blog',
     sqlitePath: env.SQLITE_PATH ?? './data/editor.sqlite'
   }
 }
