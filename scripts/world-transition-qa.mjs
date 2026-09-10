@@ -110,8 +110,8 @@ async function runLiveDirection(page, viewport, { fromWorld, toWorld, direction 
   if (!state.sameArticleNodes) fail('Article rows were replaced instead of morphed as the same DOM nodes', { viewport: viewport.name, direction })
   if (state.world !== toWorld || state.layoutWorld !== toWorld) fail('World/layout state did not settle together', { viewport: viewport.name, direction, state })
   if (state.scrollWidth > state.innerWidth + 1) fail('Live transition caused horizontal overflow', { viewport: viewport.name, direction, state })
-  for (const phase of PHASES) {
-    if (!state.phases.includes(phase)) fail('Live transition skipped required phase', { viewport: viewport.name, direction, phase, phases: state.phases })
+  for (const required of ['ignition', 'convergence', 'layout-release', 'radiation', 'settle']) {
+    if (!state.phases.includes(required)) fail('Live transition skipped a load-bearing phase', { viewport: viewport.name, direction, required, phases: state.phases })
   }
 
   report.liveRuns.push({
@@ -140,7 +140,7 @@ async function captureExactFrame(page, viewport, { fromWorld, toWorld, direction
   const waveRadius = radius * scale
   const starFrame = getStarTransitionFrame({ direction, progress: frame.progress })
 
-  await page.evaluate(({ frame, direction, origin, toggleRadius, radius, startScale, scale, visualWorld, visualTheme, active, fromWorld, toWorld }) => {
+  await page.evaluate(({ frame, direction, origin, toggleRadius, radius, startScale, scale, visualWorld, visualTheme, active, fromWorld, toWorld, swapped }) => {
     const root = document.documentElement
     const layer = document.querySelector('[data-theme-transition]')
 
@@ -210,7 +210,8 @@ async function captureExactFrame(page, viewport, { fromWorld, toWorld, direction
     const root = document.documentElement
     const layer = document.querySelector('[data-theme-transition]')
     const hero = document.querySelector('#hero-title')?.getBoundingClientRect()
-    const wave = document.querySelector('[data-solar-wave]')?.getBoundingClientRect()
+    const wave = document.querySelector('[data-solar-wave]')
+    const waveRect = wave?.getBoundingClientRect()
     return {
       world: root.dataset.world,
       layoutWorld: root.dataset.layoutWorld,
@@ -219,7 +220,7 @@ async function captureExactFrame(page, viewport, { fromWorld, toWorld, direction
       innerWidth,
       scrollWidth: Math.max(root.scrollWidth, document.body?.scrollWidth ?? 0),
       hero: hero ? { left: hero.left, top: hero.top, width: hero.width, height: hero.height } : null,
-      wave: wave ? { width: wave.width, height: wave.height, opacity: getComputedStyle(document.querySelector('[data-solar-wave]')).opacity } : null,
+      wave: waveRect && wave ? { width: waveRect.width, height: waveRect.height, opacity: getComputedStyle(wave).opacity } : null,
       hasDetachedBlackCore: Boolean(document.querySelector('[data-eclipse-core], .theme-eclipse-core'))
     }
   })
@@ -264,6 +265,11 @@ const strengths = {
 }
 if (!(strengths.near > strengths.mid && strengths.mid > strengths.far)) {
   fail('Gravitational fold strength is not depth ordered', { strengths })
+}
+
+const exactPhases = new Set(CHECKPOINTS.filter(ms => ms < 1500).map(ms => getTransitionFrame(ms, 'to-solar').phase))
+for (const phase of PHASES) {
+  if (!exactPhases.has(phase)) fail('Exact checkpoint matrix does not cover required phase', { phase, exactPhases: [...exactPhases] })
 }
 
 try {
