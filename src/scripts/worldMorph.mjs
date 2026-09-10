@@ -21,6 +21,11 @@ export function sampleFlip(delta, progress) {
   }
 }
 
+export function selectWorldMorphNodes(root) {
+  const candidates = [...root.querySelectorAll('[data-world-morph]')]
+  return candidates.filter(node => !candidates.some(other => other !== node && node.contains(other)))
+}
+
 function measure(nodes) {
   const rects = new Map()
   for (const node of nodes) {
@@ -57,7 +62,7 @@ export function createWorldMorph(root, { reducedMotion = false } = {}) {
   let prepared = false
 
   function refresh() {
-    nodes = [...root.querySelectorAll('[data-world-morph]')]
+    nodes = selectWorldMorphNodes(root)
   }
 
   function prepare(toWorld) {
