@@ -1,0 +1,21 @@
+/* Preserve the Observatory visual world while Solar destination geometry is measured/morphed. */
+html[data-layout-world='solar'][data-world='observatory'] {
+  --solar-paper: var(--bg);
+  --solar-paper-bright: var(--bg-elevated);
+  --solar-ink: var(--text);
+  --solar-muted: var(--text-soft);
+  --solar-faint: var(--text-faint);
+  --solar-cobalt: var(--text-soft);
+  --solar-cobalt-deep: var(--text);
+  --solar-rule: var(--line);
+  --solar-rule-strong: var(--line-strong);
+  --solar-accent: var(--accent);
+  color-scheme: dark;
+}
+
+html[data-layout-world='solar'][data-world='observatory'] body {
+  background:
+    radial-gradient(circle at 77% 12%, color-mix(in srgb, var(--accent) 3%, transparent), transparent 28%),
+    var(--bg);
+  color: var(--text);
+}
