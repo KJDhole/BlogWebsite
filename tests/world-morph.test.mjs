@@ -13,14 +13,14 @@ test('createFlipDelta maps destination geometry back to source geometry', () => 
   })
 })
 
-test('aspect-safe visual FLIP preserves glyph proportions while keeping the same translation', () => {
+test('aspect-safe visual FLIP translates content without scaling glyphs or scrollable overflow', () => {
   const delta = { x: -520, y: -90, scaleX: 0.8, scaleY: 0.4 }
   const visual = createAspectSafeFlipDelta(delta)
 
   assert.equal(visual.x, delta.x)
   assert.equal(visual.y, delta.y)
-  assert.equal(visual.scaleX, visual.scaleY)
-  assert.equal(visual.scaleX, Math.sqrt(0.8 * 0.4))
+  assert.equal(visual.scaleX, 1)
+  assert.equal(visual.scaleY, 1)
 })
 
 test('sampleFlip starts fully inverted and settles to identity', () => {
