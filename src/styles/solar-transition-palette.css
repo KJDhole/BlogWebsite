@@ -171,9 +171,8 @@ html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival
   opacity: var(--world-phase-progress, 0) !important;
 }
 
-/* Reverse direction keeps the Solar publication typography until Observatory arrival. */
-html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='layout-release'] #hero-title,
-html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='radiation'] #hero-title {
+/* Reverse keeps Solar typography only until the 520ms semantic swap. */
+html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='layout-release'] #hero-title {
   max-width: none;
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: clamp(72px, 8vw, 124px);
@@ -182,29 +181,25 @@ html[data-world-transitioning='true'][data-world-transition-direction='to-observ
   letter-spacing: -.072em;
 }
 
-html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='layout-release'] .world-eyebrow,
-html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='radiation'] .world-eyebrow {
+html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='layout-release'] .world-eyebrow {
   font-size: 0;
 }
 
-html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='layout-release'] .world-eyebrow::before,
-html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='radiation'] .world-eyebrow::before {
+html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='layout-release'] .world-eyebrow::before {
   content: attr(data-solar-label);
   font: 650 9px/1.45 var(--mono);
   letter-spacing: .16em;
 }
 
 @media (max-width: 760px) {
-  html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='layout-release'] #hero-title,
-  html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='radiation'] #hero-title {
+  html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='layout-release'] #hero-title {
     font-size: clamp(54px, 17vw, 86px);
     line-height: .86;
   }
 }
 
 @media (max-width: 390px) {
-  html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='layout-release'] #hero-title,
-  html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='radiation'] #hero-title {
+  html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='layout-release'] #hero-title {
     font-size: clamp(49px, 17vw, 67px);
   }
 }
