@@ -41,6 +41,21 @@ html[data-layout-world='solar'] .cosmic-hero {
   overflow: clip;
 }
 
+@media (max-width: 760px) {
+  html[data-layout-world='solar'] .index-tools.controls,
+  html[data-layout-world='solar'] .filter-wrap {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  html[data-layout-world='solar'] .filter-wrap {
+    overflow-x: auto;
+    overflow-y: clip;
+    contain: inline-size;
+  }
+}
+
 /* Signature world-wave polish: the new world remains visible inside the wave. */
 .theme-transition .theme-solar-wave {
   background:
