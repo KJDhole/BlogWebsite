@@ -4,20 +4,26 @@ import { readFile } from 'node:fs/promises'
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8')
 
-test('BaseLayout mounts one global signature transition surface', async () => {
+test('BaseLayout mounts one global transition surface without detached eclipse objects', async () => {
   const layout = await read('../src/layouts/BaseLayout.astro')
   const transition = await read('../src/components/ThemeTransition.astro')
   assert.match(layout, /ThemeTransition/)
-  assert.match(transition, /data-eclipse-core/)
-  assert.match(transition, /data-corona/)
   assert.match(transition, /data-solar-wave/)
   assert.match(transition, /world-transition\.css/)
   assert.match(transition, /Two modes of the same mind\./)
+  assert.doesNotMatch(transition, /data-eclipse-core/)
+  assert.doesNotMatch(transition, /data-corona/)
 })
 
-test('theme controller uses actual toggle origin and progressive enhancement', async () => {
+test('theme controller always uses the toggle center instead of pointer coordinates', async () => {
   const controller = await read('../src/scripts/themeController.js')
   assert.match(controller, /getBoundingClientRect/)
+  assert.match(controller, /rect\.left\s*\+\s*rect\.width\s*\/\s*2/)
+  assert.match(controller, /rect\.top\s*\+\s*rect\.height\s*\/\s*2/)
+  assert.doesNotMatch(controller, /clientX|clientY/)
+  assert.match(controller, /toggleRadius/)
+  assert.match(controller, /--world-toggle-radius/)
+  assert.match(controller, /--world-wave-start-scale/)
   assert.match(controller, /startViewTransition/)
   assert.match(controller, /prefers-reduced-motion/)
   assert.match(controller, /glenn:worldtransition/)
@@ -27,17 +33,19 @@ test('theme controller uses actual toggle origin and progressive enhancement', a
   assert.match(controller, /450/)
 })
 
-test('Solar reveal is not implemented as a generic white wipe', async () => {
+test('Solar reveal is a transparent toggle-origin radiation field, not a detached black or white wipe', async () => {
   const solarCss = await read('../src/styles/solar.css')
   const transitionCss = await read('../src/styles/world-transition.css')
   const css = `${solarCss}\n${transitionCss}`
-  assert.match(css, /\.theme-eclipse-core/)
-  assert.match(css, /\.theme-corona/)
-  assert.match(css, /\.theme-solar-wave/)
+  assert.match(transitionCss, /\.theme-toggle::after/)
+  assert.match(transitionCss, /\.theme-solar-wave/)
   assert.match(css, /--world-origin-x/)
   assert.match(css, /--world-origin-y/)
   assert.match(css, /--world-wave-radius/)
+  assert.match(transitionCss, /--world-wave-start-scale/)
   assert.match(transitionCss, /radial-gradient\(circle,\s*transparent\s+0\s+6[5-9]%/)
+  assert.doesNotMatch(transitionCss, /theme-eclipse-core/)
+  assert.doesNotMatch(transitionCss, /scale\(\.001\)/)
   assert.doesNotMatch(transitionCss, /rgba\(244,\s*240,\s*230,\s*\.98\)\s*0\s*76%/)
   assert.doesNotMatch(css, /background:\s*white\s*;/i)
 })
