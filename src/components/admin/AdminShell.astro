@@ -3,29 +3,29 @@ import BaseLayout from '../../layouts/BaseLayout.astro'
 import '../../styles/admin.css'
 
 const {
-  title = 'Editor',
-  subtitle = 'Write, review, publish.',
+  title = '写作后台',
+  subtitle = '写作、保存、发布。',
   showLogout = true
 } = Astro.props
 ---
 <BaseLayout
-  title={`${title} · Glenn Editor`}
-  description="Private article editor for Glenn Blog."
+  title={`${title} · Glenn 写作后台`}
+  description="Glenn Blog 私人写作后台。"
   noindex={true}
 >
   <main class="admin-app">
     <header class="admin-topbar">
-      <a class="admin-brand" href="/admin/" aria-label="Glenn Editor home">
+      <a class="admin-brand" href="/admin/" aria-label="返回写作后台">
         <span class="brand-dot" aria-hidden="true"></span>
-        GLENN / EDITOR
+        GLENN / 写作后台
       </a>
       <div class="admin-topbar-actions">
-        <a class="admin-text-link" href="/">View blog</a>
-        {showLogout && <button class="admin-ghost-button" type="button" data-logout>Log out</button>}
+        <a class="admin-text-link" href="/">查看博客</a>
+        {showLogout && <button class="admin-ghost-button" type="button" data-logout>退出</button>}
       </div>
     </header>
     <section class="admin-heading">
-      <p class="admin-kicker">PRIVATE WORKSPACE</p>
+      <p class="admin-kicker">私人写作空间</p>
       <h1>{title}</h1>
       <p>{subtitle}</p>
     </section>
