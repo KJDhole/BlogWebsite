@@ -68,6 +68,36 @@ async function inspectPage(page, { theme, viewport, route }) {
     const root = document.documentElement
     const body = document.body
     const article = document.querySelector('.article-body')
+    const overflowing = [...document.querySelectorAll('body *')]
+      .map(node => {
+        const rect = node.getBoundingClientRect()
+        const style = getComputedStyle(node)
+        const parent = node.parentElement
+        const morphOwner = node.closest?.('[data-world-morph]')
+        return {
+          tag: node.tagName.toLowerCase(),
+          id: node.id || null,
+          className: typeof node.className === 'string' ? node.className : null,
+          text: (node.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 96) || null,
+          parentTag: parent?.tagName?.toLowerCase() || null,
+          parentClass: typeof parent?.className === 'string' ? parent.className : null,
+          worldMorph: node.dataset?.worldMorph || null,
+          nearestWorldMorph: morphOwner?.dataset?.worldMorph || null,
+          sceneAnchor: node.dataset?.sceneAnchor || null,
+          left: Math.round(rect.left * 10) / 10,
+          right: Math.round(rect.right * 10) / 10,
+          width: Math.round(rect.width * 10) / 10,
+          position: style.position,
+          display: style.display,
+          whiteSpace: style.whiteSpace,
+          overflowX: style.overflowX,
+          visibility: style.visibility
+        }
+      })
+      .filter(item => item.visibility !== 'hidden' && item.width > 0 && (item.right > window.innerWidth + 1 || item.left < -1))
+      .sort((a, b) => Math.max(b.right - window.innerWidth, -b.left) - Math.max(a.right - window.innerWidth, -a.left))
+      .slice(0, 12)
+
     return {
       title: document.title,
       theme: root.dataset.theme || null,
@@ -75,7 +105,8 @@ async function inspectPage(page, { theme, viewport, route }) {
       innerWidth: window.innerWidth,
       scrollWidth: Math.max(root.scrollWidth, body?.scrollWidth ?? 0),
       articleWidth: article ? article.getBoundingClientRect().width : null,
-      articleFontSize: article ? Number.parseFloat(getComputedStyle(article).fontSize) : null
+      articleFontSize: article ? Number.parseFloat(getComputedStyle(article).fontSize) : null,
+      overflowing
     }
   })
 

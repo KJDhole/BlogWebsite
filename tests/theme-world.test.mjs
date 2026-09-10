@@ -14,12 +14,14 @@ test('light maps to Solar Archive and dark maps to Observatory', () => {
   assert.equal(worldToTheme('observatory'), 'dark')
 })
 
-test('world transitions have fixed signature phases', () => {
-  assert.equal(getTransitionFrame(0, 'to-solar').phase, 'eclipse')
-  assert.equal(getTransitionFrame(180, 'to-solar').phase, 'totality')
-  assert.equal(getTransitionFrame(450, 'to-solar').phase, 'solar-wave')
-  assert.equal(getTransitionFrame(950, 'to-solar').phase, 'solar-reveal')
-  assert.equal(getTransitionFrame(1250, 'to-solar').phase, 'archive-settle')
+test('world transitions follow the approved seven-stage 1500ms story', () => {
+  assert.equal(getTransitionFrame(0, 'to-solar').phase, 'ignition')
+  assert.equal(getTransitionFrame(120, 'to-solar').phase, 'fold')
+  assert.equal(getTransitionFrame(300, 'to-solar').phase, 'layout-release')
+  assert.equal(getTransitionFrame(520, 'to-solar').phase, 'radiation')
+  assert.equal(getTransitionFrame(820, 'to-solar').phase, 'solar-arrival')
+  assert.equal(getTransitionFrame(1080, 'to-solar').phase, 'index-rebuild')
+  assert.equal(getTransitionFrame(1320, 'to-solar').phase, 'settle')
   assert.equal(getTransitionFrame(1500, 'to-solar').progress, 1)
 })
 

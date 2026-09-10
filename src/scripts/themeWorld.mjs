@@ -8,11 +8,13 @@ export const THEME_BY_WORLD = Object.freeze({
   observatory: 'dark'
 })
 
-const LIMITS = Object.freeze({
-  eclipseEnd: 180,
-  totalityEnd: 450,
-  waveEnd: 950,
-  revealEnd: 1250,
+export const WORLD_TRANSITION_LIMITS = Object.freeze({
+  ignitionEnd: 120,
+  foldEnd: 300,
+  layoutReleaseEnd: 520,
+  radiationEnd: 820,
+  solarArrivalEnd: 1080,
+  indexRebuildEnd: 1320,
   settleEnd: 1500
 })
 
@@ -32,34 +34,43 @@ export function getTransitionDirection(fromWorld, toWorld) {
 }
 
 export function getTransitionFrame(elapsedMs, direction) {
-  const ms = Math.min(LIMITS.settleEnd, Math.max(0, elapsedMs))
-  const progress = clamp01(ms / LIMITS.settleEnd)
-  let phase = 'archive-settle'
-  let start = LIMITS.revealEnd
-  let end = LIMITS.settleEnd
+  const ms = Math.min(WORLD_TRANSITION_LIMITS.settleEnd, Math.max(0, elapsedMs))
+  const progress = clamp01(ms / WORLD_TRANSITION_LIMITS.settleEnd)
+  let phase = 'settle'
+  let start = WORLD_TRANSITION_LIMITS.indexRebuildEnd
+  let end = WORLD_TRANSITION_LIMITS.settleEnd
 
-  if (ms < LIMITS.eclipseEnd) {
-    phase = 'eclipse'
+  if (ms < WORLD_TRANSITION_LIMITS.ignitionEnd) {
+    phase = 'ignition'
     start = 0
-    end = LIMITS.eclipseEnd
-  } else if (ms < LIMITS.totalityEnd) {
-    phase = 'totality'
-    start = LIMITS.eclipseEnd
-    end = LIMITS.totalityEnd
-  } else if (ms < LIMITS.waveEnd) {
-    phase = 'solar-wave'
-    start = LIMITS.totalityEnd
-    end = LIMITS.waveEnd
-  } else if (ms < LIMITS.revealEnd) {
-    phase = 'solar-reveal'
-    start = LIMITS.waveEnd
-    end = LIMITS.revealEnd
+    end = WORLD_TRANSITION_LIMITS.ignitionEnd
+  } else if (ms < WORLD_TRANSITION_LIMITS.foldEnd) {
+    phase = 'fold'
+    start = WORLD_TRANSITION_LIMITS.ignitionEnd
+    end = WORLD_TRANSITION_LIMITS.foldEnd
+  } else if (ms < WORLD_TRANSITION_LIMITS.layoutReleaseEnd) {
+    phase = 'layout-release'
+    start = WORLD_TRANSITION_LIMITS.foldEnd
+    end = WORLD_TRANSITION_LIMITS.layoutReleaseEnd
+  } else if (ms < WORLD_TRANSITION_LIMITS.radiationEnd) {
+    phase = 'radiation'
+    start = WORLD_TRANSITION_LIMITS.layoutReleaseEnd
+    end = WORLD_TRANSITION_LIMITS.radiationEnd
+  } else if (ms < WORLD_TRANSITION_LIMITS.solarArrivalEnd) {
+    phase = 'solar-arrival'
+    start = WORLD_TRANSITION_LIMITS.radiationEnd
+    end = WORLD_TRANSITION_LIMITS.solarArrivalEnd
+  } else if (ms < WORLD_TRANSITION_LIMITS.indexRebuildEnd) {
+    phase = 'index-rebuild'
+    start = WORLD_TRANSITION_LIMITS.solarArrivalEnd
+    end = WORLD_TRANSITION_LIMITS.indexRebuildEnd
   }
 
   return {
     progress,
     phase,
     phaseProgress: clamp01((ms - start) / Math.max(1, end - start)),
+    elapsedMs: ms,
     direction
   }
 }

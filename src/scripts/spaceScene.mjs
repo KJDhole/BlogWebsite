@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { createStarField } from './starField.mjs'
 import { createCosmicField } from './cosmicField.mjs'
-import { createSolarField } from './solarField.mjs'
+import { createSolarField, sampleSolarTransition } from './solarField.mjs'
 
 function clamp01(value) {
   return Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
@@ -55,6 +55,9 @@ export function createSpaceScene(canvas, {
   const stars = createStarField(scene, { mobile })
   const cosmicField = createCosmicField(scene, { mobile })
   const solarField = createSolarField(scene, { mobile, reducedMotion })
+  const unprojectPoint = new THREE.Vector3()
+  const unprojectDirection = new THREE.Vector3()
+  const worldTarget = new THREE.Vector3()
 
   let currentStory = {
     field: { energy: 0.22, parallax: 0, drift: reducedMotion ? 0 : 0.35 },
@@ -70,7 +73,7 @@ export function createSpaceScene(canvas, {
   let lastFrame = performance.now()
   let elapsedSeconds = 0
 
-  function applyWorldMix(value) {
+  function applyStableWorldMix(value) {
     worldMix = clamp01(value)
     stars.setWorldMix(worldMix)
     solarField.setWorldMix(worldMix)
@@ -88,6 +91,22 @@ export function createSpaceScene(canvas, {
     renderer.setSize(width, height, false)
   }
 
+  function screenOriginToWorld(originX, originY) {
+    const rect = canvas.getBoundingClientRect()
+    const width = Math.max(1, rect.width)
+    const height = Math.max(1, rect.height)
+    const nx = ((Number(originX) - rect.left) / width) * 2 - 1
+    const ny = -(((Number(originY) - rect.top) / height) * 2 - 1)
+
+    unprojectPoint.set(Number.isFinite(nx) ? nx : 0, Number.isFinite(ny) ? ny : 0, 0.5).unproject(camera)
+    unprojectDirection.copy(unprojectPoint).sub(camera.position).normalize()
+    const distance = Math.abs(unprojectDirection.z) > 0.0001
+      ? (0 - camera.position.z) / unprojectDirection.z
+      : 0
+    worldTarget.copy(camera.position).add(unprojectDirection.multiplyScalar(distance))
+    return worldTarget
+  }
+
   function setTheme(nextTheme) {
     currentTheme = nextTheme === 'dark' ? 'dark' : 'light'
     stars.setTheme(currentTheme)
@@ -97,19 +116,26 @@ export function createSpaceScene(canvas, {
 
   function setWorld(nextWorld) {
     currentWorld = nextWorld === 'observatory' ? 'observatory' : 'solar'
-    applyWorldMix(currentWorld === 'solar' ? 1 : 0)
+    stars.setTransitionState({ direction: 'none', progress: 1 })
+    solarField.setTransitionState({ direction: 'none', progress: 1 })
+    applyStableWorldMix(currentWorld === 'solar' ? 1 : 0)
   }
 
   function setWorldTransition(detail = {}) {
     const progress = clamp01(detail.progress ?? 0)
-    if (detail.direction === 'to-solar') {
-      applyWorldMix(progress)
-    } else if (detail.direction === 'to-observatory') {
-      applyWorldMix(1 - progress)
-    } else if (detail.world) {
-      setWorld(detail.world)
-    }
-    solarField.setTransitionState(detail)
+    const target = screenOriginToWorld(detail.originX, detail.originY)
+
+    stars.setTransitionState({
+      ...detail,
+      progress,
+      targetX: target.x,
+      targetY: target.y
+    })
+
+    const solarPose = sampleSolarTransition(progress, detail.direction)
+    worldMix = solarPose.mix
+    cosmicField.group.visible = worldMix < 0.995
+    solarField.setTransitionState({ ...detail, progress })
   }
 
   function setStoryState(nextState) {
