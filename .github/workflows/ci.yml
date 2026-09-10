@@ -34,6 +34,8 @@ jobs:
         run: npm install --prefix editor-api
       - name: Test editor API
         run: npm test --prefix editor-api
+      - name: Build editor API container
+        run: docker build -t glenn-blog-editor-api ./editor-api
       - name: Verify production blog output
         run: |
           test -f dist/index.html
