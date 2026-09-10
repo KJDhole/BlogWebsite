@@ -16,11 +16,14 @@ test('Solar Archive uses a materially different editorial grid', async () => {
 })
 
 test('Solar layout keeps an ivory cobalt publication palette and clips intentional off-canvas geometry', async () => {
-  const css = await read('../src/styles/solar-layout.css')
-  assert.match(css, /--solar-paper:/)
-  assert.match(css, /--solar-cobalt:/)
-  assert.match(css, /scene-anchor-solar/)
-  assert.match(css, /html\[data-layout-world=['"]solar['"]\]\s*\{[\s\S]*?overflow-x:\s*clip/)
+  const [layoutCss, transitionCss] = await Promise.all([
+    read('../src/styles/solar-layout.css'),
+    read('../src/styles/solar-transition-palette.css')
+  ])
+  assert.match(layoutCss, /--solar-paper:/)
+  assert.match(layoutCss, /--solar-cobalt:/)
+  assert.match(layoutCss, /scene-anchor-solar/)
+  assert.match(transitionCss, /html\[data-layout-world=['"]solar['"]\]\s*\{[\s\S]*?overflow-x:\s*clip/)
 })
 
 test('Solar target geometry preserves Observatory palette and typography during layout release', async () => {
