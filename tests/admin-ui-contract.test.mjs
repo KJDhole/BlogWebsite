@@ -55,3 +55,11 @@ test('static admin route uses URLSearchParams slug and contains no server secret
     }
   }
 })
+
+test('admin pages are noindex and excluded from the public sitemap', async () => {
+  const shell = await source('src/components/admin/AdminShell.astro')
+  const config = await source('astro.config.mjs')
+  assert.match(shell, /noindex=\{true\}/)
+  assert.match(config, /filter:\s*\(page\)/)
+  assert.match(config, /pathname\.startsWith\('\/admin\/'\)/)
+})

@@ -53,6 +53,10 @@ jobs:
           grep -q "Study in public" dist/index.html
           grep -q "Commerce Agent 的 24 条设计法则" dist/index.html
           grep -q "Commerce Agent 的 24 条设计法则" dist/rss.xml
+          if grep -R "https://blog.minglingyun.com/admin" dist/sitemap*.xml; then
+            echo "Admin routes must not appear in the public sitemap"
+            exit 1
+          fi
           if grep -R "const articles = \[" src; then
             echo "Found a hardcoded article catalog"
             exit 1
