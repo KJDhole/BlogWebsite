@@ -1,0 +1,46 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import '../../styles/admin.css'
+
+const {
+  title = 'Editor',
+  subtitle = 'Write, review, publish.',
+  showLogout = true
+} = Astro.props
+---
+<BaseLayout
+  title={`${title} · Glenn Editor`}
+  description="Private article editor for Glenn Blog."
+  noindex={true}
+>
+  <main class="admin-app">
+    <header class="admin-topbar">
+      <a class="admin-brand" href="/admin/" aria-label="Glenn Editor home">
+        <span class="brand-dot" aria-hidden="true"></span>
+        GLENN / EDITOR
+      </a>
+      <div class="admin-topbar-actions">
+        <a class="admin-text-link" href="/">View blog</a>
+        {showLogout && <button class="admin-ghost-button" type="button" data-logout>Log out</button>}
+      </div>
+    </header>
+    <section class="admin-heading">
+      <p class="admin-kicker">PRIVATE WORKSPACE</p>
+      <h1>{title}</h1>
+      <p>{subtitle}</p>
+    </section>
+    <slot />
+  </main>
+</BaseLayout>
+<script>
+  import { apiFetch } from '../../scripts/admin/api'
+  const logout = document.querySelector<HTMLElement>('[data-logout]')
+  logout?.addEventListener('click', async () => {
+    logout.setAttribute('aria-busy', 'true')
+    try {
+      await apiFetch('/auth/logout', { method: 'POST' })
+    } finally {
+      window.location.replace('/admin/login/')
+    }
+  })
+</script>
