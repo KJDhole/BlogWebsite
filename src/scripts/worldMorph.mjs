@@ -10,6 +10,15 @@ export function createFlipDelta(fromRect, toRect) {
   }
 }
 
+export function createAspectSafeFlipDelta(delta) {
+  const uniformScale = Math.sqrt(Math.max(0.0001, delta.scaleX * delta.scaleY))
+  return {
+    ...delta,
+    scaleX: uniformScale,
+    scaleY: uniformScale
+  }
+}
+
 export function sampleFlip(delta, progress) {
   const t = clamp01(progress)
   const remaining = 1 - t
@@ -84,7 +93,7 @@ export function createWorldMorph(root, { reducedMotion = false } = {}) {
       const fromRect = source.get(key)
       const toRect = destination.get(key)
       if (!fromRect || !toRect) continue
-      const delta = createFlipDelta(fromRect, toRect)
+      const delta = createAspectSafeFlipDelta(createFlipDelta(fromRect, toRect))
       deltas.set(key, delta)
       node.style.setProperty('--morph-x', `${delta.x}px`)
       node.style.setProperty('--morph-y', `${delta.y}px`)
