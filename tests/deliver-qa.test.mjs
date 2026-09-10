@@ -36,15 +36,17 @@ test('deliver QA workflow builds, runs browser checks and preserves screenshots 
   assert.match(workflow, /actions\/upload-artifact@v4/)
 })
 
-test('world transition QA captures signature checkpoints, origin, phases, and both directions', async () => {
+test('world transition QA captures dense early checkpoints, toggle origin, phases, and both directions', async () => {
   const qa = await read('../scripts/world-transition-qa.mjs')
   const workflow = await read('../.github/workflows/world-transition-qa.yml')
 
-  assert.match(qa, /0,\s*180,\s*450,\s*700,\s*950,\s*1250,\s*1500/)
+  assert.match(qa, /0,\s*60,\s*120,\s*180,\s*300,\s*450,\s*700,\s*950,\s*1250,\s*1500/)
   assert.match(qa, /dataset\.world/)
   assert.match(qa, /dataset\.phase/)
   assert.match(qa, /--world-origin-x/)
   assert.match(qa, /--world-origin-y/)
+  assert.match(qa, /--world-wave-start-scale/)
+  assert.match(qa, /is-world-source/)
   assert.match(qa, /to-solar/)
   assert.match(qa, /to-observatory/)
   assert.match(qa, /screenshot/)
