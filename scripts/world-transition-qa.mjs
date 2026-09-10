@@ -38,6 +38,8 @@ async function loadWorld(page, world) {
 
 async function getToggleGeometry(page) {
   const button = page.locator('[data-world-toggle]').first()
+  await button.scrollIntoViewIfNeeded()
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)))
   const box = await button.boundingBox()
   if (!box) throw new Error('Missing visible world toggle')
   const origin = { x: box.x + box.width / 2, y: box.y + box.height / 2 }
@@ -102,9 +104,6 @@ async function captureExactFrame(page, viewport, { fromWorld, toWorld, direction
   const visualTheme = worldToTheme(visualWorld)
   const active = checkpoint < 1500
 
-  // Resolve the actual base world before freezing the transition furniture.
-  // Directly mutating data-world left the renderer and page surface in a mixed state,
-  // which made exact screenshots darker than the real transition/stable destination.
   if (visualWorld !== fromWorld) await loadWorld(page, visualWorld)
   const stableBackground = await page.evaluate(() => getComputedStyle(document.body).backgroundColor)
 
@@ -113,6 +112,7 @@ async function captureExactFrame(page, viewport, { fromWorld, toWorld, direction
     const layer = document.querySelector('[data-theme-transition]')
 
     root.dataset.world = visualWorld
+    root.dataset.layoutWorld = visualWorld
     root.dataset.theme = visualTheme
     root.style.setProperty('--world-origin-x', `${origin.x}px`)
     root.style.setProperty('--world-origin-y', `${origin.y}px`)
