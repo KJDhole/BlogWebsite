@@ -56,8 +56,68 @@ html[data-layout-world='solar'] .cosmic-hero {
   }
 }
 
-/* Signature world-wave polish: the new world remains visible inside the wave. */
+/* The toggle itself is the ignition object. No detached circle is created. */
+.theme-toggle::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 241, 197, .78);
+  background:
+    conic-gradient(from 22deg,
+      transparent 0 9%,
+      rgba(255, 244, 210, .72) 10% 10.8%,
+      transparent 12% 31%,
+      rgba(120, 166, 220, .42) 32% 32.7%,
+      transparent 34% 61%,
+      rgba(255, 248, 222, .64) 62% 62.8%,
+      transparent 64% 100%);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.05),
+    0 0 10px rgba(255, 232, 174, .18),
+    0 0 24px rgba(104, 149, 209, .08);
+  opacity: 0;
+  transform: scale(.9);
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+html[data-world-transitioning='true'] .theme-toggle {
+  z-index: 1001;
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='eclipse'] .theme-toggle::after {
+  opacity: calc(.16 + var(--world-phase-progress, 0) * .72);
+  transform: scale(calc(.9 + var(--world-phase-progress, 0) * .1));
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='totality'] .theme-toggle::after {
+  opacity: .92;
+  transform: scale(calc(1 + var(--world-phase-progress, 0) * .15));
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='solar-wave'] .theme-toggle::after {
+  opacity: calc(.92 - var(--world-phase-progress, 0) * .72);
+  transform: scale(calc(1.15 + var(--world-phase-progress, 0) * .42));
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='solar-reveal'] .theme-toggle::after,
+html[data-world-transitioning='true'][data-world-transition-phase='archive-settle'] .theme-toggle::after {
+  opacity: 0;
+}
+
+/* The page wave begins at the toggle's physical radius and only shows a thin
+   refractive boundary. The destination remains visible inside the ring. */
 .theme-transition .theme-solar-wave {
+  position: absolute;
+  left: var(--world-origin-x);
+  top: var(--world-origin-y);
+  width: calc(var(--world-wave-radius) * 2);
+  height: calc(var(--world-wave-radius) * 2);
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(var(--world-wave-start-scale, .02));
+  will-change: transform, opacity;
   background:
     radial-gradient(circle,
       transparent 0 68%,
@@ -82,8 +142,35 @@ html[data-layout-world='solar'] .cosmic-hero {
     inset 0 0 54px rgba(255,248,226,.05);
 }
 
+html .theme-transition[data-phase='eclipse'] .theme-solar-wave,
+html .theme-transition[data-phase='totality'] .theme-solar-wave {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(var(--world-wave-start-scale, .02));
+}
+
+html .theme-transition[data-phase='solar-wave'] .theme-solar-wave {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(var(--world-wave-scale, var(--world-wave-start-scale, .02)));
+}
+
+html .theme-transition[data-phase='solar-reveal'] .theme-solar-wave {
+  opacity: calc(1 - var(--world-phase-progress, 0) * .72);
+  transform: translate(-50%, -50%) scale(var(--world-wave-scale, 1));
+  filter: saturate(calc(1.15 - var(--world-phase-progress, 0) * .15));
+}
+
+html .theme-transition[data-phase='archive-settle'] .theme-solar-wave {
+  opacity: calc(.28 - var(--world-phase-progress, 0) * .28);
+  transform: translate(-50%, -50%) scale(var(--world-wave-scale, 1.015));
+}
+
+/* Remove the old full-screen dimming prelude: ignition now happens on the button. */
+html .theme-transition[data-phase='totality']::before {
+  content: none;
+}
+
 /* Match the phase-specific legacy selector specificity so the reverse wave
-   cannot fall back to an opaque near-black disc during solar-reveal. */
+   cannot fall back to an opaque near-black disc during reveal. */
 .theme-transition[data-direction='to-observatory'][data-phase='solar-wave'] .theme-solar-wave,
 .theme-transition[data-direction='to-observatory'][data-phase='solar-reveal'] .theme-solar-wave,
 .theme-transition[data-direction='to-observatory'][data-phase='archive-settle'] .theme-solar-wave {
