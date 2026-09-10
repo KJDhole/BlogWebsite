@@ -35,6 +35,12 @@ function formatDate(value) {
   return value.toISOString().slice(0, 10)
 }
 
+function isValidDateString(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const parsed = new Date(`${value}T00:00:00Z`)
+  return !Number.isNaN(parsed.valueOf()) && formatDate(parsed) === value
+}
+
 function optionalString(value) {
   return isNonEmptyString(value) ? value : null
 }
@@ -69,6 +75,9 @@ export function validateArticle(article) {
     errors.push('tags must be non-empty strings')
   }
   if (!isNonEmptyString(article?.body)) errors.push('body is required')
+  if (article?.date && (!isNonEmptyString(article.date) || !isValidDateString(article.date))) {
+    errors.push('date must use YYYY-MM-DD and be a real calendar date')
+  }
 
   if (article?.sourceUrl) {
     try {

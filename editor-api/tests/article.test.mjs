@@ -40,10 +40,11 @@ test('update preserves original date and refreshes updated date', () => {
   assert.match(out, /updated: 2026-09-12/)
 })
 
-test('validation rejects bad slug, incomplete publish data, and bad source url', () => {
+test('validation rejects bad slug, incomplete publish data, invalid date, and bad source url', () => {
   assert.ok(validateSlug('../bad').length > 0)
   const errors = validateArticle({
-    slug: 'ok', title: '', description: '', category: 'Other', tags: [], body: '', sourceUrl: 'not-a-url'
+    slug: 'ok', title: '', description: '', date: '2026-02-30', category: 'Other', tags: [], body: '', sourceUrl: 'not-a-url'
   })
-  assert.ok(errors.length >= 6)
+  assert.ok(errors.length >= 7)
+  assert.ok(errors.some(error => error.startsWith('date must use')))
 })
