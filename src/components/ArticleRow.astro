@@ -7,19 +7,18 @@ const entryNumber = String(index + 1).padStart(2, '0')
 ---
 <article
   class="article-row reveal-item is-visible"
-  data-world-morph={`article-row-${index}`}
   data-entry-index={entryNumber}
   data-title={title}
   data-description={description}
   data-category={category}
   data-tags={tags.join('|')}
 >
-  <time class="article-date" datetime={date.toISOString()}>{dateLabel}</time>
-  <div class="article-main">
+  <time class="article-date" datetime={date.toISOString()} data-world-morph={`article-date-${index}`}>{dateLabel}</time>
+  <div class="article-main" data-world-morph={`article-main-${index}`}>
     <a class="article-title" href={href}>{title}</a>
     <p class="article-summary">{description}</p>
   </div>
-  <div class="article-index-meta" aria-label="文章信息">
+  <div class="article-index-meta" aria-label="文章信息" data-world-morph={`article-meta-${index}`}>
     <span class="article-category">{category}</span>
     <span class="read-time">{readTime} MIN</span>
   </div>
