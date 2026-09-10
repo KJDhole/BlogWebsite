@@ -44,6 +44,13 @@ function clearNode(node) {
   node.style.removeProperty('--morph-scale-y')
 }
 
+function rowProgress(node, articleProgress) {
+  if (!node.dataset.worldMorph?.startsWith('article-row-')) return null
+  const index = Math.max(0, Number.parseInt(node.dataset.entryIndex || '1', 10) - 1)
+  const delay = Math.min(index * 0.10, 0.30)
+  return clamp01((articleProgress - delay) / Math.max(0.01, 1 - delay))
+}
+
 export function createWorldMorph(root, { reducedMotion = false } = {}) {
   let nodes = []
   let deltas = new Map()
@@ -83,13 +90,14 @@ export function createWorldMorph(root, { reducedMotion = false } = {}) {
     prepared = true
   }
 
-  function setProgress(progress) {
+  function setProgress(progress, { articleProgress = progress } = {}) {
     if (!prepared || reducedMotion) return
     for (const node of nodes) {
       const key = node.dataset.worldMorph
       const delta = deltas.get(key)
       if (!delta) continue
-      const frame = sampleFlip(delta, progress)
+      const articleT = rowProgress(node, articleProgress)
+      const frame = sampleFlip(delta, articleT ?? progress)
       node.style.setProperty('--morph-x', `${frame.x}px`)
       node.style.setProperty('--morph-y', `${frame.y}px`)
       node.style.setProperty('--morph-scale-x', String(frame.scaleX))
