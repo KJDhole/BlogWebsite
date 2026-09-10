@@ -14,6 +14,9 @@ export function createFlipDelta(fromRect, toRect) {
 export function sampleFlip(delta, progress) {
   const t = clamp01(progress)
   const remaining = 1 - t
+  if (remaining === 0) {
+    return { x: 0, y: 0, scaleX: 1, scaleY: 1 }
+  }
   return {
     x: delta.x * remaining,
     y: delta.y * remaining,
