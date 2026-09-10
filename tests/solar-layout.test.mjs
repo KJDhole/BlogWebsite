@@ -53,6 +53,7 @@ test('hero support copy clears the title path before layout release and returns 
   assert.match(css, /\.folio-note/)
   assert.match(css, /\.social-row/)
   assert.match(css, /\.solar-observation-meta/)
+  assert.match(css, /\.orbit-caption/)
 })
 
 test('Solar layout has explicit tablet and mobile editorial compositions', async () => {
