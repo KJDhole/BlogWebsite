@@ -1,54 +1,189 @@
-/* Signature world-wave polish: the new world remains visible inside the wave. */
+:root {
+  --world-origin-x: 50vw;
+  --world-origin-y: 44px;
+  --world-wave-radius: 100vmax;
+  --world-toggle-diameter: 40px;
+  --world-wave-scale-start: .02;
+  --world-wave-scale: var(--world-wave-scale-start);
+  --world-transition-progress: 0;
+  --world-phase-progress: 0;
+}
+
+.theme-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  overflow: clip;
+  opacity: 0;
+  visibility: hidden;
+  isolation: isolate;
+}
+
+.theme-transition.is-active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.theme-transition .theme-corona,
 .theme-transition .theme-solar-wave {
+  position: absolute;
+  left: var(--world-origin-x);
+  top: var(--world-origin-y);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+
+.theme-transition .theme-corona {
+  width: var(--world-toggle-diameter);
+  height: var(--world-toggle-diameter);
+  z-index: 4;
+  opacity: 0;
+  background:
+    conic-gradient(from 18deg,
+      transparent 0 7%,
+      rgba(255, 247, 218, .88) 7.4% 8.1%,
+      transparent 8.6% 31%,
+      rgba(136, 177, 226, .72) 31.4% 32%,
+      transparent 32.5% 61%,
+      rgba(255, 238, 191, .84) 61.4% 62.1%,
+      transparent 62.6% 83%,
+      rgba(214, 99, 61, .55) 83.3% 83.8%,
+      transparent 84.3% 100%);
+  border: 1px solid rgba(255, 246, 216, .72);
+  box-shadow:
+    0 0 7px rgba(255, 238, 186, .26),
+    0 0 18px rgba(102, 149, 207, .12);
+  filter: none;
+}
+
+.theme-transition .theme-solar-wave {
+  width: calc(var(--world-wave-radius) * 2);
+  height: calc(var(--world-wave-radius) * 2);
+  z-index: 2;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(var(--world-wave-scale));
   background:
     radial-gradient(circle,
-      transparent 0 68%,
-      rgba(244, 240, 230, .035) 72%,
-      rgba(198, 218, 236, .12) 75%,
-      rgba(91, 139, 202, .48) 78.2%,
-      rgba(255, 248, 220, .82) 80.2%,
-      rgba(214, 99, 61, .24) 81%,
-      rgba(255, 255, 255, .14) 82.4%,
+      transparent 0 69%,
+      rgba(244, 240, 230, .025) 72%,
+      rgba(198, 218, 236, .10) 75%,
+      rgba(91, 139, 202, .44) 78.2%,
+      rgba(255, 248, 220, .76) 80.2%,
+      rgba(214, 99, 61, .20) 81.1%,
+      rgba(255, 255, 255, .10) 82.3%,
       transparent 85.8%),
     conic-gradient(from 31deg,
       transparent 0 12%,
-      rgba(255, 248, 220, .12) 12.2% 12.45%,
+      rgba(255, 248, 220, .10) 12.2% 12.45%,
       transparent 12.7% 46%,
-      rgba(113, 164, 220, .11) 46.15% 46.38%,
+      rgba(113, 164, 220, .10) 46.15% 46.38%,
       transparent 46.7% 73%,
-      rgba(214, 99, 61, .09) 73.15% 73.28%,
+      rgba(214, 99, 61, .075) 73.15% 73.28%,
       transparent 73.55% 100%);
   box-shadow:
-    0 0 0 1px rgba(255,255,255,.12),
-    0 0 34px rgba(93,137,196,.14),
-    inset 0 0 54px rgba(255,248,226,.05);
+    0 0 0 1px rgba(255,255,255,.10),
+    0 0 34px rgba(93,137,196,.13),
+    inset 0 0 54px rgba(255,248,226,.035);
 }
 
-/* Match the phase-specific legacy selector specificity so the reverse wave
-   cannot fall back to an opaque near-black disc during solar-reveal. */
-.theme-transition[data-direction='to-observatory'][data-phase='solar-wave'] .theme-solar-wave,
-.theme-transition[data-direction='to-observatory'][data-phase='solar-reveal'] .theme-solar-wave,
-.theme-transition[data-direction='to-observatory'][data-phase='archive-settle'] .theme-solar-wave {
+.theme-transition .theme-transition-caption {
+  position: fixed;
+  left: 50%;
+  bottom: 30px;
+  z-index: 5;
+  transform: translateX(-50%) translateY(7px);
+  color: color-mix(in srgb, var(--solar-cobalt, #315fbc) 72%, #23272d);
+  font: 500 9px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  opacity: 0;
+}
+
+.theme-transition[data-phase='ignition'] .theme-corona {
+  opacity: calc(.10 + var(--world-phase-progress) * .58);
+  transform: translate(-50%, -50%) scale(calc(.94 + var(--world-phase-progress) * .08));
+}
+
+.theme-transition[data-phase='fold'] .theme-corona {
+  opacity: calc(.68 + var(--world-phase-progress) * .22);
+  transform: translate(-50%, -50%) scale(calc(1.02 + var(--world-phase-progress) * .16));
+  box-shadow:
+    0 0 calc(8px + var(--world-phase-progress) * 10px) rgba(255, 238, 186, .30),
+    0 0 calc(18px + var(--world-phase-progress) * 18px) rgba(102, 149, 207, .16);
+}
+
+.theme-transition[data-phase='layout-release'] .theme-corona {
+  opacity: calc(.90 - var(--world-phase-progress) * .10);
+  transform: translate(-50%, -50%) scale(calc(1.18 + var(--world-phase-progress) * .16));
+}
+
+.theme-transition[data-phase='radiation'] .theme-corona {
+  opacity: calc(.80 - var(--world-phase-progress) * .62);
+  transform: translate(-50%, -50%) scale(calc(1.34 + var(--world-phase-progress) * .62));
+}
+
+.theme-transition[data-phase='radiation'] .theme-solar-wave {
+  opacity: 1;
+}
+
+.theme-transition[data-phase='solar-arrival'] .theme-solar-wave {
+  opacity: calc(.82 - var(--world-phase-progress) * .52);
+}
+
+.theme-transition[data-phase='index-rebuild'] .theme-solar-wave {
+  opacity: calc(.30 - var(--world-phase-progress) * .22);
+}
+
+.theme-transition[data-phase='settle'] .theme-solar-wave {
+  opacity: calc(.08 - var(--world-phase-progress) * .08);
+}
+
+.theme-transition[data-phase='settle'] .theme-transition-caption {
+  opacity: calc(.42 - var(--world-phase-progress) * .42);
+  transform: translateX(-50%) translateY(calc(7px - var(--world-phase-progress) * 7px));
+}
+
+.theme-transition[data-direction='to-observatory'] .theme-corona {
+  border-color: rgba(181, 205, 244, .52);
+  box-shadow:
+    0 0 8px rgba(137, 168, 224, .22),
+    0 0 20px rgba(13, 24, 49, .16);
+}
+
+.theme-transition[data-direction='to-observatory'] .theme-solar-wave {
   background:
     radial-gradient(circle,
-      transparent 0 68%,
-      rgba(8, 13, 26, .04) 72%,
-      rgba(66, 94, 151, .16) 75%,
-      rgba(111, 145, 207, .44) 78.2%,
-      rgba(238, 226, 190, .64) 80.2%,
-      rgba(27, 48, 88, .30) 81.2%,
-      rgba(6, 10, 22, .13) 82.5%,
+      transparent 0 69%,
+      rgba(8, 13, 26, .025) 72%,
+      rgba(66, 94, 151, .13) 75%,
+      rgba(111, 145, 207, .40) 78.2%,
+      rgba(238, 226, 190, .58) 80.2%,
+      rgba(27, 48, 88, .24) 81.2%,
+      rgba(6, 10, 22, .09) 82.5%,
       transparent 85.8%),
     conic-gradient(from 211deg,
       transparent 0 18%,
-      rgba(137, 168, 224, .12) 18.15% 18.38%,
+      rgba(137, 168, 224, .10) 18.15% 18.38%,
       transparent 18.7% 57%,
-      rgba(236, 225, 190, .10) 57.1% 57.34%,
+      rgba(236, 225, 190, .08) 57.1% 57.34%,
       transparent 57.7% 82%,
-      rgba(84, 111, 171, .10) 82.1% 82.28%,
+      rgba(84, 111, 171, .08) 82.1% 82.28%,
       transparent 82.6% 100%);
   box-shadow:
-    0 0 0 1px rgba(181, 205, 244, .10),
-    0 0 36px rgba(67, 99, 164, .16),
-    inset 0 0 54px rgba(13, 24, 49, .06);
+    0 0 0 1px rgba(181, 205, 244, .08),
+    0 0 36px rgba(67, 99, 164, .14),
+    inset 0 0 54px rgba(13, 24, 49, .04);
+}
+
+.theme-transition[data-direction='to-observatory'] .theme-transition-caption {
+  color: rgba(220,229,245,.68);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-transition {
+    display: none !important;
+  }
 }
