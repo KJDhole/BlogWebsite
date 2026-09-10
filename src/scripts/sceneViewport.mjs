@@ -30,6 +30,20 @@ export function createViewportStage(viewport = {}) {
   }
 }
 
+export function fitRectToViewport(rect, viewport = {}) {
+  const source = copyRect(rect)
+  const viewportWidth = Math.max(1, Number(viewport.width) || 1)
+  const width = Math.min(source.width, viewportWidth)
+  const maxLeft = Math.max(0, viewportWidth - width)
+  const left = Math.min(maxLeft, Math.max(0, source.left))
+  return {
+    left,
+    top: source.top,
+    width,
+    height: source.height
+  }
+}
+
 function easeInOut(value) {
   const t = clamp01(value)
   return t * t * (3 - 2 * t)
@@ -49,15 +63,21 @@ export function createSceneViewport(sceneNode, { getAnchor, reducedMotion = fals
   let transition = null
   let destroyed = false
 
+  function viewportSize() {
+    return { width: window.innerWidth, height: window.innerHeight }
+  }
+
   function viewportStage() {
-    return createViewportStage({ width: window.innerWidth, height: window.innerHeight })
+    return createViewportStage(viewportSize())
   }
 
   function anchorRect(nextWorld) {
     const value = getAnchor?.(nextWorld)
     if (!value) return { left: 0, top: 0, width: 1, height: 1 }
-    if (typeof value.getBoundingClientRect === 'function') return copyRect(value.getBoundingClientRect())
-    return copyRect(value)
+    const rect = typeof value.getBoundingClientRect === 'function'
+      ? copyRect(value.getBoundingClientRect())
+      : copyRect(value)
+    return fitRectToViewport(rect, viewportSize())
   }
 
   function applyRect(rect) {
