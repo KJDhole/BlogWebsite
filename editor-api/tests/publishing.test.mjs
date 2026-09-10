@@ -125,13 +125,22 @@ test('merge is blocked until ready and protects stored PR head', async () => {
   })
   await assert.rejects(() => notReady.merge('hello-world'), error => error.code === 'CI_NOT_READY')
 
+  const changedImmediately = createPublishingService({
+    store: fakeStore({ ...validArticle, status: 'publish_pending', prNumber: 9, headSha: 'publish-head' }),
+    github: fakeGitHub({
+      getPullRequest: async () => ({ number: 9, url: 'x', state: 'open', mergeable: true, merged: false, headSha: 'changed-head' })
+    }),
+    clock
+  })
+  await assert.rejects(() => changedImmediately.merge('hello-world'), error => error.code === 'PR_HEAD_CHANGED')
+
   let prReads = 0
   const changedHead = createPublishingService({
     store: fakeStore({ ...validArticle, status: 'publish_pending', prNumber: 9, headSha: 'publish-head' }),
     github: fakeGitHub({
       getPullRequest: async () => {
         prReads += 1
-        return { number: 9, url: 'x', state: 'open', mergeable: true, merged: false, headSha: prReads === 1 ? 'publish-head' : 'changed-head' }
+        return { number: 9, url: 'x', state: 'open', mergeable: true, merged: false, headSha: prReads < 3 ? 'publish-head' : 'changed-head' }
       }
     }),
     clock

@@ -121,6 +121,11 @@ export function createPublishingService({ store, github, clock = () => new Date(
       throw editorError('CI_NOT_READY', 'There is no publish request ready to merge')
     }
 
+    const initialPr = await github.getPullRequest(before.prNumber)
+    if (initialPr.headSha !== before.headSha) {
+      throw editorError('PR_HEAD_CHANGED', 'Pull request HEAD changed after submission')
+    }
+
     const publishStatus = await status(slug)
     if (publishStatus.state !== 'ready') {
       throw editorError('CI_NOT_READY', 'CI checks have not passed or the pull request is not mergeable')
