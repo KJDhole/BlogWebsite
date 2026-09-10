@@ -5,65 +5,91 @@ const { mode = 'new' } = Astro.props
   <div class="editor-toolbar">
     <div class="editor-state">
       <span class="status-dot" aria-hidden="true"></span>
-      <span data-save-state>Not saved</span>
+      <span data-save-state>未保存</span>
     </div>
     <div class="editor-actions">
-      <a class="admin-ghost-button is-hidden" data-public-link target="_blank" rel="noreferrer">View online</a>
-      <button class="admin-ghost-button" type="button" data-preview-toggle>Preview</button>
-      <button class="admin-ghost-button" type="button" data-save-draft>Save Draft</button>
-      <button class="admin-primary-button" type="button" data-submit-publish>Submit Publish</button>
-      <button class="admin-primary-button is-hidden" type="button" data-merge-publish disabled>Merge &amp; Publish</button>
+      <a class="admin-ghost-button is-hidden" data-public-link target="_blank" rel="noreferrer">查看线上文章</a>
+      <button class="admin-ghost-button" type="button" data-preview-toggle>预览</button>
+      <button class="admin-ghost-button" type="button" data-save-draft>保存草稿</button>
+      <button class="admin-primary-button" type="button" data-submit-publish>发布文章</button>
+      <button class="admin-primary-button is-hidden" type="button" data-merge-publish disabled>确认发布</button>
     </div>
   </div>
 
-  <div class="editor-meta-grid">
+  <div class="editor-basic-fields">
     <label class="admin-field admin-field-title">
-      <span>Title</span>
-      <input name="title" autocomplete="off" placeholder="Article title" />
+      <span>文章标题</span>
+      <input name="title" autocomplete="off" placeholder="输入标题" />
     </label>
+
     <label class="admin-field">
-      <span>Slug</span>
-      <input name="slug" autocomplete="off" placeholder="article-slug" />
+      <span>摘要</span>
+      <textarea name="description" rows="2" placeholder="一句话说明这篇文章在讲什么"></textarea>
     </label>
-    <label class="admin-field admin-field-wide">
-      <span>Description</span>
-      <textarea name="description" rows="2" placeholder="One clear sentence about this article"></textarea>
-    </label>
-    <label class="admin-field">
-      <span>Date</span>
-      <input name="date" type="date" />
-    </label>
-    <label class="admin-field">
-      <span>Category</span>
-      <select name="category">
-        <option value="">Choose</option>
-        <option value="AI">AI</option>
-        <option value="Agent">Agent</option>
-        <option value="Development">Development</option>
-        <option value="Product">Product</option>
-        <option value="Thinking">Thinking</option>
-      </select>
-    </label>
-    <label class="admin-field admin-field-wide">
-      <span>Tags</span>
-      <input name="tags" autocomplete="off" placeholder="AI, Agent, Architecture" />
-    </label>
-    <label class="admin-field admin-field-wide">
-      <span>Cover</span>
-      <input name="cover" autocomplete="off" placeholder="/images/posts/.../cover.webp" />
-    </label>
+
+    <div class="admin-field choice-field">
+      <span>分类</span>
+      <input name="category" type="hidden" />
+      <div class="choice-chips" data-category-options>
+        <button class="choice-chip" type="button" data-category-option="AI" aria-pressed="false">AI</button>
+        <button class="choice-chip" type="button" data-category-option="Agent" aria-pressed="false">Agent</button>
+        <button class="choice-chip" type="button" data-category-option="Development" aria-pressed="false">开发</button>
+        <button class="choice-chip" type="button" data-category-option="Product" aria-pressed="false">产品</button>
+        <button class="choice-chip" type="button" data-category-option="Thinking" aria-pressed="false">思考</button>
+      </div>
+    </div>
+
+    <div class="admin-field choice-field">
+      <span>标签</span>
+      <input name="tags" type="hidden" />
+      <div class="choice-chips" data-tag-options>
+        <button class="choice-chip" type="button" data-tag-option="AI" aria-pressed="false">AI</button>
+        <button class="choice-chip" type="button" data-tag-option="Agent" aria-pressed="false">Agent</button>
+        <button class="choice-chip" type="button" data-tag-option="Coding Agent" aria-pressed="false">Coding Agent</button>
+        <button class="choice-chip" type="button" data-tag-option="RAG" aria-pressed="false">RAG</button>
+        <button class="choice-chip" type="button" data-tag-option="LangGraph" aria-pressed="false">LangGraph</button>
+        <button class="choice-chip" type="button" data-tag-option="FDE" aria-pressed="false">FDE</button>
+        <button class="choice-chip" type="button" data-tag-option="云计算" aria-pressed="false">云计算</button>
+        <button class="choice-chip" type="button" data-tag-option="开源" aria-pressed="false">开源</button>
+      </div>
+      <div class="tag-create-controls">
+        <button class="text-action" type="button" data-new-tag-toggle>＋ 新建标签</button>
+        <div class="tag-create-row is-hidden" data-tag-create>
+          <input type="text" autocomplete="off" maxlength="40" placeholder="输入新标签" data-new-tag />
+          <button class="admin-ghost-button" type="button" data-add-tag>添加</button>
+        </div>
+      </div>
+    </div>
+
+    <details class="editor-advanced">
+      <summary>更多设置 <span>一般不用改</span></summary>
+      <div class="editor-advanced-grid">
+        <label class="admin-field">
+          <span>日期</span>
+          <input name="date" type="date" />
+        </label>
+        <label class="admin-field">
+          <span>文章链接</span>
+          <input name="slug" autocomplete="off" placeholder="根据标题自动生成" />
+        </label>
+        <label class="admin-field admin-field-wide">
+          <span>封面路径</span>
+          <input name="cover" autocomplete="off" placeholder="可选，例如 /images/posts/.../cover.webp" />
+        </label>
+      </div>
+    </details>
   </div>
 
   <div class="editor-error is-hidden" role="alert" data-editor-error></div>
   <div class="editor-publish-state is-hidden" data-publish-state></div>
 
   <div class="editor-columns" data-editor-columns>
-    <section class="editor-pane editor-pane-input" aria-label="Markdown editor">
-      <div class="pane-label"><span>MARKDOWN</span><span data-word-count>0 words</span></div>
-      <textarea class="markdown-input" name="body" spellcheck="true" placeholder="Start writing..."></textarea>
+    <section class="editor-pane editor-pane-input" aria-label="正文编辑器">
+      <div class="pane-label"><span>正文</span><span data-word-count>0 字</span></div>
+      <textarea class="markdown-input" name="body" spellcheck="true" placeholder="开始写正文…"></textarea>
     </section>
-    <section class="editor-pane editor-pane-preview" aria-label="Article preview" data-preview-pane>
-      <div class="pane-label"><span>PREVIEW</span><span>Sanitized</span></div>
+    <section class="editor-pane editor-pane-preview" aria-label="文章预览" data-preview-pane>
+      <div class="pane-label"><span>预览</span><span>已安全处理</span></div>
       <article class="markdown-preview" data-markdown-preview></article>
     </section>
   </div>

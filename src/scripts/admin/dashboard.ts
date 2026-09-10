@@ -13,10 +13,23 @@ type ArticleSummary = {
 const list = document.querySelector<HTMLElement>('[data-article-list]')
 const state = document.querySelector<HTMLElement>('[data-dashboard-state]')
 
+const CATEGORY_LABELS: Record<string, string> = {
+  AI: 'AI',
+  Agent: 'Agent',
+  Development: '开发',
+  Product: '产品',
+  Thinking: '思考'
+}
+
 function statusLabel(status: ArticleSummary['status']) {
-  if (status === 'publish_pending') return 'Publish Pending'
-  if (status === 'draft') return 'Draft'
-  return 'Published'
+  if (status === 'publish_pending') return '发布中'
+  if (status === 'draft') return '草稿'
+  return '已发布'
+}
+
+function categoryLabel(category?: string) {
+  if (!category) return '未分类'
+  return CATEGORY_LABELS[category] ?? category
 }
 
 function renderArticle(article: ArticleSummary) {
@@ -27,12 +40,12 @@ function renderArticle(article: ArticleSummary) {
   const title = document.createElement('a')
   title.className = 'article-admin-title'
   title.href = `/admin/editor/?slug=${encodeURIComponent(article.slug)}`
-  title.textContent = article.title || 'Untitled draft'
+  title.textContent = article.title || '未命名草稿'
   main.append(title)
 
   const meta = document.createElement('p')
   meta.className = 'article-admin-meta'
-  meta.textContent = [article.category || 'Uncategorized', article.updated || article.date || 'No date', article.slug].join(' · ')
+  meta.textContent = [categoryLabel(article.category), article.updated || article.date || '暂无日期'].join(' · ')
   main.append(meta)
 
   const badge = document.createElement('span')
@@ -48,9 +61,9 @@ async function start() {
   try {
     const articles = await apiFetch<ArticleSummary[]>('/posts')
     list?.replaceChildren(...articles.map(renderArticle))
-    if (state) state.textContent = `${articles.length} article${articles.length === 1 ? '' : 's'}`
-  } catch (error) {
-    if (state) state.textContent = error instanceof Error ? error.message : 'Could not load articles'
+    if (state) state.textContent = `${articles.length} 篇文章`
+  } catch {
+    if (state) state.textContent = '文章加载失败'
   }
 }
 
