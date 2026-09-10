@@ -44,6 +44,17 @@ test('Solar target geometry preserves Observatory palette and typography during 
   assert.match(paletteCss, /\.solar-observation-meta[\s\S]*?display:\s*none/)
 })
 
+test('hero support copy clears the title path before layout release and returns during arrival', async () => {
+  const css = await read('../src/styles/solar-transition-palette.css')
+  assert.match(css, /data-world-transition-phase=['"]convergence['"][\s\S]*?\.hero-intro[\s\S]*?opacity:\s*calc\(1\s*-\s*var\(--world-phase-progress[^)]*\)\)/)
+  assert.match(css, /data-world-transition-phase=['"]layout-release['"][\s\S]*?\.hero-intro[\s\S]*?opacity:\s*0/)
+  assert.match(css, /data-world-transition-phase=['"]radiation['"][\s\S]*?\.hero-intro[\s\S]*?opacity:\s*0/)
+  assert.match(css, /data-world-transition-phase=['"]solar-arrival['"][\s\S]*?\.hero-intro[\s\S]*?opacity:\s*var\(--world-phase-progress/)
+  assert.match(css, /\.folio-note/)
+  assert.match(css, /\.social-row/)
+  assert.match(css, /\.solar-observation-meta/)
+})
+
 test('Solar layout has explicit tablet and mobile editorial compositions', async () => {
   const css = await read('../src/styles/solar-layout.css')
   assert.match(css, /@media\s*\(max-width:\s*760px\)/)
