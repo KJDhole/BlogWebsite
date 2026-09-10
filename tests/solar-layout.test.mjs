@@ -57,6 +57,13 @@ test('hero support copy clears the title path before layout release and returns 
   assert.match(css, /data-world-transition-phase=['"]layout-release['"][\s\S]*?\.orbit-caption\s*\{[\s\S]*?opacity:\s*0\s*!important/)
 })
 
+test('reverse morph releases Solar typography when radiation swaps to Observatory', async () => {
+  const css = await read('../src/styles/solar-transition-palette.css')
+  assert.match(css, /data-world-transition-direction=['"]to-observatory['"]\]\[data-world-transition-phase=['"]layout-release['"]\]\s*#hero-title/)
+  assert.doesNotMatch(css, /data-world-transition-direction=['"]to-observatory['"]\]\[data-world-transition-phase=['"]radiation['"]\]\s*#hero-title/)
+  assert.doesNotMatch(css, /data-world-transition-direction=['"]to-observatory['"]\]\[data-world-transition-phase=['"]radiation['"]\]\s*\.world-eyebrow/)
+})
+
 test('Solar layout has explicit tablet and mobile editorial compositions', async () => {
   const css = await read('../src/styles/solar-layout.css')
   assert.match(css, /@media\s*\(max-width:\s*760px\)/)
