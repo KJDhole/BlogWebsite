@@ -27,6 +27,21 @@ test('theme controller uses actual toggle origin and progressive enhancement', a
   assert.match(controller, /450/)
 })
 
+test('theme radiation starts from the toggle itself instead of the pointer or a black-hole overlay', async () => {
+  const controller = await read('../src/scripts/themeController.js')
+  const transitionCss = await read('../src/styles/world-transition.css')
+
+  assert.doesNotMatch(controller, /event\?*\.client[XY]|event\.client[XY]/)
+  assert.match(controller, /rect\.left\s*\+\s*rect\.width\s*\/\s*2/)
+  assert.match(controller, /rect\.top\s*\+\s*rect\.height\s*\/\s*2/)
+  assert.match(controller, /--world-wave-start-scale/)
+  assert.match(controller, /is-world-source/)
+  assert.match(transitionCss, /\.theme-transition\s+\.theme-eclipse-core\s*\{[^}]*display:\s*none/s)
+  assert.match(transitionCss, /\[data-world-toggle\]\.is-world-source/)
+  assert.match(transitionCss, /--world-wave-start-scale/)
+  assert.doesNotMatch(transitionCss, /scale\(\.001\)/)
+})
+
 test('Solar reveal is not implemented as a generic white wipe', async () => {
   const solarCss = await read('../src/styles/solar.css')
   const transitionCss = await read('../src/styles/world-transition.css')
