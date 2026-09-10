@@ -4,7 +4,7 @@ import { readdir, readFile } from 'node:fs/promises'
 
 const postsDir = new URL('../src/content/posts/', import.meta.url)
 
-test('published article set contains the first and second essays', async () => {
+test('published article set contains the established essays', async () => {
   const names = (await readdir(postsDir)).filter(name => name.endsWith('.md')).sort()
   const entries = await Promise.all(names.map(async name => ({
     name,
@@ -15,10 +15,18 @@ test('published article set contains the first and second essays', async () => {
     .map(({ name }) => name)
     .sort()
 
-  assert.deepEqual(published, ['commerce-agent-rules.md', 'personal-ip-real-work.md'])
-  const secondEssay = entries.find(({ name }) => name === 'personal-ip-real-work.md')
-  assert.ok(secondEssay)
-  assert.match(secondEssay.source, /^draft:\s*false\s*$/m)
+  const requiredPublishedArticles = [
+    'coding-agent-large-project.md',
+    'commerce-agent-rules.md',
+    'personal-ip-real-work.md'
+  ]
+
+  for (const name of requiredPublishedArticles) {
+    assert.ok(published.includes(name), `${name} should remain published`)
+    const article = entries.find(entry => entry.name === name)
+    assert.ok(article)
+    assert.match(article.source, /^draft:\s*false\s*$/m)
+  }
 })
 
 test('published article preserves homepage metadata and contains exactly 24 laws', async () => {
