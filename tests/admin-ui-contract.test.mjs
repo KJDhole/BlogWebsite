@@ -39,6 +39,8 @@ test('browser API wrapper always sends credentialed requests and preview sanitiz
     assert.match(editor, new RegExp(preserved))
   }
   assert.match(editor, /Open PR/)
+  assert.match(editor, /const fallbackSlug =/)
+  assert.match(editor, /status\.state === 'published'[\s\S]*setPendingMode\(false\)/)
 })
 
 test('static admin route uses URLSearchParams slug and contains no server secret names', async () => {

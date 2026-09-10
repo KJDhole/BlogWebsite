@@ -61,6 +61,7 @@ let currentSlug: string | null = null
 let isNew = root.dataset.mode === 'new'
 let slugTouched = !isNew
 let pollTimer: number | null = null
+const fallbackSlug = `post-${Date.now().toString(36)}`
 
 function today() {
   const now = new Date()
@@ -74,7 +75,7 @@ function slugify(value: string) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 120)
-  return slug || `post-${Date.now().toString(36)}`
+  return slug || fallbackSlug
 }
 
 function collectArticle(): Article {
@@ -224,8 +225,9 @@ function applyPublishStatus(status: PublishStatus) {
     setPendingMode(true)
     stopPolling()
   } else if (status.state === 'published') {
+    sourceSha = 'published'
+    setPendingMode(false)
     setPublishMessage('Published.')
-    stopPolling()
     if (currentSlug) {
       publicLink.href = `/writing/${encodeURIComponent(currentSlug)}/`
       publicLink.classList.remove('is-hidden')

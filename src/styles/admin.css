@@ -77,6 +77,7 @@
 }
 .admin-primary-button:disabled,
 .admin-ghost-button:disabled { opacity: .45; cursor: not-allowed; }
+[data-preview-toggle] { display: none; }
 .is-hidden { display: none !important; }
 
 .login-card {
@@ -255,6 +256,7 @@
   .admin-heading { padding-top: 34px; }
   .editor-toolbar { align-items: flex-start; padding: 14px 0; flex-direction: column; }
   .editor-actions { flex-wrap: wrap; }
+  [data-preview-toggle] { display: inline-flex; }
   .editor-meta-grid { grid-template-columns: 1fr 1fr; }
   .admin-field-wide, .admin-field-title { grid-column: span 2; }
   .editor-columns { display: block; min-height: 0; }
