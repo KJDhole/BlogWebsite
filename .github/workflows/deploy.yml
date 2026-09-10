@@ -22,7 +22,22 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout public website code
+        uses: actions/checkout@v4
+
+      - name: Checkout private article content
+        uses: actions/checkout@v4
+        with:
+          repository: KJDhole/Blog
+          token: ${{ secrets.BLOG_CONTENT_TOKEN }}
+          path: .blog-content
+
+      - name: Overlay private articles
+        run: |
+          rm -rf src/content/posts
+          mkdir -p src/content/posts
+          cp -a .blog-content/posts/. src/content/posts/
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
