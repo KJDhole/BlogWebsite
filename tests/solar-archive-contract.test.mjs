@@ -122,3 +122,23 @@ test('dual-world motion keeps explicit mobile, reduced-motion, and renderer guar
   assert.match(scene, /ResizeObserver/)
   assert.match(scene, /renderer\.dispose\(\)/)
 })
+
+test('homepage exposes one shared morphable DOM tree for Observatory and Solar', async () => {
+  const page = await read('../src/pages/index.astro')
+  assert.equal((page.match(/posts\.map/g) ?? []).length, 1)
+  assert.equal((page.match(/id="hero-title"/g) ?? []).length, 1)
+  assert.match(page, /data-world-morph="hero-title"/)
+  assert.match(page, /data-world-morph="hero-eyebrow"/)
+  assert.match(page, /data-world-morph="primary-nav"/)
+  assert.match(page, /data-world-morph="writing-heading"/)
+  assert.match(page, /data-scene-anchor="observatory"/)
+  assert.match(page, /data-scene-anchor="solar"/)
+  assert.doesNotMatch(page, /solar-homepage-copy|duplicate-solar-list/)
+})
+
+test('article rows expose stable morph identity without duplicating title content', async () => {
+  const row = await read('../src/components/ArticleRow.astro')
+  assert.match(row, /data-world-morph=/)
+  assert.match(row, /data-entry-index=/)
+  assert.equal((row.match(/class="article-title"/g) ?? []).length, 1)
+})
