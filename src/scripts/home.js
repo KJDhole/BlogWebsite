@@ -3,7 +3,9 @@ import { getCosmicPath, getCosmicPathD, sampleCosmicPath } from './cosmicPath.mj
 import { getScrollStoryState, getStoryScrollDistance } from './scrollStory.mjs'
 import { createSceneViewport } from './sceneViewport.mjs'
 import { createSpaceScene } from './spaceScene.mjs'
+import { createWorldMorph, getLayoutMorphProgress } from './worldMorph.mjs'
 
+const root = document.documentElement
 const state = { query: '', category: 'All' }
 const articleList = document.querySelector('#article-list')
 const searchInput = document.querySelector('#article-search')
@@ -32,6 +34,8 @@ let currentStory = getScrollStoryState(0, {
 let currentCosmicPath = null
 let spaceScene = null
 let sceneViewport = null
+let worldMorph = null
+let transitionActive = false
 let sceneMobile = mobileMedia.matches
 let sceneReduced = reducedMotion.matches
 let scrollStoryLayoutSettled = false
@@ -110,7 +114,7 @@ function settleScrollStoryLayout() {
     controls.style.transition = 'none'
     controls.classList.add('is-visible')
     controls.style.opacity = '1'
-    controls.style.transform = 'none'
+    controls.style.removeProperty('transform')
   }
 }
 
@@ -147,7 +151,13 @@ function createViewportController() {
       return document.querySelector(`[data-scene-anchor="${world}"]`)?.getBoundingClientRect()
     }
   })
-  sceneViewport.setWorld(document.documentElement.dataset.world || 'solar')
+  sceneViewport.setWorld(root.dataset.world || 'solar')
+}
+
+function createMorphController() {
+  worldMorph?.destroy()
+  worldMorph = createWorldMorph(root, { reducedMotion: sceneReduced })
+  worldMorph.refresh()
 }
 
 function initializeSpaceScene() {
@@ -155,11 +165,12 @@ function initializeSpaceScene() {
   sceneMobile = mobileMedia.matches
   sceneReduced = reducedMotion.matches
   spaceSceneNode?.classList.remove('is-fallback')
+  createMorphController()
   createViewportController()
   spaceScene = createSpaceScene(spaceCanvas, {
     mobile: sceneMobile,
     reducedMotion: sceneReduced,
-    theme: document.documentElement.dataset.theme || 'light',
+    theme: root.dataset.theme || 'light',
     onUnavailable() {
       spaceSceneNode?.classList.add('is-fallback')
     }
@@ -168,17 +179,46 @@ function initializeSpaceScene() {
   spaceScene.resize()
 }
 
+window.addEventListener('glenn:worldtransitionstart', event => {
+  const detail = event.detail ?? {}
+  transitionActive = true
+  sceneViewport?.beginTransition?.(detail.fromWorld)
+  worldMorph?.prepare?.(detail.toWorld)
+  sceneViewport?.captureTarget?.(detail.toWorld)
+  worldMorph?.setProgress?.(getLayoutMorphProgress(detail.elapsedMs ?? 0, detail.direction))
+  sceneViewport?.setTransition?.(detail)
+  spaceScene?.resize?.()
+  spaceScene?.setWorldTransition?.(detail)
+})
+
 window.addEventListener('glenn:worldchange', event => {
   const { world, theme } = event.detail ?? {}
+  spaceScene?.setTheme?.(theme)
+  if (transitionActive) return
   sceneViewport?.setWorld?.(world)
   spaceScene?.setWorld?.(world)
-  spaceScene?.setTheme?.(theme)
+  worldMorph?.refresh?.()
 })
 
 window.addEventListener('glenn:worldtransition', event => {
-  sceneViewport?.setTransition?.(event.detail)
+  const detail = event.detail ?? {}
+  if (transitionActive) {
+    worldMorph?.setProgress?.(getLayoutMorphProgress(detail.elapsedMs ?? 0, detail.direction))
+  }
+  sceneViewport?.setTransition?.(detail)
   spaceScene?.resize?.()
-  spaceScene?.setWorldTransition?.(event.detail)
+  spaceScene?.setWorldTransition?.(detail)
+})
+
+window.addEventListener('glenn:worldtransitionend', event => {
+  const detail = event.detail ?? {}
+  worldMorph?.setProgress?.(1)
+  worldMorph?.finish?.()
+  sceneViewport?.finishTransition?.(detail.toWorld)
+  spaceScene?.setWorld?.(detail.toWorld)
+  spaceScene?.setTheme?.(detail.theme)
+  spaceScene?.resize?.()
+  transitionActive = false
 })
 
 window.addEventListener('scroll', scheduleScrollStory, { passive: true })
@@ -279,6 +319,7 @@ function handleViewportChange() {
   const qualityChanged = sceneMobile !== mobileMedia.matches || sceneReduced !== reducedMotion.matches
   if (qualityChanged) initializeSpaceScene()
   else {
+    if (!transitionActive) worldMorph?.refresh?.()
     sceneViewport?.refresh()
     spaceScene?.resize()
   }
