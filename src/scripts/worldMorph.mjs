@@ -11,11 +11,10 @@ export function createFlipDelta(fromRect, toRect) {
 }
 
 export function createAspectSafeFlipDelta(delta) {
-  const uniformScale = Math.sqrt(Math.max(0.0001, delta.scaleX * delta.scaleY))
   return {
     ...delta,
-    scaleX: uniformScale,
-    scaleY: uniformScale
+    scaleX: 1,
+    scaleY: 1
   }
 }
 
