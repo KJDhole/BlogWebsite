@@ -30,7 +30,7 @@ test('theme controller always uses the toggle center instead of pointer coordina
   assert.match(controller, /glenn:worldchange/)
   assert.match(controller, /Math\.hypot/)
   assert.match(controller, /1500/)
-  assert.match(controller, /450/)
+  assert.match(controller, /520/)
 })
 
 test('Solar reveal is a transparent toggle-origin radiation field, not a detached black or white wipe', async () => {
@@ -50,15 +50,15 @@ test('Solar reveal is a transparent toggle-origin radiation field, not a detache
   assert.doesNotMatch(css, /background:\s*white\s*;/i)
 })
 
-test('reverse Observatory wave keeps the destination visible through wave and reveal', async () => {
+test('reverse Observatory wave keeps the destination visible through radiation and arrival', async () => {
   const transitionCss = await read('../src/styles/world-transition.css')
   assert.match(
     transitionCss,
-    /\.theme-transition\[data-direction=['"]to-observatory['"]\]\[data-phase=['"]solar-wave['"]\]\s+\.theme-solar-wave/
+    /\.theme-transition\[data-direction=['"]to-observatory['"]\]\[data-phase=['"]radiation['"]\]\s+\.theme-solar-wave/
   )
   assert.match(
     transitionCss,
-    /\.theme-transition\[data-direction=['"]to-observatory['"]\]\[data-phase=['"]solar-reveal['"]\]\s+\.theme-solar-wave/
+    /\.theme-transition\[data-direction=['"]to-observatory['"]\]\[data-phase=['"]solar-arrival['"]\]\s+\.theme-solar-wave/
   )
 })
 
