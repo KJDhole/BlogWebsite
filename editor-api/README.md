@@ -55,8 +55,9 @@ Minimum repository permissions:
 
 - Contents: read/write
 - Pull requests: read/write
-- Checks: read
-- Commit statuses: read when required by the repository's CI/status configuration
+- Actions: read
+
+Metadata read access is added by GitHub automatically. The editor reads CI state from the GitHub Actions workflow-runs API; it does not require the Checks permission, which is not currently configurable for fine-grained PATs.
 
 Never put the PAT, password hash, raw password, or session secret in GitHub Pages, `PUBLIC_*` variables, browser JavaScript, or committed files.
 

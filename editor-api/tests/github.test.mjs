@@ -60,16 +60,19 @@ test('creates branch, writes content, and opens pull request', async () => {
   assert.deepEqual(JSON.parse(calls[0].options.body), { ref: 'refs/heads/content/editor-a', sha: 'base-sha' })
 })
 
-test('check summary is pending, failure, or success from check runs', async () => {
-  const pending = makeClient(() => jsonResponse({ check_runs: [{ name: 'CI', status: 'in_progress', conclusion: null }] })).client
-  assert.equal((await pending.getCheckSummary('sha')).state, 'pending')
+test('check summary is pending, failure, or success from GitHub Actions workflow runs', async () => {
+  const pendingFixture = makeClient((url) => {
+    assert.match(url, /\/actions\/runs\?head_sha=sha&event=pull_request&per_page=100$/)
+    return jsonResponse({ workflow_runs: [{ name: 'CI', status: 'in_progress', conclusion: null }] })
+  })
+  assert.equal((await pendingFixture.client.getCheckSummary('sha')).state, 'pending')
 
-  const failed = makeClient(() => jsonResponse({ check_runs: [{ name: 'CI', status: 'completed', conclusion: 'failure' }] })).client
+  const failed = makeClient(() => jsonResponse({ workflow_runs: [{ name: 'CI', status: 'completed', conclusion: 'failure' }] })).client
   assert.equal((await failed.getCheckSummary('sha')).state, 'failure')
 
-  const success = makeClient(() => jsonResponse({ check_runs: [
+  const success = makeClient(() => jsonResponse({ workflow_runs: [
     { name: 'CI', status: 'completed', conclusion: 'success' },
-    { name: 'Lint', status: 'completed', conclusion: 'neutral' }
+    { name: 'Deliver QA', status: 'completed', conclusion: 'neutral' }
   ] })).client
   assert.equal((await success.getCheckSummary('sha')).state, 'success')
 })
