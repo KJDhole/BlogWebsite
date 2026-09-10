@@ -3,6 +3,8 @@ import { getCosmicPath, getCosmicPathD, sampleCosmicPath } from './cosmicPath.mj
 import { getScrollStoryState, getStoryScrollDistance } from './scrollStory.mjs'
 import { createSceneViewport } from './sceneViewport.mjs'
 import { createSpaceScene } from './spaceScene.mjs'
+import { createWorldMorph } from './worldMorph.mjs'
+import { getMorphProgress, getIndexProgress } from './themeWorld.mjs'
 
 const state = { query: '', category: 'All' }
 const articleList = document.querySelector('#article-list')
@@ -33,6 +35,8 @@ let currentStory = getScrollStoryState(0, {
 let currentCosmicPath = null
 let spaceScene = null
 let sceneViewport = null
+let worldMorph = null
+let worldMorphPrepared = false
 let sceneMobile = mobileMedia.matches
 let sceneReduced = reducedMotion.matches
 let scrollStoryLayoutSettled = false
@@ -179,6 +183,19 @@ function initializeSceneViewport() {
   sceneViewport.setWorld(document.documentElement.dataset.world || 'solar')
 }
 
+function initializeWorldMorph() {
+  worldMorph?.destroy()
+  worldMorph = createWorldMorph(document.documentElement, {
+    reducedMotion: reducedMotion.matches
+  })
+  worldMorphPrepared = false
+}
+
+window.addEventListener('glenn:worldtransitionstart', () => {
+  worldMorph?.finish()
+  worldMorphPrepared = false
+})
+
 window.addEventListener('glenn:worldchange', event => {
   const { world, theme } = event.detail ?? {}
   sceneViewport?.setWorld?.(world)
@@ -187,8 +204,29 @@ window.addEventListener('glenn:worldchange', event => {
 })
 
 window.addEventListener('glenn:worldtransition', event => {
-  sceneViewport?.setTransition?.(event.detail)
-  spaceScene?.setWorldTransition?.(event.detail)
+  const detail = event.detail ?? {}
+  const elapsedMs = Number.isFinite(detail.elapsedMs) ? detail.elapsedMs : (detail.progress ?? 0) * 1500
+
+  if (!worldMorphPrepared && elapsedMs >= 300) {
+    worldMorph?.prepare(detail.toWorld)
+    worldMorphPrepared = true
+  }
+  if (worldMorphPrepared) {
+    worldMorph?.setProgress(getMorphProgress(elapsedMs), {
+      articleProgress: getIndexProgress(elapsedMs)
+    })
+  }
+
+  sceneViewport?.setTransition?.(detail)
+  spaceScene?.setWorldTransition?.(detail)
+})
+
+window.addEventListener('glenn:worldtransitionend', event => {
+  worldMorph?.finish()
+  worldMorphPrepared = false
+  const world = event.detail?.toWorld || document.documentElement.dataset.world || 'solar'
+  document.documentElement.dataset.layoutWorld = world
+  sceneViewport?.setWorld?.(world)
 })
 
 window.addEventListener('scroll', scheduleScrollStory, { passive: true })
@@ -290,8 +328,10 @@ function handleViewportChange() {
   if (qualityChanged) {
     initializeSpaceScene()
     initializeSceneViewport()
+    initializeWorldMorph()
   } else {
     sceneViewport?.refresh()
+    worldMorph?.refresh()
     spaceScene?.resize()
   }
 
@@ -305,6 +345,7 @@ window.addEventListener('resize', handleViewportChange)
 mobileMedia.addEventListener?.('change', handleViewportChange)
 reducedMotion.addEventListener?.('change', handleViewportChange)
 window.addEventListener('pagehide', () => {
+  worldMorph?.destroy()
   sceneViewport?.destroy()
   spaceScene?.destroy()
 })
@@ -315,5 +356,6 @@ requestAnimationFrame(() => {
   refreshCosmicGeometry()
   initializeSpaceScene()
   initializeSceneViewport()
+  initializeWorldMorph()
   updateScrollStory()
 })
