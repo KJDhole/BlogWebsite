@@ -157,6 +157,20 @@ html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival
   opacity: var(--world-phase-progress, 0);
 }
 
+/* solar.css intentionally gives the stable Solar caption !important opacity. Override it during motion. */
+html[data-world-transitioning='true'][data-world-transition-phase='convergence'] .orbit-caption {
+  opacity: calc(1 - var(--world-phase-progress, 0)) !important;
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='layout-release'] .orbit-caption,
+html[data-world-transitioning='true'][data-world-transition-phase='radiation'] .orbit-caption {
+  opacity: 0 !important;
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival'] .orbit-caption {
+  opacity: var(--world-phase-progress, 0) !important;
+}
+
 /* Reverse direction keeps the Solar publication typography until Observatory arrival. */
 html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='layout-release'] #hero-title,
 html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='radiation'] #hero-title {
