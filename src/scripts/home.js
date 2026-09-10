@@ -1,6 +1,7 @@
 import { filterArticleMetadata } from './filterArticles.mjs'
 import { getCosmicPath, getCosmicPathD, sampleCosmicPath } from './cosmicPath.mjs'
 import { getScrollStoryState, getStoryScrollDistance } from './scrollStory.mjs'
+import { createSceneViewport } from './sceneViewport.mjs'
 import { createSpaceScene } from './spaceScene.mjs'
 
 const state = { query: '', category: 'All' }
@@ -13,6 +14,7 @@ const emptyState = document.querySelector('#empty-state')
 const clearFilters = document.querySelector('#clear-filters')
 const hero = document.querySelector('.hero')
 const controls = document.querySelector('.controls')
+const orbitWrap = document.querySelector('.orbit-wrap')
 const orbitCaption = document.querySelector('.orbit-caption')
 const spaceSceneNode = document.querySelector('[data-space-scene]')
 const spaceCanvas = document.querySelector('[data-space-canvas]')
@@ -30,6 +32,7 @@ let currentStory = getScrollStoryState(0, {
 })
 let currentCosmicPath = null
 let spaceScene = null
+let sceneViewport = null
 let sceneMobile = mobileMedia.matches
 let sceneReduced = reducedMotion.matches
 let scrollStoryLayoutSettled = false
@@ -37,6 +40,15 @@ let storyScrollFrame = 0
 
 function clamp01(value) {
   return Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
+}
+
+function getSceneAnchor(world) {
+  const anchor = document.querySelector(`[data-scene-anchor="${world}"]`)
+  if (anchor) {
+    const rect = anchor.getBoundingClientRect()
+    if (rect.width > 1 && rect.height > 1) return anchor
+  }
+  return orbitWrap
 }
 
 function refreshCosmicGeometry() {
@@ -121,6 +133,7 @@ function updateScrollStory() {
   if (currentStory.progress > 0.12) settleScrollStoryLayout()
   spaceScene?.setStoryState(currentStory)
   paintCosmicForeground()
+  sceneViewport?.refresh()
 
   if (orbitCaption) {
     orbitCaption.style.opacity = reducedMotion.matches
@@ -151,15 +164,30 @@ function initializeSpaceScene() {
     }
   })
   spaceScene.setStoryState(currentStory)
+  sceneViewport?.refresh()
+}
+
+function initializeSceneViewport() {
+  sceneViewport?.destroy()
+  sceneViewport = createSceneViewport(spaceSceneNode, {
+    reducedMotion: reducedMotion.matches,
+    getAnchor: getSceneAnchor,
+    onResize() {
+      spaceScene?.resize()
+    }
+  })
+  sceneViewport.setWorld(document.documentElement.dataset.world || 'solar')
 }
 
 window.addEventListener('glenn:worldchange', event => {
   const { world, theme } = event.detail ?? {}
+  sceneViewport?.setWorld?.(world)
   spaceScene?.setWorld?.(world)
   spaceScene?.setTheme?.(theme)
 })
 
 window.addEventListener('glenn:worldtransition', event => {
+  sceneViewport?.setTransition?.(event.detail)
   spaceScene?.setWorldTransition?.(event.detail)
 })
 
@@ -259,8 +287,13 @@ document.querySelectorAll('.reveal-block').forEach(node => observer.observe(node
 
 function handleViewportChange() {
   const qualityChanged = sceneMobile !== mobileMedia.matches || sceneReduced !== reducedMotion.matches
-  if (qualityChanged) initializeSpaceScene()
-  else spaceScene?.resize()
+  if (qualityChanged) {
+    initializeSpaceScene()
+    initializeSceneViewport()
+  } else {
+    sceneViewport?.refresh()
+    spaceScene?.resize()
+  }
 
   refreshCosmicGeometry()
   const active = document.querySelector('.filter-button.is-active')
@@ -271,11 +304,16 @@ function handleViewportChange() {
 window.addEventListener('resize', handleViewportChange)
 mobileMedia.addEventListener?.('change', handleViewportChange)
 reducedMotion.addEventListener?.('change', handleViewportChange)
+window.addEventListener('pagehide', () => {
+  sceneViewport?.destroy()
+  spaceScene?.destroy()
+})
 
 renderArticles()
 requestAnimationFrame(() => {
   moveIndicator(document.querySelector('.filter-button.is-active'))
   refreshCosmicGeometry()
   initializeSpaceScene()
+  initializeSceneViewport()
   updateScrollStory()
 })
