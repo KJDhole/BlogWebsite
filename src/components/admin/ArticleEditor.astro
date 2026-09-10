@@ -1,0 +1,73 @@
+---
+const { mode = 'new' } = Astro.props
+---
+<section class="editor-workbench" data-article-editor data-mode={mode}>
+  <div class="editor-toolbar">
+    <div class="editor-state">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span data-save-state>Not saved</span>
+    </div>
+    <div class="editor-actions">
+      <a class="admin-ghost-button is-hidden" data-public-link target="_blank" rel="noreferrer">View online</a>
+      <button class="admin-ghost-button" type="button" data-preview-toggle>Preview</button>
+      <button class="admin-ghost-button" type="button" data-save-draft>Save Draft</button>
+      <button class="admin-primary-button" type="button" data-submit-publish>Submit Publish</button>
+      <button class="admin-primary-button is-hidden" type="button" data-merge-publish disabled>Merge &amp; Publish</button>
+    </div>
+  </div>
+
+  <div class="editor-meta-grid">
+    <label class="admin-field admin-field-title">
+      <span>Title</span>
+      <input name="title" autocomplete="off" placeholder="Article title" />
+    </label>
+    <label class="admin-field">
+      <span>Slug</span>
+      <input name="slug" autocomplete="off" placeholder="article-slug" />
+    </label>
+    <label class="admin-field admin-field-wide">
+      <span>Description</span>
+      <textarea name="description" rows="2" placeholder="One clear sentence about this article"></textarea>
+    </label>
+    <label class="admin-field">
+      <span>Date</span>
+      <input name="date" type="date" />
+    </label>
+    <label class="admin-field">
+      <span>Category</span>
+      <select name="category">
+        <option value="">Choose</option>
+        <option value="AI">AI</option>
+        <option value="Agent">Agent</option>
+        <option value="Development">Development</option>
+        <option value="Product">Product</option>
+        <option value="Thinking">Thinking</option>
+      </select>
+    </label>
+    <label class="admin-field admin-field-wide">
+      <span>Tags</span>
+      <input name="tags" autocomplete="off" placeholder="AI, Agent, Architecture" />
+    </label>
+    <label class="admin-field admin-field-wide">
+      <span>Cover</span>
+      <input name="cover" autocomplete="off" placeholder="/images/posts/.../cover.webp" />
+    </label>
+  </div>
+
+  <div class="editor-error is-hidden" role="alert" data-editor-error></div>
+  <div class="editor-publish-state is-hidden" data-publish-state></div>
+
+  <div class="editor-columns" data-editor-columns>
+    <section class="editor-pane editor-pane-input" aria-label="Markdown editor">
+      <div class="pane-label"><span>MARKDOWN</span><span data-word-count>0 words</span></div>
+      <textarea class="markdown-input" name="body" spellcheck="true" placeholder="Start writing..."></textarea>
+    </section>
+    <section class="editor-pane editor-pane-preview" aria-label="Article preview" data-preview-pane>
+      <div class="pane-label"><span>PREVIEW</span><span>Sanitized</span></div>
+      <article class="markdown-preview" data-markdown-preview></article>
+    </section>
+  </div>
+</section>
+<script>
+  import '../../scripts/admin/editor'
+</script>

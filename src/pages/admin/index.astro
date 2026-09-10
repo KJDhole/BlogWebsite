@@ -1,0 +1,13 @@
+---
+import AdminShell from '../../components/admin/AdminShell.astro'
+---
+<AdminShell title="Articles" subtitle="Published Markdown and private drafts in one place.">
+  <div class="dashboard-toolbar">
+    <span data-dashboard-state>Loading articles…</span>
+    <a class="admin-primary-button" href="/admin/new/">New Article</a>
+  </div>
+  <section class="article-admin-list" data-article-list aria-live="polite"></section>
+</AdminShell>
+<script>
+  import '../../scripts/admin/dashboard'
+</script>
