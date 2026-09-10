@@ -128,28 +128,32 @@ html[data-world-transitioning='true'][data-world-transition-direction='to-solar'
 html[data-world-transitioning='true'][data-world-transition-phase='convergence'] .hero-intro,
 html[data-world-transitioning='true'][data-world-transition-phase='convergence'] .folio-note,
 html[data-world-transitioning='true'][data-world-transition-phase='convergence'] .social-row,
-html[data-world-transitioning='true'][data-world-transition-phase='convergence'] .solar-observation-meta {
+html[data-world-transitioning='true'][data-world-transition-phase='convergence'] .solar-observation-meta,
+html[data-world-transitioning='true'][data-world-transition-phase='convergence'] .orbit-caption {
   opacity: calc(1 - var(--world-phase-progress, 0));
 }
 
 html[data-world-transitioning='true'][data-world-transition-phase='layout-release'] .hero-intro,
 html[data-world-transitioning='true'][data-world-transition-phase='layout-release'] .folio-note,
 html[data-world-transitioning='true'][data-world-transition-phase='layout-release'] .social-row,
-html[data-world-transitioning='true'][data-world-transition-phase='layout-release'] .solar-observation-meta {
+html[data-world-transitioning='true'][data-world-transition-phase='layout-release'] .solar-observation-meta,
+html[data-world-transitioning='true'][data-world-transition-phase='layout-release'] .orbit-caption {
   opacity: 0;
 }
 
 html[data-world-transitioning='true'][data-world-transition-phase='radiation'] .hero-intro,
 html[data-world-transitioning='true'][data-world-transition-phase='radiation'] .folio-note,
 html[data-world-transitioning='true'][data-world-transition-phase='radiation'] .social-row,
-html[data-world-transitioning='true'][data-world-transition-phase='radiation'] .solar-observation-meta {
+html[data-world-transitioning='true'][data-world-transition-phase='radiation'] .solar-observation-meta,
+html[data-world-transitioning='true'][data-world-transition-phase='radiation'] .orbit-caption {
   opacity: 0;
 }
 
 html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival'] .hero-intro,
 html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival'] .folio-note,
 html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival'] .social-row,
-html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival'] .solar-observation-meta {
+html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival'] .solar-observation-meta,
+html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival'] .orbit-caption {
   opacity: var(--world-phase-progress, 0);
 }
 
