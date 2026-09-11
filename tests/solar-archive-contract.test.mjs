@@ -4,13 +4,13 @@ import { readFile } from 'node:fs/promises'
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8')
 
-test('BaseLayout mounts one global transition surface without detached eclipse objects', async () => {
+test('BaseLayout mounts one global transition controller without a custom full-screen wipe', async () => {
   const layout = await read('../src/layouts/BaseLayout.astro')
   const transition = await read('../src/components/ThemeTransition.astro')
   assert.match(layout, /ThemeTransition/)
-  assert.match(transition, /data-solar-wave/)
   assert.match(transition, /world-transition\.css/)
   assert.match(transition, /Two modes of the same mind\./)
+  assert.doesNotMatch(transition, /data-solar-wave/)
   assert.doesNotMatch(transition, /data-eclipse-core/)
   assert.doesNotMatch(transition, /data-corona/)
 })
@@ -22,47 +22,42 @@ test('theme controller always uses the toggle center instead of pointer coordina
   assert.match(controller, /rect\.top\s*\+\s*rect\.height\s*\/\s*2/)
   assert.doesNotMatch(controller, /clientX|clientY/)
   assert.match(controller, /toggleRadius/)
-  assert.match(controller, /--world-toggle-radius/)
-  assert.match(controller, /--world-wave-start-scale/)
+  assert.match(controller, /--world-origin-x/)
+  assert.match(controller, /--world-origin-y/)
+  assert.doesNotMatch(controller, /--world-wave-radius/)
+  assert.doesNotMatch(controller, /--world-wave-start-scale/)
   assert.match(controller, /startViewTransition/)
   assert.match(controller, /prefers-reduced-motion/)
   assert.match(controller, /glenn:worldtransition/)
   assert.match(controller, /glenn:worldchange/)
-  assert.match(controller, /Math\.hypot/)
   assert.match(controller, /1500/)
   assert.match(controller, /520/)
 })
 
-test('Solar reveal is a transparent toggle-origin radiation field, not a detached black or white wipe', async () => {
-  const solarCss = await read('../src/styles/solar.css')
-  const transitionCss = await read('../src/styles/world-transition.css')
-  const css = `${solarCss}\n${transitionCss}`
+test('world blend uses official Three.js transition and bloom addons instead of a CSS radial wipe', async () => {
+  const [transitionCss, adapter, scene] = await Promise.all([
+    read('../src/styles/world-transition.css'),
+    read('../src/scripts/officialWorldTransition.mjs'),
+    read('../src/scripts/spaceScene.mjs')
+  ])
+
   assert.match(transitionCss, /\.theme-toggle::after/)
-  assert.match(transitionCss, /\.theme-solar-wave/)
-  assert.match(css, /--world-origin-x/)
-  assert.match(css, /--world-origin-y/)
-  assert.match(css, /--world-wave-radius/)
-  assert.match(transitionCss, /--world-wave-start-scale/)
-  assert.match(transitionCss, /radial-gradient\(circle,\s*transparent\s+0\s+6[5-9]%/)
+  assert.doesNotMatch(transitionCss, /\.theme-solar-wave/)
+  assert.doesNotMatch(transitionCss, /--world-wave-radius/)
+  assert.match(adapter, /RenderTransitionPass/)
+  assert.match(adapter, /UnrealBloomPass/)
+  assert.match(scene, /direction === ['"]to-solar['"] \? 1 - progress : progress/)
   assert.doesNotMatch(transitionCss, /theme-eclipse-core/)
-  assert.doesNotMatch(transitionCss, /scale\(\.001\)/)
-  assert.doesNotMatch(transitionCss, /rgba\(244,\s*240,\s*230,\s*\.98\)\s*0\s*76%/)
-  assert.doesNotMatch(css, /background:\s*white\s*;/i)
+  assert.doesNotMatch(transitionCss, /background:\s*white\s*;/i)
 })
 
-test('reverse Observatory wave keeps the destination visible through radiation and arrival', async () => {
-  const transitionCss = await read('../src/styles/world-transition.css')
-  assert.match(
-    transitionCss,
-    /\.theme-transition\[data-direction=['"]to-observatory['"]\]\[data-phase=['"]radiation['"]\]\s+\.theme-solar-wave/
-  )
-  assert.match(
-    transitionCss,
-    /\.theme-transition\[data-direction=['"]to-observatory['"]\]\[data-phase=['"]solar-arrival['"]\]\s+\.theme-solar-wave/
-  )
+test('reverse Observatory transition is driven by the official pass ratio', async () => {
+  const scene = await read('../src/scripts/spaceScene.mjs')
+  assert.match(scene, /direction === ['"]to-solar['"] \? 1 - progress : progress/)
+  assert.match(scene, /officialTransition\.setTransition\(transitionRatio\)/)
 })
 
-test('reduced motion bypasses the signature wave while preserving the world swap', async () => {
+test('reduced motion bypasses the signature transition while preserving the world swap', async () => {
   const controller = await read('../src/scripts/themeController.js')
   assert.match(controller, /reducedMotion\.matches/)
   assert.match(controller, /applyWorld/)
