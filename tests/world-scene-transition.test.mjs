@@ -16,6 +16,18 @@ test('official scene transition maps both directions onto RenderTransitionPass m
   assert.equal(getOfficialTransitionMix('to-observatory', -1), 1)
 })
 
+test('official scene mixing waits until the canvas is full-stage, then completes before settle', async () => {
+  const { getOfficialSceneMixProgress } = await import(moduleUrl.href)
+
+  assert.equal(getOfficialSceneMixProgress(0), 0)
+  assert.equal(getOfficialSceneMixProgress(520), 0)
+  assert.equal(getOfficialSceneMixProgress(649), 0)
+  assert.equal(getOfficialSceneMixProgress(650), 0)
+  assert.equal(getOfficialSceneMixProgress(800), 0.5)
+  assert.equal(getOfficialSceneMixProgress(950), 1)
+  assert.equal(getOfficialSceneMixProgress(1500), 1)
+})
+
 test('world scene transition composes official Three.js post-processing addons', async () => {
   const source = await read('../src/scripts/worldSceneTransition.mjs')
 
