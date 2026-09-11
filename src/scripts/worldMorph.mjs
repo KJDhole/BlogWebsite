@@ -1,5 +1,6 @@
 const clamp01 = value => Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
 const normalizeZero = value => value === 0 ? 0 : value
+const PHYSICAL_MORPH_KEYS = new Set(['scene-stage', 'world-toggle'])
 
 export function createFlipDelta(fromRect, toRect) {
   return {
@@ -89,6 +90,7 @@ export function createWorldMorph(root, { reducedMotion = false } = {}) {
 
     for (const node of nodes) {
       const key = node.dataset.worldMorph
+      if (!PHYSICAL_MORPH_KEYS.has(key)) continue
       const fromRect = source.get(key)
       const toRect = destination.get(key)
       if (!fromRect || !toRect) continue
