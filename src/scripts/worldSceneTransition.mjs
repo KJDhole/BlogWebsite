@@ -5,10 +5,17 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 
 const clamp01 = value => Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
+const SCENE_MIX_START_MS = 650
+const SCENE_MIX_END_MS = 950
 
 export function getOfficialTransitionMix(direction, progress = 0) {
   const p = clamp01(progress)
   return direction === 'to-observatory' ? 1 - p : p
+}
+
+export function getOfficialSceneMixProgress(elapsedMs = 0) {
+  const elapsed = Number.isFinite(elapsedMs) ? elapsedMs : 0
+  return clamp01((elapsed - SCENE_MIX_START_MS) / (SCENE_MIX_END_MS - SCENE_MIX_START_MS))
 }
 
 function createRadialMaskTexture(renderer, detail = {}) {
@@ -136,12 +143,13 @@ export function createWorldSceneTransition(renderer, {
 
     currentDirection = direction
     currentProgress = clamp01(detail.progress ?? 0)
-    active = currentProgress < 0.9999
-    updateMask(detail)
+    active = currentProgress > 0.0001 && currentProgress < 0.9999
+
     transitionPass.setTransition(getOfficialTransitionMix(direction, currentProgress))
+    if (active) updateMask(detail)
 
     const peak = Math.sin(Math.PI * currentProgress)
-    bloomPass.strength = (mobile ? 0.08 : 0.12) * Math.max(0, peak)
+    bloomPass.strength = active ? (mobile ? 0.08 : 0.12) * Math.max(0, peak) : 0
   }
 
   function setSize(width, height) {
