@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { createStarField } from './starField.mjs'
 import { createCosmicField } from './cosmicField.mjs'
 import { createSolarField } from './solarField.mjs'
+import { createWorldSceneTransition } from './worldSceneTransition.mjs'
 
 function clamp01(value) {
   return Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
@@ -47,18 +48,30 @@ export function createSpaceScene(canvas, {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.2 : 1.65))
   renderer.setClearColor(0x000000, 0)
 
-  const scene = new THREE.Scene()
+  const observatoryScene = new THREE.Scene()
+  const solarScene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(43, 1, 0.1, 70)
   camera.position.set(0.08, 0.2, 8.25)
   camera.lookAt(0, 0, 0)
 
-  // All visual worlds are instantiated once and share this renderer/context.
-  const stars = createStarField(scene, { mobile, reducedMotion })
-  const cosmicField = createCosmicField(scene, { mobile })
-  const solarField = createSolarField(scene, { mobile, reducedMotion })
+  // One renderer/context, two stable visual worlds. The official transition pass mixes them only during a switch.
+  const stars = createStarField(observatoryScene, { mobile, reducedMotion })
+  const cosmicField = createCosmicField(observatoryScene, { mobile })
+  const solarField = createSolarField(solarScene, { mobile, reducedMotion })
+  const worldTransition = createWorldSceneTransition(renderer, {
+    observatoryScene,
+    solarScene,
+    camera,
+    mobile
+  })
   const targetNdc = new THREE.Vector3()
   const targetWorld = new THREE.Vector3()
   const targetDirection = new THREE.Vector3()
+
+  // Each scene is now self-contained and always renders its full stable appearance.
+  stars.setWorldMix?.(0)
+  cosmicField.group.visible = true
+  solarField.setWorldMix?.(1)
 
   let currentStory = {
     field: { energy: 0.22, parallax: 0, drift: reducedMotion ? 0 : 0.35 },
@@ -74,13 +87,6 @@ export function createSpaceScene(canvas, {
   let lastFrame = performance.now()
   let elapsedSeconds = 0
 
-  function applyWorldMix(value, { updateStars = true } = {}) {
-    worldMix = clamp01(value)
-    if (updateStars) stars.setWorldMix(worldMix)
-    solarField.setWorldMix(worldMix)
-    cosmicField.group.visible = worldMix < 0.995
-  }
-
   function resize() {
     if (destroyed || !contextAvailable) return
     const parent = canvas.parentElement
@@ -90,6 +96,7 @@ export function createSpaceScene(canvas, {
     camera.aspect = width / height
     camera.updateProjectionMatrix()
     renderer.setSize(width, height, false)
+    worldTransition.setSize(width, height)
   }
 
   function getTransitionTarget(detail = {}) {
@@ -113,14 +120,15 @@ export function createSpaceScene(canvas, {
 
   function setTheme(nextTheme) {
     currentTheme = nextTheme === 'dark' ? 'dark' : 'light'
-    stars.setTheme(currentTheme)
-    cosmicField.setTheme(currentTheme)
-    solarField.setTheme(currentTheme)
+    // Separate scenes own separate personalities, so the destination can render correctly before the DOM theme swap.
+    stars.setTheme('dark')
+    cosmicField.setTheme('dark')
+    solarField.setTheme('light')
   }
 
   function setWorld(nextWorld) {
     currentWorld = nextWorld === 'observatory' ? 'observatory' : 'solar'
-    applyWorldMix(currentWorld === 'solar' ? 1 : 0)
+    worldMix = currentWorld === 'solar' ? 1 : 0
   }
 
   function setWorldTransition(detail = {}) {
@@ -133,14 +141,12 @@ export function createSpaceScene(canvas, {
       targetZ: 0
     })
 
-    if (detail.direction === 'to-solar') {
-      applyWorldMix(progress, { updateStars: false })
-    } else if (detail.direction === 'to-observatory') {
-      applyWorldMix(1 - progress, { updateStars: false })
-    } else if (detail.world) {
-      setWorld(detail.world)
-    }
-    solarField.setTransitionState(detail)
+    if (detail.direction === 'to-solar') worldMix = progress
+    else if (detail.direction === 'to-observatory') worldMix = 1 - progress
+    else if (detail.world) setWorld(detail.world)
+
+    // RenderTransitionPass now owns the visual crossfade. Solar stays a complete destination scene.
+    worldTransition.setTransition(detail)
   }
 
   function setStoryState(nextState) {
@@ -152,6 +158,7 @@ export function createSpaceScene(canvas, {
     return {
       world: currentWorld,
       worldMix,
+      transition: worldTransition.getDebugState?.() ?? null,
       stars: stars.getDebugState?.() ?? null
     }
   }
@@ -169,9 +176,12 @@ export function createSpaceScene(canvas, {
     elapsedSeconds += reducedMotion ? deltaSeconds * 0.03 : deltaSeconds
 
     stars.update(elapsedSeconds, currentStory)
-    if (cosmicField.group.visible) cosmicField.update(elapsedSeconds, currentStory)
+    cosmicField.update(elapsedSeconds, currentStory)
     solarField.update(elapsedSeconds, currentStory)
-    renderer.render(scene, camera)
+
+    if (!worldTransition.render(deltaSeconds)) {
+      renderer.render(currentWorld === 'solar' ? solarScene : observatoryScene, camera)
+    }
   }
 
   function handleVisibility() {
@@ -212,11 +222,13 @@ export function createSpaceScene(canvas, {
     canvas.removeEventListener('webglcontextlost', handleContextLost, false)
     if (resizeObserver) resizeObserver.disconnect()
     else window.removeEventListener('resize', resize)
+    worldTransition.destroy()
     stars.destroy()
     cosmicField.destroy()
     solarField.destroy()
     renderer.dispose()
-    scene.clear()
+    observatoryScene.clear()
+    solarScene.clear()
   }
 
   return {
