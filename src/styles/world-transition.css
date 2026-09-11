@@ -51,7 +51,7 @@ html[data-layout-world='solar'] .cosmic-hero {
   }
 }
 
-/* The toggle is the only ignition object. */
+/* Lightweight DOM feedback only. Bloom and scene blending belong to Three.js. */
 .theme-toggle::after {
   content: '';
   position: absolute;
@@ -103,98 +103,7 @@ html[data-world-transitioning='true'][data-world-transition-phase='settle'] .the
   opacity: 0;
 }
 
-/* Transparent radiation boundary; never an opaque wipe. */
-.theme-transition .theme-solar-wave {
-  position: absolute;
-  left: var(--world-origin-x);
-  top: var(--world-origin-y);
-  width: calc(var(--world-wave-radius) * 2);
-  height: calc(var(--world-wave-radius) * 2);
-  border-radius: 50%;
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(var(--world-wave-start-scale, .02));
-  will-change: transform, opacity;
-  background:
-    radial-gradient(circle,
-      transparent 0 66%,
-      rgba(244, 240, 230, .055) 70%,
-      rgba(198, 218, 236, .19) 74%,
-      rgba(91, 139, 202, .62) 77.8%,
-      rgba(255, 248, 220, .96) 80%,
-      rgba(214, 99, 61, .32) 81%,
-      rgba(255, 255, 255, .20) 82.5%,
-      transparent 86%),
-    conic-gradient(from 31deg,
-      transparent 0 12%,
-      rgba(255, 248, 220, .16) 12.2% 12.45%,
-      transparent 12.7% 46%,
-      rgba(113, 164, 220, .15) 46.15% 46.38%,
-      transparent 46.7% 73%,
-      rgba(214, 99, 61, .12) 73.15% 73.28%,
-      transparent 73.55% 100%);
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,.18),
-    0 0 58px rgba(93,137,196,.24),
-    inset 0 0 72px rgba(255,248,226,.08);
-}
-
-html .theme-transition[data-phase='ignition'] .theme-solar-wave,
-html .theme-transition[data-phase='convergence'] .theme-solar-wave,
-html .theme-transition[data-phase='layout-release'] .theme-solar-wave {
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(var(--world-wave-start-scale, .02));
-}
-
-html .theme-transition[data-phase='radiation'] .theme-solar-wave {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(var(--world-wave-scale, var(--world-wave-start-scale, .02)));
-}
-
-html .theme-transition[data-phase='solar-arrival'] .theme-solar-wave {
-  opacity: calc(1 - var(--world-phase-progress, 0) * .64);
-  transform: translate(-50%, -50%) scale(var(--world-wave-scale, 1));
-  filter: saturate(calc(1.12 - var(--world-phase-progress, 0) * .12));
-}
-
-html .theme-transition[data-phase='index-reconstruction'] .theme-solar-wave {
-  opacity: calc(.36 - var(--world-phase-progress, 0) * .24);
-  transform: translate(-50%, -50%) scale(var(--world-wave-scale, 1.012));
-}
-
-html .theme-transition[data-phase='settle'] .theme-solar-wave {
-  opacity: calc(.12 - var(--world-phase-progress, 0) * .12);
-  transform: translate(-50%, -50%) scale(var(--world-wave-scale, 1.017));
-}
-
-.theme-transition[data-direction='to-observatory'][data-phase='radiation'] .theme-solar-wave,
-.theme-transition[data-direction='to-observatory'][data-phase='solar-arrival'] .theme-solar-wave,
-.theme-transition[data-direction='to-observatory'][data-phase='index-reconstruction'] .theme-solar-wave,
-.theme-transition[data-direction='to-observatory'][data-phase='settle'] .theme-solar-wave {
-  background:
-    radial-gradient(circle,
-      transparent 0 66%,
-      rgba(8, 13, 26, .06) 70%,
-      rgba(66, 94, 151, .22) 74%,
-      rgba(111, 145, 207, .58) 77.8%,
-      rgba(238, 226, 190, .82) 80%,
-      rgba(27, 48, 88, .38) 81.2%,
-      rgba(6, 10, 22, .18) 82.5%,
-      transparent 86%),
-    conic-gradient(from 211deg,
-      transparent 0 18%,
-      rgba(137, 168, 224, .15) 18.15% 18.38%,
-      transparent 18.7% 57%,
-      rgba(236, 225, 190, .13) 57.1% 57.34%,
-      transparent 57.7% 82%,
-      rgba(84, 111, 171, .13) 82.1% 82.28%,
-      transparent 82.6% 100%);
-  box-shadow:
-    0 0 0 1px rgba(181, 205, 244, .14),
-    0 0 58px rgba(67, 99, 164, .24),
-    inset 0 0 72px rgba(13, 24, 49, .09);
-}
-
-/* Content exits before destination geometry is exposed. The page no longer drags text across the viewport. */
+/* Content exits before destination geometry is exposed. Typography never flies across the viewport. */
 html[data-world-transitioning='true'][data-world-transition-phase='convergence']
 :is(
   [data-world-morph='brand'],
@@ -268,43 +177,6 @@ html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival
   opacity: var(--world-phase-progress, 0);
   transform: translateY(calc((1 - var(--world-phase-progress, 0)) * 10px));
   will-change: opacity, transform;
-}
-
-/* Radiation owns the middle of the story, without becoming an opaque wipe. */
-.theme-transition[data-phase='radiation']::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at var(--world-origin-x) var(--world-origin-y),
-      rgba(255, 250, 232, .34) 0%,
-      rgba(166, 198, 230, .18) 18%,
-      rgba(244, 240, 230, .11) 42%,
-      rgba(15, 24, 42, .08) 72%,
-      transparent 100%);
-  opacity: calc(.34 + var(--world-phase-progress, 0) * .30);
-}
-
-.theme-transition[data-direction='to-observatory'][data-phase='radiation']::before {
-  background:
-    radial-gradient(circle at var(--world-origin-x) var(--world-origin-y),
-      rgba(225, 233, 249, .22) 0%,
-      rgba(82, 113, 174, .20) 20%,
-      rgba(17, 31, 59, .20) 48%,
-      rgba(4, 8, 18, .24) 78%,
-      transparent 100%);
-}
-
-.theme-transition[data-phase='solar-arrival']::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: radial-gradient(circle at var(--world-origin-x) var(--world-origin-y), rgba(255, 248, 225, .13), transparent 62%);
-  opacity: calc((1 - var(--world-phase-progress, 0)) * .34);
 }
 
 @media (prefers-reduced-motion: reduce) {

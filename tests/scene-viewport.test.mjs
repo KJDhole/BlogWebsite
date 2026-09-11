@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { interpolateRect, createViewportStage, fitRectToViewport } from '../src/scripts/sceneViewport.mjs'
+import { interpolateRect, createViewportStage, fitRectToViewport, getTransitionViewportRect } from '../src/scripts/sceneViewport.mjs'
 
 test('interpolateRect moves the one scene viewport continuously between anchors', () => {
   const from = { left: 820, top: 130, width: 430, height: 430 }
@@ -22,6 +22,21 @@ test('viewport stage covers the viewport without changing renderer count', () =>
     width: 1440,
     height: 1000
   })
+})
+
+test('transition viewport reaches full screen by semantic swap and holds through radiation', () => {
+  const from = { left: 820, top: 130, width: 430, height: 430 }
+  const to = { left: 820, top: 34, width: 620, height: 590 }
+  const viewport = { width: 1440, height: 1000 }
+  const stage = createViewportStage(viewport)
+
+  assert.deepEqual(getTransitionViewportRect({ from, to, viewport, progress: 520 / 1500 }), stage)
+  assert.deepEqual(getTransitionViewportRect({ from, to, viewport, progress: 650 / 1500 }), stage)
+  assert.deepEqual(getTransitionViewportRect({ from, to, viewport, progress: 820 / 1500 }), stage)
+
+  const afterRadiation = getTransitionViewportRect({ from, to, viewport, progress: 950 / 1500 })
+  assert.ok(afterRadiation.width < stage.width)
+  assert.ok(afterRadiation.width > to.width)
 })
 
 test('interpolateRect clamps progress', () => {
