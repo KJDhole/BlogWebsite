@@ -4,10 +4,18 @@ import { RenderTransitionPass } from 'three/addons/postprocessing/RenderTransiti
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 
 const clamp01 = value => Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
+const OFFICIAL_SCENE_START_MS = 300
+const OFFICIAL_SCENE_END_MS = 1080
 
 export function getOfficialTransitionMix(direction, progress = 0) {
   const p = clamp01(progress)
   return direction === 'to-solar' ? 1 - p : p
+}
+
+export function getOfficialSceneProgress(elapsedMs = 0) {
+  const elapsed = Number.isFinite(elapsedMs) ? elapsedMs : 0
+  return clamp01((elapsed - OFFICIAL_SCENE_START_MS) /
+    (OFFICIAL_SCENE_END_MS - OFFICIAL_SCENE_START_MS))
 }
 
 function createMaskCanvas() {
