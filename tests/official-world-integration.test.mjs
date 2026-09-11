@@ -24,3 +24,12 @@ test('stable rendering selects one world scene while transition rendering uses p
   assert.match(source, /transitionActive[\s\S]*?officialTransition\.render/)
   assert.doesNotMatch(source, /applyWorldMix\(progress/)
 })
+
+test('postprocessing gives each world a matching background only while the full-screen transition is active', async () => {
+  const source = await read('../src/scripts/spaceScene.mjs')
+
+  assert.match(source, /observatoryTransitionBackground\s*=\s*new THREE\.Color/)
+  assert.match(source, /solarTransitionBackground\s*=\s*new THREE\.Color/)
+  assert.match(source, /observatoryScene\.background\s*=\s*transitionActive\s*\?\s*observatoryTransitionBackground\s*:\s*null/)
+  assert.match(source, /solarScene\.background\s*=\s*transitionActive\s*\?\s*solarTransitionBackground\s*:\s*null/)
+})
