@@ -1,5 +1,118 @@
-/* Signature world-wave polish: the new world remains visible inside the wave. */
+/* Shared-DOM FLIP transform surface. Layout geometry is owned by data-layout-world;
+   this layer only applies transient inverse transforms during a world morph. */
+[data-world-morph] {
+  transform-origin: 0 0;
+}
+
+html[data-world-morphing='true'] [data-world-morph] {
+  transform:
+    translate3d(var(--morph-x, 0px), var(--morph-y, 0px), 0)
+    scale(var(--morph-scale-x, 1), var(--morph-scale-y, 1));
+  will-change: transform;
+}
+
+/* One persistent WebGL viewport. */
+html[data-layout-world] [data-space-scene][data-scene-viewport='active'] {
+  position: fixed;
+  left: var(--scene-left, 0px);
+  top: var(--scene-top, 0px);
+  width: var(--scene-width, 1px);
+  height: var(--scene-height, 1px);
+  z-index: 2;
+  margin: 0;
+  pointer-events: none;
+  transform: none;
+  overflow: clip;
+  contain: layout paint style;
+  will-change: left, top, width, height;
+}
+
+html[data-layout-world='solar'][data-world='solar'] .world-eyebrow::before {
+  content: none;
+}
+
+html[data-layout-world='solar'] .cosmic-hero {
+  overflow: clip;
+}
+
+@media (max-width: 760px) {
+  html[data-layout-world='solar'] .index-tools.controls,
+  html[data-layout-world='solar'] .filter-wrap {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  html[data-layout-world='solar'] .filter-wrap {
+    overflow-x: auto;
+    overflow-y: clip;
+    contain: inline-size;
+  }
+}
+
+/* The toggle is the only ignition object. */
+.theme-toggle::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 241, 197, .78);
+  background:
+    conic-gradient(from 22deg,
+      transparent 0 9%,
+      rgba(255, 244, 210, .72) 10% 10.8%,
+      transparent 12% 31%,
+      rgba(120, 166, 220, .42) 32% 32.7%,
+      transparent 34% 61%,
+      rgba(255, 248, 222, .64) 62% 62.8%,
+      transparent 64% 100%);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.05),
+    0 0 10px rgba(255, 232, 174, .18),
+    0 0 24px rgba(104, 149, 209, .08);
+  opacity: 0;
+  transform: scale(.9);
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+html[data-world-transitioning='true'] .theme-toggle {
+  z-index: 1001;
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='ignition'] .theme-toggle::after {
+  opacity: calc(.18 + var(--world-phase-progress, 0) * .72);
+  transform: scale(calc(.9 + var(--world-phase-progress, 0) * .1));
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='convergence'] .theme-toggle::after,
+html[data-world-transitioning='true'][data-world-transition-phase='layout-release'] .theme-toggle::after {
+  opacity: .92;
+  transform: scale(calc(1 + var(--world-phase-progress, 0) * .13));
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='radiation'] .theme-toggle::after {
+  opacity: calc(.92 - var(--world-phase-progress, 0) * .82);
+  transform: scale(calc(1.13 + var(--world-phase-progress, 0) * .4));
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival'] .theme-toggle::after,
+html[data-world-transitioning='true'][data-world-transition-phase='index-reconstruction'] .theme-toggle::after,
+html[data-world-transitioning='true'][data-world-transition-phase='settle'] .theme-toggle::after {
+  opacity: 0;
+}
+
+/* Transparent radiation boundary; never an opaque wipe. */
 .theme-transition .theme-solar-wave {
+  position: absolute;
+  left: var(--world-origin-x);
+  top: var(--world-origin-y);
+  width: calc(var(--world-wave-radius) * 2);
+  height: calc(var(--world-wave-radius) * 2);
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(var(--world-wave-start-scale, .02));
+  will-change: transform, opacity;
   background:
     radial-gradient(circle,
       transparent 0 68%,
@@ -24,11 +137,38 @@
     inset 0 0 54px rgba(255,248,226,.05);
 }
 
-/* Match the phase-specific legacy selector specificity so the reverse wave
-   cannot fall back to an opaque near-black disc during solar-reveal. */
-.theme-transition[data-direction='to-observatory'][data-phase='solar-wave'] .theme-solar-wave,
-.theme-transition[data-direction='to-observatory'][data-phase='solar-reveal'] .theme-solar-wave,
-.theme-transition[data-direction='to-observatory'][data-phase='archive-settle'] .theme-solar-wave {
+html .theme-transition[data-phase='ignition'] .theme-solar-wave,
+html .theme-transition[data-phase='convergence'] .theme-solar-wave,
+html .theme-transition[data-phase='layout-release'] .theme-solar-wave {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(var(--world-wave-start-scale, .02));
+}
+
+html .theme-transition[data-phase='radiation'] .theme-solar-wave {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(var(--world-wave-scale, var(--world-wave-start-scale, .02)));
+}
+
+html .theme-transition[data-phase='solar-arrival'] .theme-solar-wave {
+  opacity: calc(1 - var(--world-phase-progress, 0) * .64);
+  transform: translate(-50%, -50%) scale(var(--world-wave-scale, 1));
+  filter: saturate(calc(1.12 - var(--world-phase-progress, 0) * .12));
+}
+
+html .theme-transition[data-phase='index-reconstruction'] .theme-solar-wave {
+  opacity: calc(.36 - var(--world-phase-progress, 0) * .24);
+  transform: translate(-50%, -50%) scale(var(--world-wave-scale, 1.012));
+}
+
+html .theme-transition[data-phase='settle'] .theme-solar-wave {
+  opacity: calc(.12 - var(--world-phase-progress, 0) * .12);
+  transform: translate(-50%, -50%) scale(var(--world-wave-scale, 1.017));
+}
+
+.theme-transition[data-direction='to-observatory'][data-phase='radiation'] .theme-solar-wave,
+.theme-transition[data-direction='to-observatory'][data-phase='solar-arrival'] .theme-solar-wave,
+.theme-transition[data-direction='to-observatory'][data-phase='index-reconstruction'] .theme-solar-wave,
+.theme-transition[data-direction='to-observatory'][data-phase='settle'] .theme-solar-wave {
   background:
     radial-gradient(circle,
       transparent 0 68%,

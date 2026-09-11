@@ -4,6 +4,40 @@ function clamp01(value) {
   return Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
 }
 
+function smoothstep(start, end, value) {
+  const t = clamp01((value - start) / Math.max(0.0001, end - start))
+  return t * t * (3 - 2 * t)
+}
+
+export function getSolarTransitionFrame({ direction, progress = 0 } = {}) {
+  const p = clamp01(progress)
+
+  if (direction === 'to-solar') {
+    const elapsed = p * 1500
+    const limb = smoothstep(820, 1080, elapsed)
+    const structure = smoothstep(900, 1180, elapsed)
+    return {
+      limb,
+      structure,
+      offsetX: (1 - limb) * 1.55,
+      offsetY: (1 - limb) * 0.78
+    }
+  }
+
+  if (direction === 'to-observatory') {
+    const limb = 1 - smoothstep(0.10, 0.36, p)
+    const structure = 1 - smoothstep(0.06, 0.26, p)
+    return {
+      limb,
+      structure,
+      offsetX: (1 - limb) * 1.35,
+      offsetY: (1 - limb) * 0.66
+    }
+  }
+
+  return { limb: 1, structure: 1, offsetX: 0, offsetY: 0 }
+}
+
 function createMagneticArc({ start, control, end, color, opacity }) {
   const curve = new THREE.QuadraticBezierCurve3(
     new THREE.Vector3(...start),
@@ -150,10 +184,13 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
   })
   const solarLimb = new THREE.Mesh(solarGeometry, solarMaterial)
   solarLimb.name = 'cropped-solar-limb'
-  solarLimb.position.set(mobile ? 2.86 : 3.28, mobile ? 0.16 : 0.08, -0.45)
+  const limbBaseX = mobile ? 2.86 : 3.28
+  const limbBaseY = mobile ? 0.16 : 0.08
+  solarLimb.position.set(limbBaseX, limbBaseY, -0.45)
 
   const spectral = createSpectralGrid(mobile)
-  spectral.lines.position.set(mobile ? 1.92 : 2.18, 0.03, 0)
+  const spectralBaseX = mobile ? 1.92 : 2.18
+  spectral.lines.position.set(spectralBaseX, 0.03, 0)
 
   const arcA = createMagneticArc({
     start: [0.62, 0.72, -0.12],
@@ -183,14 +220,17 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
 
   let worldMix = 0
   let transitionPulse = 0
+  let transitionFrame = { limb: 1, structure: 1, offsetX: 0, offsetY: 0 }
   let darkTheme = false
 
   function applyMix() {
     const mix = clamp01(worldMix)
-    uniforms.uWorldMix.value = mix
-    spectral.material.opacity = (mobile ? 0.045 : 0.072) * mix
-    arcs.forEach(arc => { arc.material.opacity = arc.baseOpacity * mix })
-    group.visible = mix > 0.002
+    const limbVisibility = mix * transitionFrame.limb
+    const structureVisibility = mix * transitionFrame.structure
+    uniforms.uWorldMix.value = limbVisibility
+    spectral.material.opacity = (mobile ? 0.045 : 0.072) * structureVisibility
+    arcs.forEach(arc => { arc.material.opacity = arc.baseOpacity * structureVisibility })
+    group.visible = Math.max(limbVisibility, structureVisibility) > 0.002
   }
 
   function setWorldMix(value) {
@@ -209,12 +249,22 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
   function setTransitionState(state = {}) {
     if (reducedMotion) {
       transitionPulse = 0
+      transitionFrame = state.direction === 'to-observatory'
+        ? { limb: 0, structure: 0, offsetX: 0, offsetY: 0 }
+        : { limb: 1, structure: 1, offsetX: 0, offsetY: 0 }
       uniforms.uTransitionPulse.value = 0
+      applyMix()
       return
     }
-    const activeReveal = state.phase === 'solar-reveal' || state.phase === 'archive-settle'
+
+    transitionFrame = getSolarTransitionFrame(state)
+    solarLimb.position.x = limbBaseX + transitionFrame.offsetX
+    solarLimb.position.y = limbBaseY + transitionFrame.offsetY
+
+    const activeReveal = state.phase === 'solar-arrival' || state.phase === 'index-reconstruction'
     transitionPulse = activeReveal ? 1 - clamp01(state.phaseProgress ?? 0) * 0.6 : 0
     uniforms.uTransitionPulse.value = transitionPulse
+    applyMix()
   }
 
   function update(elapsedSeconds, storyState) {
@@ -226,12 +276,12 @@ export function createSolarField(scene, { mobile = false, reducedMotion = false 
 
     if (calm) {
       group.position.y = 0
-      spectral.lines.position.x = mobile ? 1.92 : 2.18
+      spectral.lines.position.x = spectralBaseX
       return
     }
 
-    group.position.y = Math.sin(elapsedSeconds * 0.04) * (mobile ? 0.004 : 0.008) * worldMix
-    spectral.lines.position.x = (mobile ? 1.92 : 2.18) + Math.sin(elapsedSeconds * 0.018) * 0.009 * worldMix
+    group.position.y = Math.sin(elapsedSeconds * 0.04) * (mobile ? 0.004 : 0.008) * worldMix * transitionFrame.limb
+    spectral.lines.position.x = spectralBaseX + Math.sin(elapsedSeconds * 0.018) * 0.009 * worldMix * transitionFrame.structure
   }
 
   function destroy() {

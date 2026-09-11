@@ -1,0 +1,72 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+
+const read = path => readFile(new URL(path, import.meta.url), 'utf8')
+
+test('Solar Archive uses a materially different editorial grid', async () => {
+  const css = await read('../src/styles/solar-layout.css')
+  assert.match(css, /data-layout-world=['"]solar['"]/)
+  assert.match(css, /grid-template-areas:/)
+  assert.match(css, /hero-title/)
+  assert.match(css, /scene-anchor-solar/)
+  assert.match(css, /publication-index/)
+  assert.match(css, /article-row::before/)
+  assert.doesNotMatch(css, /grid-template-columns:\s*1\.03fr\s+\.97fr/)
+})
+
+test('Solar layout keeps an ivory cobalt publication palette and clips intentional off-canvas geometry', async () => {
+  const [layoutCss, transitionCss] = await Promise.all([
+    read('../src/styles/solar-layout.css'),
+    read('../src/styles/solar-transition-palette.css')
+  ])
+  assert.match(layoutCss, /--solar-paper:/)
+  assert.match(layoutCss, /--solar-cobalt:/)
+  assert.match(layoutCss, /scene-anchor-solar/)
+  assert.match(transitionCss, /html\[data-layout-world=['"]solar['"]\]\s*\{[\s\S]*?overflow-x:\s*clip/)
+})
+
+test('Solar target geometry preserves Observatory palette and typography during layout release', async () => {
+  const [paletteCss, baseLayout] = await Promise.all([
+    read('../src/styles/solar-transition-palette.css'),
+    read('../src/layouts/BaseLayout.astro')
+  ])
+
+  assert.match(baseLayout, /import ['"]\.\.\/styles\/solar-transition-palette\.css['"]/)
+  assert.match(paletteCss, /html\[data-layout-world=['"]solar['"]\]\[data-world=['"]observatory['"]\]/)
+  assert.match(paletteCss, /--solar-paper:\s*var\(--bg\)/)
+  assert.match(paletteCss, /--solar-ink:\s*var\(--text\)/)
+  assert.match(paletteCss, /--solar-rule:\s*var\(--line\)/)
+  assert.match(paletteCss, /color-scheme:\s*dark/)
+  assert.match(paletteCss, /#hero-title[\s\S]*?font-family:\s*var\(--serif\)/)
+  assert.match(paletteCss, /#hero-title[\s\S]*?font-size:\s*clamp\(50px,\s*5\.1vw,\s*76px\)/)
+  assert.match(paletteCss, /\.world-eyebrow::after[\s\S]*?content:\s*none/)
+  assert.match(paletteCss, /\.solar-observation-meta[\s\S]*?display:\s*none/)
+})
+
+test('hero support copy clears the title path before layout release and returns during arrival', async () => {
+  const css = await read('../src/styles/solar-transition-palette.css')
+  assert.match(css, /data-world-transition-phase=['"]convergence['"][\s\S]*?\.hero-intro[\s\S]*?opacity:\s*calc\(1\s*-\s*var\(--world-phase-progress[^)]*\)\)/)
+  assert.match(css, /data-world-transition-phase=['"]layout-release['"][\s\S]*?\.hero-intro[\s\S]*?opacity:\s*0/)
+  assert.match(css, /data-world-transition-phase=['"]radiation['"][\s\S]*?\.hero-intro[\s\S]*?opacity:\s*0/)
+  assert.match(css, /data-world-transition-phase=['"]solar-arrival['"][\s\S]*?\.hero-intro[\s\S]*?opacity:\s*var\(--world-phase-progress/)
+  assert.match(css, /\.folio-note/)
+  assert.match(css, /\.social-row/)
+  assert.match(css, /\.solar-observation-meta/)
+  assert.match(css, /\.orbit-caption/)
+  assert.match(css, /data-world-transition-phase=['"]layout-release['"][\s\S]*?\.orbit-caption\s*\{[\s\S]*?opacity:\s*0\s*!important/)
+})
+
+test('reverse morph releases Solar typography when radiation swaps to Observatory', async () => {
+  const css = await read('../src/styles/solar-transition-palette.css')
+  assert.match(css, /data-world-transition-direction=['"]to-observatory['"]\]\[data-world-transition-phase=['"]layout-release['"]\]\s*#hero-title/)
+  assert.doesNotMatch(css, /data-world-transition-direction=['"]to-observatory['"]\]\[data-world-transition-phase=['"]radiation['"]\]\s*#hero-title/)
+  assert.doesNotMatch(css, /data-world-transition-direction=['"]to-observatory['"]\]\[data-world-transition-phase=['"]radiation['"]\]\s*\.world-eyebrow/)
+})
+
+test('Solar layout has explicit tablet and mobile editorial compositions', async () => {
+  const css = await read('../src/styles/solar-layout.css')
+  assert.match(css, /@media\s*\(max-width:\s*760px\)/)
+  assert.match(css, /@media\s*\(max-width:\s*390px\)/)
+  assert.match(css, /min-width:\s*0/)
+})

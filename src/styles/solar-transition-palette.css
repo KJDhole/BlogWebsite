@@ -1,0 +1,205 @@
+/* World-morph guardrails: keep source typography readable while destination geometry moves. */
+html[data-layout-world='solar'] {
+  overflow-x: clip;
+}
+
+html[data-layout-world='solar'] .page-shell,
+html[data-world-morphing='true'] .page-shell {
+  overflow-x: clip;
+}
+
+/* Before the semantic swap, Solar geometry is measurable without leaking Solar colors. */
+html[data-layout-world='solar'][data-world='observatory'] {
+  --solar-paper: var(--bg);
+  --solar-paper-bright: var(--bg-elevated);
+  --solar-ink: var(--text);
+  --solar-muted: var(--text-soft);
+  --solar-faint: var(--text-faint);
+  --solar-cobalt: var(--text-soft);
+  --solar-cobalt-deep: var(--text);
+  --solar-rule: var(--line);
+  --solar-rule-strong: var(--line-strong);
+  --solar-accent: var(--accent);
+  color-scheme: dark;
+}
+
+html[data-layout-world='solar'][data-world='observatory'] body {
+  background:
+    radial-gradient(circle at 77% 12%, color-mix(in srgb, var(--accent) 3%, transparent), transparent 28%),
+    var(--bg);
+  color: var(--text);
+}
+
+/* Keep Observatory typography/furniture through layout release and radiation.
+   Geometry can move, but glyphs do not reflow into the Solar publication style until arrival. */
+html[data-layout-world='solar'][data-world='observatory'] .brand::after,
+html[data-world-transitioning='true'][data-world-transition-direction='to-solar'][data-world-transition-phase='radiation'] .brand::after {
+  content: none;
+}
+
+html[data-layout-world='solar'][data-world='observatory'] .folio-nav a::before,
+html[data-world-transitioning='true'][data-world-transition-direction='to-solar'][data-world-transition-phase='radiation'] .folio-nav a::before {
+  content: none;
+  margin-right: 0;
+}
+
+html[data-layout-world='solar'][data-world='observatory'] .world-eyebrow,
+html[data-world-transitioning='true'][data-world-transition-direction='to-solar'][data-world-transition-phase='radiation'] .world-eyebrow {
+  color: var(--text-faint);
+  font: 560 9px/1.45 var(--mono);
+  font-size: 9px;
+  letter-spacing: .17em;
+}
+
+html[data-layout-world='solar'][data-world='observatory'] .world-eyebrow::after,
+html[data-world-transitioning='true'][data-world-transition-direction='to-solar'][data-world-transition-phase='radiation'] .world-eyebrow::after {
+  content: none;
+}
+
+html[data-layout-world='solar'][data-world='observatory'] .solar-observation-meta,
+html[data-world-transitioning='true'][data-world-transition-direction='to-solar'][data-world-transition-phase='radiation'] .solar-observation-meta {
+  display: none;
+}
+
+html[data-layout-world='solar'][data-world='observatory'] .hero::after,
+html[data-world-transitioning='true'][data-world-transition-direction='to-solar'][data-world-transition-phase='radiation'] .hero::after {
+  content: none;
+}
+
+html[data-layout-world='solar'][data-world='observatory'] #hero-title,
+html[data-world-transitioning='true'][data-world-transition-direction='to-solar'][data-world-transition-phase='radiation'] #hero-title {
+  max-width: 9.2em;
+  color: var(--text);
+  font-family: var(--serif);
+  font-size: clamp(50px, 5.1vw, 76px);
+  font-weight: 500;
+  line-height: 1.01;
+  letter-spacing: -.052em;
+}
+
+html[data-layout-world='solar'][data-world='observatory'] .hero-intro,
+html[data-world-transitioning='true'][data-world-transition-direction='to-solar'][data-world-transition-phase='radiation'] .hero-intro {
+  color: var(--text-soft);
+  font-family: var(--reading);
+  font-size: clamp(17px, 1.55vw, 20px);
+  font-weight: 400;
+  line-height: 1.65;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+html[data-layout-world='solar'][data-world='observatory'] .folio-principles,
+html[data-world-transitioning='true'][data-world-transition-direction='to-solar'][data-world-transition-phase='radiation'] .folio-principles {
+  font-family: var(--mono);
+  font-size: .63em;
+  letter-spacing: .14em;
+}
+
+html[data-layout-world='solar'][data-world='observatory'] .folio-note,
+html[data-world-transitioning='true'][data-world-transition-direction='to-solar'][data-world-transition-phase='radiation'] .folio-note {
+  max-width: 470px;
+  color: var(--text-soft);
+  font-family: var(--reading);
+  font-size: 15px;
+  line-height: 1.85;
+}
+
+html[data-layout-world='solar'][data-world='observatory'] .social-row,
+html[data-world-transitioning='true'][data-world-transition-direction='to-solar'][data-world-transition-phase='radiation'] .social-row {
+  gap: 22px;
+}
+
+html[data-layout-world='solar'][data-world='observatory'] .social-link,
+html[data-world-transitioning='true'][data-world-transition-direction='to-solar'][data-world-transition-phase='radiation'] .social-link {
+  padding: 0 0 2px;
+  color: var(--text-soft);
+  font: 560 10px/1 var(--mono);
+  letter-spacing: .1em;
+}
+
+html[data-layout-world='solar'][data-world='observatory'] .index-heading h2,
+html[data-world-transitioning='true'][data-world-transition-direction='to-solar'][data-world-transition-phase='radiation'] .index-heading h2,
+html[data-layout-world='solar'][data-world='observatory'] .article-title,
+html[data-world-transitioning='true'][data-world-transition-direction='to-solar'][data-world-transition-phase='radiation'] .article-title {
+  font-family: var(--serif);
+}
+
+/* Keep secondary hero copy out of the title's physical morph path. */
+html[data-world-transitioning='true'][data-world-transition-phase='convergence'] .hero-intro,
+html[data-world-transitioning='true'][data-world-transition-phase='convergence'] .folio-note,
+html[data-world-transitioning='true'][data-world-transition-phase='convergence'] .social-row,
+html[data-world-transitioning='true'][data-world-transition-phase='convergence'] .solar-observation-meta,
+html[data-world-transitioning='true'][data-world-transition-phase='convergence'] .orbit-caption {
+  opacity: calc(1 - var(--world-phase-progress, 0));
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='layout-release'] .hero-intro,
+html[data-world-transitioning='true'][data-world-transition-phase='layout-release'] .folio-note,
+html[data-world-transitioning='true'][data-world-transition-phase='layout-release'] .social-row,
+html[data-world-transitioning='true'][data-world-transition-phase='layout-release'] .solar-observation-meta,
+html[data-world-transitioning='true'][data-world-transition-phase='layout-release'] .orbit-caption {
+  opacity: 0;
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='radiation'] .hero-intro,
+html[data-world-transitioning='true'][data-world-transition-phase='radiation'] .folio-note,
+html[data-world-transitioning='true'][data-world-transition-phase='radiation'] .social-row,
+html[data-world-transitioning='true'][data-world-transition-phase='radiation'] .solar-observation-meta,
+html[data-world-transitioning='true'][data-world-transition-phase='radiation'] .orbit-caption {
+  opacity: 0;
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival'] .hero-intro,
+html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival'] .folio-note,
+html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival'] .social-row,
+html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival'] .solar-observation-meta,
+html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival'] .orbit-caption {
+  opacity: var(--world-phase-progress, 0);
+}
+
+/* solar.css intentionally gives the stable Solar caption !important opacity. Override it during motion. */
+html[data-world-transitioning='true'][data-world-transition-phase='convergence'] .orbit-caption {
+  opacity: calc(1 - var(--world-phase-progress, 0)) !important;
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='layout-release'] .orbit-caption,
+html[data-world-transitioning='true'][data-world-transition-phase='radiation'] .orbit-caption {
+  opacity: 0 !important;
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival'] .orbit-caption {
+  opacity: var(--world-phase-progress, 0) !important;
+}
+
+/* Reverse keeps Solar typography only until the 520ms semantic swap. */
+html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='layout-release'] #hero-title {
+  max-width: none;
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: clamp(72px, 8vw, 124px);
+  font-weight: 520;
+  line-height: .83;
+  letter-spacing: -.072em;
+}
+
+html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='layout-release'] .world-eyebrow {
+  font-size: 0;
+}
+
+html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='layout-release'] .world-eyebrow::before {
+  content: attr(data-solar-label);
+  font: 650 9px/1.45 var(--mono);
+  letter-spacing: .16em;
+}
+
+@media (max-width: 760px) {
+  html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='layout-release'] #hero-title {
+    font-size: clamp(54px, 17vw, 86px);
+    line-height: .86;
+  }
+}
+
+@media (max-width: 390px) {
+  html[data-world-transitioning='true'][data-world-transition-direction='to-observatory'][data-world-transition-phase='layout-release'] #hero-title {
+    font-size: clamp(49px, 17vw, 67px);
+  }
+}

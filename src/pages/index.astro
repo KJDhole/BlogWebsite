@@ -10,10 +10,12 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
 ---
 <BaseLayout title={SITE.title} description={SITE.description}>
+  <SpaceScene />
+
   <div class="page-shell">
-    <header class="site-topbar folio-topbar">
-      <a class="brand" href="#top" aria-label="返回首页">GLENN<span class="brand-dot" aria-hidden="true"></span></a>
-      <nav class="folio-nav" aria-label="主要导航">
+    <header class="site-topbar folio-topbar" data-world-morph="masthead">
+      <a class="brand" href="#top" aria-label="返回首页" data-world-morph="brand">GLENN<span class="brand-dot" aria-hidden="true"></span></a>
+      <nav class="folio-nav" aria-label="主要导航" data-world-morph="primary-nav">
         <a href="#writing">Writing</a>
         <a href="/archive/">Archive</a>
         <a href="/tags/">Tags</a>
@@ -24,6 +26,7 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
         class="icon-button theme-toggle"
         type="button"
         data-world-toggle
+        data-world-morph="world-toggle"
         aria-label="切换到 Observatory"
         title="切换世界"
       >
@@ -34,36 +37,39 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
 
     <main id="top">
       <section class="hero cosmic-hero reveal-block" aria-labelledby="hero-title">
-        <div class="hero-copy folio-intro">
+        <div class="hero-copy folio-intro" data-world-morph="hero-copy">
           <p
             class="eyebrow world-eyebrow"
+            data-world-morph="hero-eyebrow"
             data-observatory-label="GLENN / RESEARCH FOLIO / 2026"
             data-solar-label="GLENN / SOLAR ARCHIVE / 2026"
           >GLENN / RESEARCH FOLIO / 2026</p>
 
-          <div class="solar-observation-meta" aria-hidden="true">
+          <div class="solar-observation-meta" data-world-morph="observation-meta" aria-hidden="true">
             <span>OBS / SOL-26</span>
             <span>λ 617.3 NM</span>
             <span>+18.4° / 72.1°</span>
           </div>
 
-          <h1 id="hero-title">Build things.<br />Study the systems behind them.</h1>
-          <p class="hero-intro"><span class="folio-principles">Build · Analyze · Think</span></p>
-          <p class="folio-note">关于 AI Agent、产品、工程与判断。记录我真正做过、拆过、验证过的东西。</p>
-          <div class="social-row" aria-label="社交链接">
+          <h1 id="hero-title" data-world-morph="hero-title">Build things.<br />Study the systems behind them.</h1>
+          <p class="hero-intro" data-world-morph="principles"><span class="folio-principles">Build · Analyze · Think</span></p>
+          <p class="folio-note" data-world-morph="hero-note">关于 AI Agent、产品、工程与判断。记录我真正做过、拆过、验证过的东西。</p>
+          <div class="social-row" aria-label="社交链接" data-world-morph="social-row">
             <a href={SITE.x} target="_blank" rel="noreferrer" aria-label="X / Twitter" class="social-link">X ↗</a>
             <a href={SITE.github} target="_blank" rel="noreferrer" aria-label="GitHub" class="social-link">GitHub ↗</a>
           </div>
         </div>
 
-        <div class="orbit-wrap" aria-hidden="true">
-          <SpaceScene />
+        <div class="scene-anchor scene-anchor-observatory" data-scene-anchor="observatory" aria-hidden="true"></div>
+        <div class="scene-anchor scene-anchor-solar" data-scene-anchor="solar" aria-hidden="true"></div>
+
+        <div class="orbit-wrap" aria-hidden="true" data-world-morph="scene-stage">
           <p class="orbit-caption">slow systems · clear thinking</p>
         </div>
       </section>
 
       <section id="writing" class="content-section publication-index" aria-label="文章索引">
-        <header class="index-heading reveal-block">
+        <header class="index-heading reveal-block" data-world-morph="writing-heading">
           <div>
             <p class="eyebrow">WRITING / CHRONOLOGICAL INDEX</p>
             <h2>Notes, systems,<br />and working ideas.</h2>
@@ -76,7 +82,7 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
           </div>
         </header>
 
-        <div class="index-tools controls reveal-block">
+        <div class="index-tools controls reveal-block" data-world-morph="writing-tools">
           <label class="index-search" for="article-search">
             <span class="index-search-label">SEARCH</span>
             <input id="article-search" type="search" autocomplete="off" placeholder="Title, topic, tag…" aria-label="搜索文章" />
@@ -104,7 +110,7 @@ const posts = (await getCollection('posts', ({ data }) => data.draft !== true))
         <p id="result-count" class="result-count" aria-live="polite"></p>
 
         <div id="article-list" class="article-list publication-register" aria-live="polite">
-          {posts.map(post => <ArticleRow post={post} readTime={estimateReadingTime(post.body ?? '')} />)}
+          {posts.map((post, index) => <ArticleRow post={post} index={index} readTime={estimateReadingTime(post.body ?? '')} />)}
         </div>
         <div id="empty-state" class="empty-state" hidden>
           <p>No matching entries.</p>
