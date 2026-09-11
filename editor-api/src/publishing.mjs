@@ -11,7 +11,7 @@ function branchTimestamp(date) {
 }
 
 function postPath(slug) {
-  return `src/content/posts/${slug}.md`
+  return `posts/${slug}.md`
 }
 
 export function createPublishingService({ store, github, clock = () => new Date() }) {
