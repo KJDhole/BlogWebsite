@@ -36,7 +36,7 @@ test('deliver QA workflow builds, runs browser checks and preserves screenshots 
   assert.match(workflow, /actions\/upload-artifact@v4/)
 })
 
-test('world transition QA inspects all approved frames and same-DOM geometry', async () => {
+test('world transition QA inspects all approved frames and official Three.js canvas geometry', async () => {
   const qa = await read('../scripts/world-transition-qa.mjs')
   const workflow = await read('../.github/workflows/world-transition-qa.yml')
 
@@ -44,7 +44,10 @@ test('world transition QA inspects all approved frames and same-DOM geometry', a
   assert.match(qa, /sameHeroNode/)
   assert.match(qa, /sameArticleNodes/)
   assert.match(qa, /toggleRadius/)
-  assert.match(qa, /waveRadius/)
+  assert.match(qa, /canvasCoverage/)
+  assert.match(qa, /heroOpacity/)
+  assert.match(qa, /data-space-scene/)
+  assert.doesNotMatch(qa, /waveRadius|data-solar-wave/)
   assert.match(qa, /fold/)
   assert.match(qa, /visibility/)
   assert.match(qa, /dataset\.layoutWorld/)
