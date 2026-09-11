@@ -1,4 +1,6 @@
 const clamp01 = value => Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
+const FULL_STAGE_PROGRESS = 650 / 1500
+const SETTLE_START_PROGRESS = 0.88
 
 function copyRect(rect) {
   return {
@@ -47,6 +49,10 @@ export function fitRectToViewport(rect, viewport = {}) {
 function easeInOut(value) {
   const t = clamp01(value)
   return t * t * (3 - 2 * t)
+}
+
+export function getViewportStageProgress(progress = 0) {
+  return easeInOut(clamp01(progress) / FULL_STAGE_PROGRESS)
 }
 
 export function createSceneViewport(sceneNode, { getAnchor, reducedMotion = false, onResize = () => {} } = {}) {
@@ -101,12 +107,16 @@ export function createSceneViewport(sceneNode, { getAnchor, reducedMotion = fals
 
     const stage = viewportStage()
     const progress = clamp01(detail.progress ?? 0)
-    const openUntil = 0.55
 
-    if (progress <= openUntil) {
-      return interpolateRect(source, stage, easeInOut(progress / openUntil))
+    if (progress < FULL_STAGE_PROGRESS) {
+      return interpolateRect(source, stage, getViewportStageProgress(progress))
     }
-    return interpolateRect(stage, destination, easeInOut((progress - openUntil) / (1 - openUntil)))
+    if (progress < SETTLE_START_PROGRESS) return stage
+    return interpolateRect(
+      stage,
+      destination,
+      easeInOut((progress - SETTLE_START_PROGRESS) / (1 - SETTLE_START_PROGRESS))
+    )
   }
 
   function setWorld(nextWorld) {
