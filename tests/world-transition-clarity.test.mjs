@@ -52,8 +52,11 @@ test('text content does not physically fly across the viewport during a world sw
   assert.equal(sceneStage.style.values.has('--morph-x'), true)
 })
 
-test('world transition fades content out, lets radiation own the middle, then reveals the destination layout', async () => {
-  const css = await read('../src/styles/world-transition.css')
+test('world transition fades content locally while official Three.js scene mixing owns the middle', async () => {
+  const [css, renderer] = await Promise.all([
+    read('../src/styles/world-transition.css'),
+    read('../src/scripts/worldTransitionRenderer.mjs')
+  ])
 
   assert.match(css, /data-world-transition-phase=['"]convergence['"][\s\S]*?data-world-morph=['"]hero-title['"][\s\S]*?opacity:/)
   assert.match(css, /data-world-transition-phase=['"]layout-release['"][\s\S]*?data-world-morph=['"]hero-title['"][\s\S]*?opacity:\s*0/)
@@ -61,5 +64,8 @@ test('world transition fades content out, lets radiation own the middle, then re
   assert.match(css, /data-world-transition-phase=['"]solar-arrival['"][\s\S]*?data-world-morph=['"]hero-title['"][\s\S]*?opacity:\s*var\(--world-phase-progress/)
 
   assert.doesNotMatch(css, /data-world-morph=['"]hero-title['"][^{]*\{[^}]*translateX\(/)
-  assert.match(css, /theme-transition\[data-phase=['"]radiation['"]\]::before[\s\S]*?radial-gradient/)
+  assert.doesNotMatch(css, /theme-solar-wave/)
+  assert.doesNotMatch(css, /theme-transition\[data-phase=['"]radiation['"]\]::before/)
+  assert.match(renderer, /RenderTransitionPass/)
+  assert.match(renderer, /getOfficialSceneProgress/)
 })
