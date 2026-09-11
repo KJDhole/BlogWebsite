@@ -24,7 +24,10 @@ test('Observatory and Solar fields attach to their own scenes', async () => {
 test('stable rendering stays direct and composer rendering is transition-only', async () => {
   const source = await read('../src/scripts/spaceScene.mjs')
 
+  assert.match(source, /getOfficialSceneMixProgress/)
+  assert.match(source, /transitionRenderWorld/)
   assert.match(source, /worldTransition\.render\(deltaSeconds\)/)
-  assert.match(source, /renderer\.render\(\s*currentWorld\s*===\s*['"]solar['"]\s*\?\s*solarScene\s*:\s*observatoryScene\s*,\s*camera\s*\)/)
+  assert.match(source, /const\s+directWorld\s*=\s*transitionRenderWorld\s*\|\|\s*currentWorld/)
+  assert.match(source, /renderer\.render\(\s*directWorld\s*===\s*['"]solar['"]\s*\?\s*solarScene\s*:\s*observatoryScene\s*,\s*camera\s*\)/)
   assert.doesNotMatch(source, /renderer\.render\(scene,\s*camera\)/)
 })
