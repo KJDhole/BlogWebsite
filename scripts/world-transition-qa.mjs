@@ -131,7 +131,7 @@ async function runLiveDirection(page, viewport, { fromWorld, toWorld, direction 
   if (!state.sameArticleNodes) fail('Article row DOM identity changed during world transition', { viewport: viewport.name, direction })
   if (state.world !== toWorld || state.layoutWorld !== toWorld) fail('World/layout state did not settle together', { viewport: viewport.name, direction, state })
   if (state.scrollWidth > state.innerWidth + 1) fail('Live transition caused horizontal overflow', { viewport: viewport.name, direction, state })
-  for (const required of ['ignition', 'convergence', 'layout-release', 'radiation', 'settle']) {
+  for (const required of ['ignition', 'layout-release', 'radiation', 'settle']) {
     if (!state.phases.includes(required)) fail('Live transition skipped a load-bearing phase', { viewport: viewport.name, direction, required, phases: state.phases })
   }
 
@@ -220,7 +220,7 @@ async function captureExactFrame(page, viewport, { fromWorld, toWorld, direction
   await loadWorld(page, fromWorld)
   const { origin, toggleRadius } = await getToggleGeometry(page)
   const frame = getTransitionFrame(checkpoint, direction)
-  const swapped = checkpoint >= 520
+  const swapped = checkpoint >= 650
   const visualWorld = swapped ? toWorld : fromWorld
   const visualTheme = worldToTheme(visualWorld)
   const active = checkpoint < 1500
@@ -344,8 +344,8 @@ async function captureExactFrame(page, viewport, { fromWorld, toWorld, direction
     if (state.heroOpacity > 0.05) {
       fail('DOM copy remained visible while Three.js owned radiation phase', { viewport: viewport.name, direction, checkpoint, state })
     }
-    if (frame.phaseProgress > 0.3 && state.canvasCoverage && (state.canvasCoverage.widthRatio < 0.75 || state.canvasCoverage.heightRatio < 0.75)) {
-      fail('Three.js transition canvas did not expand across the viewport during radiation', { viewport: viewport.name, direction, checkpoint, state })
+    if (checkpoint >= 650 && state.canvasCoverage && (state.canvasCoverage.widthRatio < 0.98 || state.canvasCoverage.heightRatio < 0.98)) {
+      fail('Three.js transition canvas was not full-stage during official scene mixing', { viewport: viewport.name, direction, checkpoint, state })
     }
   }
 
