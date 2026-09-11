@@ -39,3 +39,15 @@ test('official transition mask is generated from the measured toggle origin rath
   assert.match(source, /createRadialGradient/)
   assert.match(source, /new THREE\.CanvasTexture/)
 })
+
+test('official post-processing starts after star convergence and completes by Solar arrival', async () => {
+  const module = await import('../src/scripts/worldTransitionRenderer.mjs')
+  assert.equal(typeof module.getOfficialSceneProgress, 'function')
+  assert.equal(module.getOfficialSceneProgress(0), 0)
+  assert.equal(module.getOfficialSceneProgress(299), 0)
+  assert.equal(module.getOfficialSceneProgress(300), 0)
+  assert.ok(module.getOfficialSceneProgress(520) > 0)
+  assert.ok(module.getOfficialSceneProgress(820) > module.getOfficialSceneProgress(520))
+  assert.equal(module.getOfficialSceneProgress(1080), 1)
+  assert.equal(module.getOfficialSceneProgress(1500), 1)
+})
