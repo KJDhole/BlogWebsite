@@ -1,10 +1,11 @@
 /* Shared-DOM FLIP transform surface. Layout geometry is owned by data-layout-world;
-   this layer only applies transient inverse transforms during a world morph. */
+   only structural anchors physically move during a world morph. */
 [data-world-morph] {
   transform-origin: 0 0;
 }
 
-html[data-world-morphing='true'] [data-world-morph] {
+html[data-world-morphing='true'] [data-world-morph='scene-stage'],
+html[data-world-morphing='true'] [data-world-morph='world-toggle'] {
   transform:
     translate3d(var(--morph-x, 0px), var(--morph-y, 0px), 0)
     scale(var(--morph-scale-x, 1), var(--morph-scale-y, 1));
@@ -115,26 +116,26 @@ html[data-world-transitioning='true'][data-world-transition-phase='settle'] .the
   will-change: transform, opacity;
   background:
     radial-gradient(circle,
-      transparent 0 68%,
-      rgba(244, 240, 230, .035) 72%,
-      rgba(198, 218, 236, .12) 75%,
-      rgba(91, 139, 202, .48) 78.2%,
-      rgba(255, 248, 220, .82) 80.2%,
-      rgba(214, 99, 61, .24) 81%,
-      rgba(255, 255, 255, .14) 82.4%,
-      transparent 85.8%),
+      transparent 0 66%,
+      rgba(244, 240, 230, .055) 70%,
+      rgba(198, 218, 236, .19) 74%,
+      rgba(91, 139, 202, .62) 77.8%,
+      rgba(255, 248, 220, .96) 80%,
+      rgba(214, 99, 61, .32) 81%,
+      rgba(255, 255, 255, .20) 82.5%,
+      transparent 86%),
     conic-gradient(from 31deg,
       transparent 0 12%,
-      rgba(255, 248, 220, .12) 12.2% 12.45%,
+      rgba(255, 248, 220, .16) 12.2% 12.45%,
       transparent 12.7% 46%,
-      rgba(113, 164, 220, .11) 46.15% 46.38%,
+      rgba(113, 164, 220, .15) 46.15% 46.38%,
       transparent 46.7% 73%,
-      rgba(214, 99, 61, .09) 73.15% 73.28%,
+      rgba(214, 99, 61, .12) 73.15% 73.28%,
       transparent 73.55% 100%);
   box-shadow:
-    0 0 0 1px rgba(255,255,255,.12),
-    0 0 34px rgba(93,137,196,.14),
-    inset 0 0 54px rgba(255,248,226,.05);
+    0 0 0 1px rgba(255,255,255,.18),
+    0 0 58px rgba(93,137,196,.24),
+    inset 0 0 72px rgba(255,248,226,.08);
 }
 
 html .theme-transition[data-phase='ignition'] .theme-solar-wave,
@@ -171,24 +172,157 @@ html .theme-transition[data-phase='settle'] .theme-solar-wave {
 .theme-transition[data-direction='to-observatory'][data-phase='settle'] .theme-solar-wave {
   background:
     radial-gradient(circle,
-      transparent 0 68%,
-      rgba(8, 13, 26, .04) 72%,
-      rgba(66, 94, 151, .16) 75%,
-      rgba(111, 145, 207, .44) 78.2%,
-      rgba(238, 226, 190, .64) 80.2%,
-      rgba(27, 48, 88, .30) 81.2%,
-      rgba(6, 10, 22, .13) 82.5%,
-      transparent 85.8%),
+      transparent 0 66%,
+      rgba(8, 13, 26, .06) 70%,
+      rgba(66, 94, 151, .22) 74%,
+      rgba(111, 145, 207, .58) 77.8%,
+      rgba(238, 226, 190, .82) 80%,
+      rgba(27, 48, 88, .38) 81.2%,
+      rgba(6, 10, 22, .18) 82.5%,
+      transparent 86%),
     conic-gradient(from 211deg,
       transparent 0 18%,
-      rgba(137, 168, 224, .12) 18.15% 18.38%,
+      rgba(137, 168, 224, .15) 18.15% 18.38%,
       transparent 18.7% 57%,
-      rgba(236, 225, 190, .10) 57.1% 57.34%,
+      rgba(236, 225, 190, .13) 57.1% 57.34%,
       transparent 57.7% 82%,
-      rgba(84, 111, 171, .10) 82.1% 82.28%,
+      rgba(84, 111, 171, .13) 82.1% 82.28%,
       transparent 82.6% 100%);
   box-shadow:
-    0 0 0 1px rgba(181, 205, 244, .10),
-    0 0 36px rgba(67, 99, 164, .16),
-    inset 0 0 54px rgba(13, 24, 49, .06);
+    0 0 0 1px rgba(181, 205, 244, .14),
+    0 0 58px rgba(67, 99, 164, .24),
+    inset 0 0 72px rgba(13, 24, 49, .09);
+}
+
+/* Content exits before destination geometry is exposed. The page no longer drags text across the viewport. */
+html[data-world-transitioning='true'][data-world-transition-phase='convergence']
+:is(
+  [data-world-morph='brand'],
+  [data-world-morph='primary-nav'],
+  [data-world-morph='hero-eyebrow'],
+  [data-world-morph='observation-meta'],
+  [data-world-morph='hero-title'],
+  [data-world-morph='principles'],
+  [data-world-morph='hero-note'],
+  [data-world-morph='social-row'],
+  [data-world-morph='writing-heading'],
+  [data-world-morph='writing-tools'],
+  [data-world-morph^='article-row-'],
+  .solar-marginalia
+) {
+  opacity: calc(1 - var(--world-phase-progress, 0));
+  transform: translateY(calc(var(--world-phase-progress, 0) * -7px));
+  will-change: opacity, transform;
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='layout-release']
+:is(
+  [data-world-morph='brand'],
+  [data-world-morph='primary-nav'],
+  [data-world-morph='hero-eyebrow'],
+  [data-world-morph='observation-meta'],
+  [data-world-morph='hero-title'],
+  [data-world-morph='principles'],
+  [data-world-morph='hero-note'],
+  [data-world-morph='social-row'],
+  [data-world-morph='writing-heading'],
+  [data-world-morph='writing-tools'],
+  [data-world-morph^='article-row-'],
+  .solar-marginalia
+),
+html[data-world-transitioning='true'][data-world-transition-phase='radiation']
+:is(
+  [data-world-morph='brand'],
+  [data-world-morph='primary-nav'],
+  [data-world-morph='hero-eyebrow'],
+  [data-world-morph='observation-meta'],
+  [data-world-morph='hero-title'],
+  [data-world-morph='principles'],
+  [data-world-morph='hero-note'],
+  [data-world-morph='social-row'],
+  [data-world-morph='writing-heading'],
+  [data-world-morph='writing-tools'],
+  [data-world-morph^='article-row-'],
+  .solar-marginalia
+) {
+  opacity: 0;
+  transform: translateY(-7px);
+  pointer-events: none;
+}
+
+html[data-world-transitioning='true'][data-world-transition-phase='solar-arrival']
+:is(
+  [data-world-morph='brand'],
+  [data-world-morph='primary-nav'],
+  [data-world-morph='hero-eyebrow'],
+  [data-world-morph='observation-meta'],
+  [data-world-morph='hero-title'],
+  [data-world-morph='principles'],
+  [data-world-morph='hero-note'],
+  [data-world-morph='social-row'],
+  [data-world-morph='writing-heading'],
+  [data-world-morph='writing-tools'],
+  [data-world-morph^='article-row-'],
+  .solar-marginalia
+) {
+  opacity: var(--world-phase-progress, 0);
+  transform: translateY(calc((1 - var(--world-phase-progress, 0)) * 10px));
+  will-change: opacity, transform;
+}
+
+/* Radiation owns the middle of the story, without becoming an opaque wipe. */
+.theme-transition[data-phase='radiation']::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at var(--world-origin-x) var(--world-origin-y),
+      rgba(255, 250, 232, .34) 0%,
+      rgba(166, 198, 230, .18) 18%,
+      rgba(244, 240, 230, .11) 42%,
+      rgba(15, 24, 42, .08) 72%,
+      transparent 100%);
+  opacity: calc(.34 + var(--world-phase-progress, 0) * .30);
+}
+
+.theme-transition[data-direction='to-observatory'][data-phase='radiation']::before {
+  background:
+    radial-gradient(circle at var(--world-origin-x) var(--world-origin-y),
+      rgba(225, 233, 249, .22) 0%,
+      rgba(82, 113, 174, .20) 20%,
+      rgba(17, 31, 59, .20) 48%,
+      rgba(4, 8, 18, .24) 78%,
+      transparent 100%);
+}
+
+.theme-transition[data-phase='solar-arrival']::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--world-origin-x) var(--world-origin-y), rgba(255, 248, 225, .13), transparent 62%);
+  opacity: calc((1 - var(--world-phase-progress, 0)) * .34);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-world-transitioning='true']
+  :is(
+    [data-world-morph='brand'],
+    [data-world-morph='primary-nav'],
+    [data-world-morph='hero-eyebrow'],
+    [data-world-morph='observation-meta'],
+    [data-world-morph='hero-title'],
+    [data-world-morph='principles'],
+    [data-world-morph='hero-note'],
+    [data-world-morph='social-row'],
+    [data-world-morph='writing-heading'],
+    [data-world-morph='writing-tools'],
+    [data-world-morph^='article-row-']
+  ) {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
