@@ -16,20 +16,19 @@ test('master world transition uses the approved seven-stage 1500ms timeline', ()
   assert.equal(getTransitionFrame(1500, 'to-solar').progress, 1)
 })
 
-test('homepage drives DOM morph scene viewport and WebGL scene from one worldtransition event', async () => {
+test('homepage drives scene viewport and official WebGL transition from one worldtransition event', async () => {
   const home = await read('../src/scripts/home.js')
-  assert.match(home, /createWorldMorph/)
-  assert.match(home, /worldMorph\.prepare/)
-  assert.match(home, /worldMorph\.setProgress/)
-  assert.match(home, /worldMorph\.finish/)
+  assert.doesNotMatch(home, /createWorldMorph/)
+  assert.doesNotMatch(home, /worldMorph/)
+  assert.doesNotMatch(home, /getMorphProgress|getIndexProgress/)
   assert.match(home, /sceneViewport\?\.setTransition/)
   assert.match(home, /spaceScene\?\.setWorldTransition/)
 })
 
-test('layout target is prepared before the visible transition and settles to destination world', async () => {
+test('semantic world swap still settles layout state at the destination', async () => {
   const controller = await read('../src/scripts/themeController.js')
   assert.match(controller, /glenn:worldtransitionstart/)
   assert.match(controller, /glenn:worldtransitionend/)
-  assert.match(controller, /layoutWorld/)
-  assert.match(controller, /toWorld/)
+  assert.match(controller, /root\.dataset\.layoutWorld\s*=\s*toWorld/)
+  assert.match(controller, /swapWorld\(toWorld\)/)
 })
