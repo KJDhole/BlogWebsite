@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { createStarField } from './starField.mjs'
 import { createCosmicField } from './cosmicField.mjs'
 import { createSolarField } from './solarField.mjs'
-import { createWorldTransitionRenderer } from './worldTransitionRenderer.mjs'
+import { createWorldTransitionRenderer, getOfficialSceneProgress } from './worldTransitionRenderer.mjs'
 
 function clamp01(value) {
   return Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
@@ -140,11 +140,13 @@ export function createSpaceScene(canvas, {
       ? detail.direction
       : 'none'
     const progress = clamp01(detail.progress ?? 0)
+    const elapsedMs = Number.isFinite(detail.elapsedMs) ? detail.elapsedMs : progress * 1500
+    const sceneProgress = getOfficialSceneProgress(elapsedMs)
     const target = getTransitionTarget(detail)
 
     transitionDirection = direction
     transitionProgress = progress
-    transitionActive = !reducedMotion && direction !== 'none' && progress > 0 && progress < 0.999
+    transitionActive = !reducedMotion && direction !== 'none' && sceneProgress > 0 && sceneProgress < 0.999
 
     stars.setTransitionState({
       ...detail,
@@ -165,7 +167,7 @@ export function createSpaceScene(canvas, {
         width: window.innerWidth,
         height: window.innerHeight
       })
-      transitionRenderer.setTransition({ direction, progress })
+      transitionRenderer.setTransition({ direction, progress: sceneProgress })
     }
 
     if (!transitionActive && progress >= 0.999) settleWorldFields(currentWorld)
