@@ -7,7 +7,7 @@ import {
 
 const STORAGE_KEY = 'glenn-blog-theme'
 const DURATION_MS = 1500
-const SWAP_AT_MS = 520
+const SWAP_AT_MS = 650
 const root = document.documentElement
 const transitionLayer = document.querySelector('[data-theme-transition]')
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -60,35 +60,10 @@ function getOrigin(button) {
 }
 
 function setTransitionGeometry(origin) {
-  const radius = Math.hypot(
-    Math.max(origin.x, window.innerWidth - origin.x),
-    Math.max(origin.y, window.innerHeight - origin.y)
-  )
   const toggleRadius = Math.max(1, origin.toggleRadius)
-  const waveStartScale = Math.min(1, toggleRadius / Math.max(1, radius))
   root.style.setProperty('--world-origin-x', `${origin.x}px`)
   root.style.setProperty('--world-origin-y', `${origin.y}px`)
   root.style.setProperty('--world-toggle-radius', `${toggleRadius}px`)
-  root.style.setProperty('--world-wave-radius', `${radius}px`)
-  root.style.setProperty('--world-wave-start-scale', String(waveStartScale))
-  root.style.setProperty('--world-wave-scale', String(waveStartScale))
-  return { radius, toggleRadius, waveStartScale }
-}
-
-function getWaveScale(frame, waveStartScale) {
-  if (frame.phase === 'radiation') {
-    return waveStartScale + (1 - waveStartScale) * frame.phaseProgress
-  }
-  if (frame.phase === 'solar-arrival') {
-    return 1 + frame.phaseProgress * 0.012
-  }
-  if (frame.phase === 'index-reconstruction') {
-    return 1.012 + frame.phaseProgress * 0.005
-  }
-  if (frame.phase === 'settle') {
-    return 1.017 + frame.phaseProgress * 0.003
-  }
-  return waveStartScale
 }
 
 function swapWorld(toWorld) {
@@ -120,7 +95,6 @@ function finishTransition({ fromWorld, toWorld, direction }) {
   root.dataset.layoutWorld = toWorld
   root.style.removeProperty('--world-transition-progress')
   root.style.removeProperty('--world-phase-progress')
-  root.style.removeProperty('--world-wave-scale')
   dispatch('glenn:worldtransitionend', {
     fromWorld,
     toWorld,
@@ -132,7 +106,7 @@ function finishTransition({ fromWorld, toWorld, direction }) {
   })
 }
 
-function runTransition({ fromWorld, toWorld, direction, origin, waveStartScale }) {
+function runTransition({ fromWorld, toWorld, direction, origin }) {
   running = true
   let startedAt = 0
   let swapped = false
@@ -168,7 +142,6 @@ function runTransition({ fromWorld, toWorld, direction, origin, waveStartScale }
     root.dataset.worldTransitionPhase = frame.phase
     root.style.setProperty('--world-transition-progress', String(frame.progress))
     root.style.setProperty('--world-phase-progress', String(frame.phaseProgress))
-    root.style.setProperty('--world-wave-scale', String(getWaveScale(frame, waveStartScale)))
     if (transitionLayer) {
       transitionLayer.dataset.phase = frame.phase
       transitionLayer.dataset.direction = direction
@@ -207,7 +180,7 @@ function requestWorldToggle(button) {
   const toWorld = fromWorld === 'solar' ? 'observatory' : 'solar'
   const direction = getTransitionDirection(fromWorld, toWorld)
   const origin = getOrigin(button)
-  const geometry = setTransitionGeometry(origin)
+  setTransitionGeometry(origin)
 
   if (reducedMotion.matches) {
     const next = applyWorld(toWorld)
@@ -225,13 +198,7 @@ function requestWorldToggle(button) {
     return
   }
 
-  runTransition({
-    fromWorld,
-    toWorld,
-    direction,
-    origin,
-    waveStartScale: geometry.waveStartScale
-  })
+  runTransition({ fromWorld, toWorld, direction, origin })
 }
 
 document.addEventListener('click', event => {
