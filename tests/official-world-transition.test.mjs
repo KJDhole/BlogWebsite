@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
+// RED contract: these tests describe the official Three.js transition architecture before implementation.
 const read = path => readFile(new URL(path, import.meta.url), 'utf8')
 
 test('project stays pinned to the Three.js release used by the official transition references', async () => {
