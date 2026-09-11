@@ -16,11 +16,21 @@ test('world transition browser QA verifies reduced motion settles without animat
   const qa = await read('../scripts/world-transition-qa.mjs')
   assert.match(qa, /emulateMedia\(\{\s*reducedMotion:\s*['"]reduce['"]/)
   assert.match(qa, /worldTransitioning/)
-  assert.match(qa, /worldMorphing/)
   assert.match(qa, /reducedMotion/)
+  assert.doesNotMatch(qa, /worldMorphing/)
 })
 
-test('world morph hardening preserves one renderer, lifecycle cleanup, and preallocated star buffers', async () => {
+test('world transition browser QA validates official scene mixing instead of the removed CSS wave', async () => {
+  const qa = await read('../scripts/world-transition-qa.mjs')
+  assert.doesNotMatch(qa, /data-solar-wave|waveRadius|waveScale/)
+  assert.match(qa, /data-space-scene/)
+  assert.match(qa, /canvasCoverage/)
+  assert.match(qa, /heroOpacity/)
+  assert.match(qa, /frame\.phase\s*===\s*['"]radiation['"]/)
+  assert.match(qa, /title stayed outside viewport|title left viewport|hero.*viewport/i)
+})
+
+test('world transition hardening preserves one renderer, lifecycle cleanup, and preallocated star buffers', async () => {
   const scene = await read('../src/scripts/spaceScene.mjs')
   const stars = await read('../src/scripts/starField.mjs')
 

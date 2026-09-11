@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { interpolateRect, createViewportStage, fitRectToViewport } from '../src/scripts/sceneViewport.mjs'
+import { interpolateRect, createViewportStage, fitRectToViewport, getViewportStageProgress } from '../src/scripts/sceneViewport.mjs'
 
 test('interpolateRect moves the one scene viewport continuously between anchors', () => {
   const from = { left: 820, top: 130, width: 430, height: 430 }
@@ -22,6 +22,13 @@ test('viewport stage covers the viewport without changing renderer count', () =>
     width: 1440,
     height: 1000
   })
+})
+
+test('canvas reaches full-stage before official scene mixing begins', () => {
+  assert.equal(getViewportStageProgress(0), 0)
+  assert.ok(getViewportStageProgress(520 / 1500) < 1)
+  assert.equal(getViewportStageProgress(650 / 1500), 1)
+  assert.equal(getViewportStageProgress(1), 1)
 })
 
 test('interpolateRect clamps progress', () => {

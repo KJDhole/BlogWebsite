@@ -27,14 +27,6 @@ function pad(ms) {
   return String(ms).padStart(4, '0')
 }
 
-function waveScale(frame, startScale) {
-  if (frame.phase === 'radiation') return startScale + (1 - startScale) * frame.phaseProgress
-  if (frame.phase === 'solar-arrival') return 1 + frame.phaseProgress * 0.012
-  if (frame.phase === 'index-reconstruction') return 1.012 + frame.phaseProgress * 0.005
-  if (frame.phase === 'settle') return 1.017 + frame.phaseProgress * 0.003
-  return startScale
-}
-
 async function loadWorld(page, world) {
   const theme = worldToTheme(world)
   await page.goto(BASE_URL, { waitUntil: 'networkidle' })
@@ -59,12 +51,7 @@ async function getToggleGeometry(page) {
   if (!box) throw new Error('Missing visible world toggle')
   const origin = { x: box.x + box.width / 2, y: box.y + box.height / 2 }
   const toggleRadius = Math.max(box.width, box.height) / 2
-  const viewport = page.viewportSize()
-  const radius = Math.hypot(
-    Math.max(origin.x, viewport.width - origin.x),
-    Math.max(origin.y, viewport.height - origin.y)
-  )
-  return { button, box, origin, toggleRadius, radius }
+  return { button, box, origin, toggleRadius }
 }
 
 async function inspectStableState(page) {
@@ -75,7 +62,6 @@ async function inspectStableState(page) {
       world: root.dataset.world,
       layoutWorld: root.dataset.layoutWorld,
       worldTransitioning: root.dataset.worldTransitioning ?? null,
-      worldMorphing: root.dataset.worldMorphing ?? null,
       layerActive: Boolean(layer?.classList.contains('is-active')),
       innerWidth,
       scrollWidth: Math.max(root.scrollWidth, document.body?.scrollWidth ?? 0)
@@ -88,7 +74,7 @@ async function captureStableState(page, viewport, world, label) {
   if (state.world !== world || state.layoutWorld !== world) {
     fail('Hardening stable state did not settle to one world/layout', { viewport: viewport.name, world, label, state })
   }
-  if (state.worldTransitioning || state.worldMorphing || state.layerActive) {
+  if (state.worldTransitioning || state.layerActive) {
     fail('Hardening stable state retained transient transition state', { viewport: viewport.name, world, label, state })
   }
   if (state.scrollWidth > state.innerWidth + 1) {
@@ -141,11 +127,11 @@ async function runLiveDirection(page, viewport, { fromWorld, toWorld, direction 
   if (Math.abs(state.originX - origin.x) > 2 || Math.abs(state.originY - origin.y) > 2) {
     fail('Live transition origin drifted from toggle center', { viewport: viewport.name, direction, clickSide, origin, state })
   }
-  if (!state.sameHeroNode) fail('Hero title was replaced instead of morphed as the same DOM node', { viewport: viewport.name, direction })
-  if (!state.sameArticleNodes) fail('Article rows were replaced instead of morphed as the same DOM nodes', { viewport: viewport.name, direction })
+  if (!state.sameHeroNode) fail('Hero title DOM identity changed during world transition', { viewport: viewport.name, direction })
+  if (!state.sameArticleNodes) fail('Article row DOM identity changed during world transition', { viewport: viewport.name, direction })
   if (state.world !== toWorld || state.layoutWorld !== toWorld) fail('World/layout state did not settle together', { viewport: viewport.name, direction, state })
   if (state.scrollWidth > state.innerWidth + 1) fail('Live transition caused horizontal overflow', { viewport: viewport.name, direction, state })
-  for (const required of ['ignition', 'convergence', 'layout-release', 'radiation', 'settle']) {
+  for (const required of ['ignition', 'layout-release', 'radiation', 'settle']) {
     if (!state.phases.includes(required)) fail('Live transition skipped a load-bearing phase', { viewport: viewport.name, direction, required, phases: state.phases })
   }
 
@@ -183,21 +169,18 @@ async function runReducedMotion(page, viewport) {
   const solarState = await page.evaluate(() => {
     const root = document.documentElement
     const layer = document.querySelector('[data-theme-transition]')
-    const wave = document.querySelector('[data-solar-wave]')
     return {
       world: root.dataset.world,
       layoutWorld: root.dataset.layoutWorld,
       worldTransitioning: root.dataset.worldTransitioning ?? null,
-      worldMorphing: root.dataset.worldMorphing ?? null,
       layerActive: Boolean(layer?.classList.contains('is-active')),
-      waveOpacity: wave ? Number.parseFloat(getComputedStyle(wave).opacity) : 0,
       innerWidth,
       scrollWidth: Math.max(root.scrollWidth, document.body?.scrollWidth ?? 0),
       events: { ...window.__reducedMotionEvents }
     }
   })
 
-  if (solarState.worldTransitioning || solarState.worldMorphing || solarState.layerActive) {
+  if (solarState.worldTransitioning || solarState.layerActive) {
     fail('Reduced motion activated animated transition surfaces', { viewport: viewport.name, state: solarState })
   }
   if (solarState.events.start !== 0 || solarState.events.transition !== 0) {
@@ -221,7 +204,7 @@ async function runReducedMotion(page, viewport) {
   await page.waitForTimeout(40)
   const observatoryState = await inspectStableState(page)
 
-  if (observatoryState.worldTransitioning || observatoryState.worldMorphing || observatoryState.layerActive) {
+  if (observatoryState.worldTransitioning || observatoryState.layerActive) {
     fail('Reduced motion reverse retained animated transition surfaces', { viewport: viewport.name, state: observatoryState })
   }
   if (observatoryState.scrollWidth > observatoryState.innerWidth + 1) {
@@ -235,18 +218,15 @@ async function runReducedMotion(page, viewport) {
 
 async function captureExactFrame(page, viewport, { fromWorld, toWorld, direction }, checkpoint) {
   await loadWorld(page, fromWorld)
-  const { origin, toggleRadius, radius } = await getToggleGeometry(page)
+  const { origin, toggleRadius } = await getToggleGeometry(page)
   const frame = getTransitionFrame(checkpoint, direction)
-  const swapped = checkpoint >= 520
+  const swapped = checkpoint >= 650
   const visualWorld = swapped ? toWorld : fromWorld
   const visualTheme = worldToTheme(visualWorld)
   const active = checkpoint < 1500
-  const startScale = Math.min(1, toggleRadius / Math.max(1, radius))
-  const scale = waveScale(frame, startScale)
-  const waveRadius = radius * scale
   const starFrame = getStarTransitionFrame({ direction, progress: frame.progress })
 
-  await page.evaluate(({ frame, direction, origin, toggleRadius, radius, startScale, scale, visualWorld, visualTheme, active, fromWorld, toWorld, swapped }) => {
+  await page.evaluate(({ frame, direction, origin, toggleRadius, visualWorld, visualTheme, active, fromWorld, toWorld, swapped }) => {
     const root = document.documentElement
     const layer = document.querySelector('[data-theme-transition]')
 
@@ -262,11 +242,10 @@ async function captureExactFrame(page, viewport, { fromWorld, toWorld, direction
     root.style.setProperty('--world-origin-x', `${origin.x}px`)
     root.style.setProperty('--world-origin-y', `${origin.y}px`)
     root.style.setProperty('--world-toggle-radius', `${toggleRadius}px`)
-    root.style.setProperty('--world-wave-radius', `${radius}px`)
-    root.style.setProperty('--world-wave-start-scale', String(startScale))
-    root.style.setProperty('--world-wave-scale', String(scale))
     root.style.setProperty('--world-transition-progress', String(frame.progress))
     root.style.setProperty('--world-phase-progress', String(frame.phaseProgress))
+
+    if (swapped) root.dataset.layoutWorld = toWorld
 
     if (layer) {
       layer.classList.toggle('is-active', active)
@@ -309,37 +288,78 @@ async function captureExactFrame(page, viewport, { fromWorld, toWorld, direction
         detail: { fromWorld, toWorld, world: toWorld, theme: visualTheme, direction, elapsedMs: 1500, progress: 1 }
       }))
     }
-  }, { frame, direction, origin, toggleRadius, radius, startScale, scale, visualWorld, visualTheme, active, fromWorld, toWorld, swapped })
+  }, { frame, direction, origin, toggleRadius, visualWorld, visualTheme, active, fromWorld, toWorld, swapped })
 
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
   const state = await page.evaluate(() => {
     const root = document.documentElement
     const layer = document.querySelector('[data-theme-transition]')
-    const hero = document.querySelector('#hero-title')?.getBoundingClientRect()
-    const wave = document.querySelector('[data-solar-wave]')
-    const waveRect = wave?.getBoundingClientRect()
+    const heroNode = document.querySelector('#hero-title')
+    const hero = heroNode?.getBoundingClientRect()
+    const heroOpacity = heroNode ? Number.parseFloat(getComputedStyle(heroNode).opacity) : 0
+    const sceneNode = document.querySelector('[data-space-scene]')
+    const sceneRect = sceneNode?.getBoundingClientRect()
+    const canvasCoverage = sceneRect
+      ? {
+          left: sceneRect.left,
+          top: sceneRect.top,
+          width: sceneRect.width,
+          height: sceneRect.height,
+          widthRatio: sceneRect.width / innerWidth,
+          heightRatio: sceneRect.height / innerHeight
+        }
+      : null
     return {
       world: root.dataset.world,
       layoutWorld: root.dataset.layoutWorld,
       phase: layer?.dataset.phase ?? null,
       active: Boolean(layer?.classList.contains('is-active')),
       innerWidth,
+      innerHeight,
       scrollWidth: Math.max(root.scrollWidth, document.body?.scrollWidth ?? 0),
-      hero: hero ? { left: hero.left, top: hero.top, width: hero.width, height: hero.height } : null,
-      wave: waveRect && wave ? { width: waveRect.width, height: waveRect.height, opacity: getComputedStyle(wave).opacity } : null,
+      heroOpacity,
+      hero: hero ? { left: hero.left, top: hero.top, width: hero.width, height: hero.height, right: hero.right, bottom: hero.bottom } : null,
+      canvasCoverage,
       hasDetachedBlackCore: Boolean(document.querySelector('[data-eclipse-core], .theme-eclipse-core'))
     }
   })
 
-  if (state.scrollWidth > state.innerWidth + 1) fail('Frozen transition frame caused horizontal overflow', { viewport: viewport.name, direction, checkpoint, state })
-  if (state.hasDetachedBlackCore) fail('Detached black eclipse core exists in transition DOM', { viewport: viewport.name, direction, checkpoint })
-  if (active && state.phase !== frame.phase) fail('Frozen transition frame rendered wrong phase', { viewport: viewport.name, direction, checkpoint, expected: frame.phase, state })
-  if (!active && (state.world !== toWorld || state.layoutWorld !== toWorld)) fail('Final frame did not settle both world and layout state', { viewport: viewport.name, direction, checkpoint, state })
-  if (checkpoint === 520 && waveRadius + 0.5 < toggleRadius) fail('First radiation radius starts smaller than toggle radius', { viewport: viewport.name, direction, checkpoint, waveRadius, toggleRadius })
+  if (state.scrollWidth > state.innerWidth + 1) {
+    fail('Frozen transition frame caused horizontal overflow', { viewport: viewport.name, direction, checkpoint, state })
+  }
+  if (state.hasDetachedBlackCore) {
+    fail('Detached black eclipse core exists in transition DOM', { viewport: viewport.name, direction, checkpoint })
+  }
+  if (active && state.phase !== frame.phase) {
+    fail('Frozen transition frame rendered wrong phase', { viewport: viewport.name, direction, checkpoint, expected: frame.phase, state })
+  }
+  if (!active && (state.world !== toWorld || state.layoutWorld !== toWorld)) {
+    fail('Final frame did not settle both world and layout state', { viewport: viewport.name, direction, checkpoint, state })
+  }
+  if (!state.canvasCoverage) {
+    fail('Official Three.js transition canvas was missing', { viewport: viewport.name, direction, checkpoint, state })
+  }
+
+  if (frame.phase === 'radiation') {
+    if (state.heroOpacity > 0.05) {
+      fail('DOM copy remained visible while Three.js owned radiation phase', { viewport: viewport.name, direction, checkpoint, state })
+    }
+    if (checkpoint >= 650 && state.canvasCoverage && (state.canvasCoverage.widthRatio < 0.98 || state.canvasCoverage.heightRatio < 0.98)) {
+      fail('Three.js transition canvas was not full-stage during official scene mixing', { viewport: viewport.name, direction, checkpoint, state })
+    }
+  }
+
+  if (state.heroOpacity > 0.2 && state.hero) {
+    if (state.hero.left < -1 || state.hero.right > state.innerWidth + 1) {
+      fail('Hero title left viewport bounds while visible', { viewport: viewport.name, direction, checkpoint, state })
+    }
+  }
 
   if (direction === 'to-solar' && checkpoint >= 180 && checkpoint <= 450) {
     report.fold.push({ viewport: viewport.name, checkpoint, fold: starFrame.fold, visibility: starFrame.visibility })
-    if (checkpoint >= 300 && starFrame.fold <= 0) fail('Star field did not begin folding before radiation', { viewport: viewport.name, checkpoint, starFrame })
+    if (checkpoint >= 300 && starFrame.fold <= 0) {
+      fail('Star field did not begin folding before scene transition', { viewport: viewport.name, checkpoint, starFrame })
+    }
     if (!(starFrame.visibility.far <= starFrame.visibility.mid && starFrame.visibility.mid <= starFrame.visibility.near)) {
       fail('Star depth visibility does not preserve far-before-near convergence', { viewport: viewport.name, checkpoint, starFrame })
     }
@@ -357,10 +377,11 @@ async function captureExactFrame(page, viewport, { fromWorld, toWorld, direction
     world: visualWorld,
     layoutWorld: state.layoutWorld,
     toggleRadius,
-    waveRadius,
     fold: starFrame.fold,
     visibility: starFrame.visibility,
-    hero: state.hero
+    heroOpacity: state.heroOpacity,
+    hero: state.hero,
+    canvasCoverage: state.canvasCoverage
   })
 }
 
