@@ -119,7 +119,7 @@ export function createSpaceScene(canvas, {
     camera.aspect = width / height
     camera.updateProjectionMatrix()
     renderer.setSize(width, height, false)
-    officialTransition?.setSize(width, height)
+    officialTransition.setSize(width, height)
   }
 
   function getTransitionTarget(detail = {}) {
@@ -152,8 +152,8 @@ export function createSpaceScene(canvas, {
     currentWorld = nextWorld === 'observatory' ? 'observatory' : 'solar'
     transitionRatio = currentWorld === 'observatory' ? 1 : 0
     if (!transitionActive) {
-      officialTransition?.setTransition(transitionRatio)
-      officialTransition?.setBloom(0)
+      officialTransition.setTransition(transitionRatio)
+      officialTransition.setBloom(0)
     }
   }
 
@@ -174,16 +174,16 @@ export function createSpaceScene(canvas, {
 
     if (!direction) {
       transitionActive = false
-      officialTransition?.setBloom(0)
+      officialTransition.setBloom(0)
       return
     }
 
     transitionRatio = direction === 'to-solar' ? 1 - progress : progress
     transitionActive = progress < 0.999 && !reducedMotion
-    officialTransition?.setTransition(transitionRatio)
-    officialTransition?.setBloom(getBloomStrength(detail, reducedMotion))
+    officialTransition.setTransition(transitionRatio)
+    officialTransition.setBloom(getBloomStrength(detail, reducedMotion))
 
-    if (!transitionActive) officialTransition?.setBloom(0)
+    if (!transitionActive) officialTransition.setBloom(0)
   }
 
   function setStoryState(nextState) {
@@ -217,7 +217,7 @@ export function createSpaceScene(canvas, {
     cosmicField.update(elapsedSeconds, currentStory)
     solarField.update(elapsedSeconds, currentStory)
 
-    if (transitionActive && officialTransition) {
+    if (transitionActive) {
       officialTransition.render(deltaSeconds)
     } else {
       renderer.render(currentWorld === 'solar' ? solarScene : observatoryScene, camera)
@@ -262,7 +262,7 @@ export function createSpaceScene(canvas, {
     canvas.removeEventListener('webglcontextlost', handleContextLost, false)
     if (resizeObserver) resizeObserver.disconnect()
     else window.removeEventListener('resize', resize)
-    officialTransition?.dispose()
+    officialTransition.dispose()
     stars.destroy()
     cosmicField.destroy()
     solarField.destroy()
