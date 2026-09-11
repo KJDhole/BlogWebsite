@@ -16,7 +16,7 @@ test('BaseLayout mounts one transition controller surface without a CSS world re
   assert.doesNotMatch(transition, /data-corona/)
 })
 
-test('theme controller always uses the toggle center instead of pointer coordinates', async () => {
+test('theme controller uses the toggle center and swaps semantics only after the canvas reaches full stage', async () => {
   const controller = await read('../src/scripts/themeController.js')
   assert.match(controller, /getBoundingClientRect/)
   assert.match(controller, /rect\.left\s*\+\s*rect\.width\s*\/\s*2/)
@@ -27,8 +27,8 @@ test('theme controller always uses the toggle center instead of pointer coordina
   assert.match(controller, /prefers-reduced-motion/)
   assert.match(controller, /glenn:worldtransition/)
   assert.match(controller, /glenn:worldchange/)
-  assert.match(controller, /1500/)
-  assert.match(controller, /520/)
+  assert.match(controller, /const\s+DURATION_MS\s*=\s*1500/)
+  assert.match(controller, /const\s+SWAP_AT_MS\s*=\s*650/)
 })
 
 test('world reveal is owned by official RenderTransitionPass with a toggle-centered radial texture', async () => {
