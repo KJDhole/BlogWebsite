@@ -11,7 +11,7 @@ const SESSION_COOKIE = 'glenn_editor_session'
 const SESSION_MS = 7 * 24 * 60 * 60 * 1000
 
 function postPath(slug) {
-  return `src/content/posts/${slug}.md`
+  return `posts/${slug}.md`
 }
 
 function httpError(statusCode, code, message, details) {
@@ -52,7 +52,11 @@ export async function buildApp({ config, store, github, clock = () => new Date()
   const publishing = createPublishingService({ store, github, clock })
 
   await app.register(cookie, { secret: config.sessionSecret })
-  await app.register(cors, { origin: config.adminOrigin, credentials: true })
+  await app.register(cors, {
+    origin: config.adminOrigin,
+    credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+  })
   await app.register(rateLimit, { global: false })
 
   function requireOrigin(request) {
@@ -125,7 +129,7 @@ export async function buildApp({ config, store, github, clock = () => new Date()
   app.get('/auth/session', { preHandler: requireSession }, async () => ({ authenticated: true }))
 
   app.get('/posts', { preHandler: requireSession }, async () => {
-    const entries = await github.listDirectory('src/content/posts', 'main')
+    const entries = await github.listDirectory('posts', 'main')
     const published = await Promise.all(
       entries
         .filter(entry => entry.type === 'file' && entry.name.endsWith('.md'))
