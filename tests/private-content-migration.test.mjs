@@ -20,6 +20,18 @@ test('CI validates builds against the private Blog repository content', async ()
   assertPrivateContentCheckout(workflow)
 })
 
+test('all browser QA workflows build against private Blog content', async () => {
+  const workflows = [
+    '../.github/workflows/absorption-qa.yml',
+    '../.github/workflows/deliver-qa.yml',
+    '../.github/workflows/world-transition-qa.yml'
+  ]
+
+  for (const path of workflows) {
+    assertPrivateContentCheckout(await read(path))
+  }
+})
+
 test('article editor publishes to the private Blog repository and its posts directory', async () => {
   const config = await read('../editor-api/src/config.mjs')
   const envExample = await read('../editor-api/.env.example')
