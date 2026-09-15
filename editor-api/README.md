@@ -1,6 +1,6 @@
 # Glenn Blog Editor API
 
-Private runtime for the browser article editor. The public Astro blog remains a static GitHub Pages site; this service only handles login, private drafts, GitHub publishing, PR/CI status, and explicit merge actions.
+Private runtime for the browser article editor. The public Astro blog remains a static GitHub Pages site; this service handles login, working drafts, GitHub publishing, PR/CI status, and explicit merge actions.
 
 ## Production shape
 
@@ -11,10 +11,10 @@ blog.minglingyun.com/admin/   -> static GitHub Pages admin client
 editor-api.minglingyun.com   -> Nginx HTTPS -> 127.0.0.1:8787
                                     |
                                     +-> SQLite /app/data/editor.sqlite
-                                    +-> GitHub API -> KJDhole/BlogWebsite
+                                    +-> GitHub API -> KJDhole/Blog (private)
 ```
 
-DNS: `editor-api.minglingyun.com` points to the existing server. Nginx terminates HTTPS and proxies only to `127.0.0.1:8787`.
+The public website code lives in `KJDhole/BlogWebsite`. Article Markdown truth lives in the private `KJDhole/Blog` repository under `posts/`.
 
 ## Required environment
 
@@ -29,7 +29,7 @@ ADMIN_PASSWORD_HASH=<bcrypt-hash>
 SESSION_SECRET=<at-least-32-random-characters>
 GITHUB_TOKEN=<fine-grained-pat>
 GITHUB_OWNER=KJDhole
-GITHUB_REPO=BlogWebsite
+GITHUB_CONTENT_REPO=Blog
 SQLITE_PATH=/app/data/editor.sqlite
 ```
 
@@ -49,7 +49,7 @@ Keep the production env file readable only by the deployment user, for example `
 
 ## GitHub token
 
-Use a fine-grained PAT restricted to **only** `KJDhole/BlogWebsite`.
+Use a fine-grained PAT restricted to **only** `KJDhole/Blog`.
 
 Minimum repository permissions:
 
@@ -57,9 +57,22 @@ Minimum repository permissions:
 - Pull requests: read/write
 - Actions: read
 
-Metadata read access is added by GitHub automatically. The editor reads CI state from the GitHub Actions workflow-runs API; it does not require the Checks permission, which is not currently configurable for fine-grained PATs.
+The editor reads and writes articles at:
+
+```text
+posts/<slug>.md
+```
 
 Never put the PAT, password hash, raw password, or session secret in GitHub Pages, `PUBLIC_*` variables, browser JavaScript, or committed files.
+
+## Draft model
+
+There are two kinds of draft state:
+
+- GitHub Markdown with `draft: true` lives in private `KJDhole/Blog/posts/`.
+- Unsumbitted working drafts created in `/admin/` live in SQLite until they are submitted for publishing.
+
+Published article truth is always the private GitHub Markdown, not SQLite.
 
 ## Build and run
 
@@ -81,16 +94,24 @@ docker run -d \
 
 The API is deliberately bound to loopback on the host. Do not expose port `8787` directly to the Internet.
 
+## CORS
+
+The browser admin client uses credentialed requests. The API explicitly allows the methods used by the editor:
+
+```text
+GET, HEAD, POST, PUT, DELETE, OPTIONS
+```
+
+`ADMIN_ORIGIN` must remain exactly the public admin origin.
+
 ## Nginx
 
-Example server block after DNS is in place:
+Example server block:
 
 ```nginx
 server {
     listen 443 ssl http2;
     server_name editor-api.minglingyun.com;
-
-    # Use the server's normal certificate/SSL include here.
 
     client_max_body_size 2m;
 
@@ -105,11 +126,9 @@ server {
 }
 ```
 
-After enabling the site, obtain/renew HTTPS using the server's existing certificate workflow (for example Certbot if that is already how the server is managed). `ADMIN_ORIGIN` must remain exactly `https://blog.minglingyun.com`.
-
 ## Persistence and backup
 
-`/app/data` must be a persistent Docker volume. SQLite is working-state storage for drafts and sessions; published article truth still lives in GitHub Markdown.
+`/app/data` must be a persistent Docker volume. SQLite stores working drafts and sessions.
 
 Before replacing the container, take a SQLite backup:
 
@@ -126,12 +145,7 @@ docker cp glenn-blog-editor-api:/app/data/editor-backup.sqlite ./editor-backup.s
 
 ## Verification
 
-Repository/CI commands:
-
 ```bash
-npm install
-npm test
-npm run build
 npm install --prefix editor-api
 npm test --prefix editor-api
 docker build -t glenn-blog-editor-api ./editor-api
@@ -140,9 +154,14 @@ docker build -t glenn-blog-editor-api ./editor-api
 A successful production smoke test is:
 
 ```text
-/admin/login/ -> login -> create draft -> reload -> draft survives
--> submit publish -> PR appears -> CI passes -> Merge & Publish
--> main updates -> GitHub Pages deploys the article
+/admin/login/
+→ create/save draft
+→ submit publish
+→ PR appears in KJDhole/Blog with posts/<slug>.md
+→ Content CI passes
+→ confirm publish / merge
+→ private Blog main updates
+→ BlogWebsite Pages deployment is triggered
 ```
 
-The GitHub Pages deploy workflow stays static and does not run this API container.
+The GitHub Pages deploy workflow remains static and does not run this API container.
