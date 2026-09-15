@@ -3,6 +3,14 @@ node_modules/
 dist/
 .astro/
 
+# Private article content is overlaid from KJDhole/Blog during CI/deploy.
+# Keep local copies untracked so article sources cannot leak back into this public repo.
+src/content/posts/
+.blog-content/
+
+# Server-only editor runtime configuration
+editor-api/.env
+
 # Generated visual QA artifacts
 *-preview.*
 v*-preview/
